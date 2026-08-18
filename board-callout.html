@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#000000">
+<title>Board callout</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:#000;color:#EDEDEA;font-family:'Space Grotesk',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  padding:16px 14px calc(24px + env(safe-area-inset-bottom));-webkit-text-size-adjust:100%}
+.wrap{max-width:640px;margin:0 auto}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;touch-action:manipulation}
+.mono{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace}
+.head{margin-bottom:12px}
+.modes{display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid #1C1C1C;padding-bottom:10px}
+.mode{flex:1;padding:9px 8px;border-radius:6px;font-size:13px;font-weight:700;background:#0B0B0B;color:#8A8A85;
+  border:1px solid #262626;text-align:center}
+.mode.on{background:#E8B33C;color:#000;border-color:#E8B33C}
+.mode small{display:block;font-size:10px;font-weight:400;opacity:.75;margin-top:1px}
+h1{font-size:18px;font-weight:700;letter-spacing:-.01em}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:16px}
+.tab{padding:5px 10px;border-radius:5px;font-size:12px;background:#0B0B0B;color:#8A8A85;border:1px solid #262626;text-transform:capitalize}
+.tab.on{background:#E8B33C;color:#000;border-color:#E8B33C;font-weight:700}
+.tab.done{color:#EDEDEA}
+.grow{flex:1}
+.panel{background:#0B0B0B;border:1px solid #262626;border-radius:9px}
+.board{display:flex;align-items:flex-end;justify-content:center;gap:7px;padding:16px 10px;margin-bottom:16px}
+.slotwrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+.tag{font-size:9px;color:#8A8A85;height:12px;letter-spacing:.05em}
+.card{background:#F2F0E9;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  box-shadow:0 2px 6px rgba(0,0,0,.45);flex:0 0 auto}
+.card .r{font-weight:700;line-height:1;font-family:'JetBrains Mono',ui-monospace,Menlo,monospace}
+.card .p{line-height:1.1}
+.lg{width:52px;height:72px}.lg .r{font-size:22px}.lg .p{font-size:20px}
+.md{width:40px;height:56px}.md .r{font-size:17px}.md .p{font-size:15px}
+.sm{width:30px;height:42px}.sm .r{font-size:13px}.sm .p{font-size:12px}
+.new{border-radius:8px;padding:2px;background:#E8B33C}
+.empty{width:52px;height:72px;border:1px dashed #262626;border-radius:6px;margin:2px}
+.q{font-size:12px;color:#8A8A85;margin-bottom:8px;display:flex;justify-content:space-between}
+.list{display:grid;gap:6px;margin-bottom:16px}
+.item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:6px;text-align:left;font-size:14px;
+  background:#0B0B0B;border:1px solid #262626;width:100%}
+.item.on{background:#16211C;border-color:#3D5A4C}
+.item.hit{background:#13271D;border-color:#5BC98C}
+.item.missed{background:#0B0B0B;border-color:#E4685D}
+.item.void{background:#0B0B0B;border-color:#262626;opacity:.5}
+.box{width:17px;height:17px;border-radius:3px;border:1px solid #262626;flex:0 0 auto;display:flex;align-items:center;
+  justify-content:center;font-size:11px;font-weight:700;color:#000}
+.box.on{background:#5BC98C;border-color:#5BC98C}
+.lbl{flex:1}
+.ex{font-size:11px;color:#8A8A85;font-family:'JetBrains Mono',ui-monospace,Menlo,monospace}
+.picked{display:flex;align-items:center;gap:8px;margin-bottom:12px;min-height:56px}
+.pslot{width:40px;height:56px;border:1px dashed #262626;border-radius:6px}
+.verdict{font-size:14px;font-weight:700;margin-left:6px}
+.good{color:#5BC98C}.bad{color:#E4685D}.gold{color:#E8B33C}.mut{color:#8A8A85}
+.picker{padding:7px;margin-bottom:14px}
+.prow{display:grid;grid-template-columns:15px repeat(13,minmax(0,1fr));gap:3px;margin-bottom:3px}
+.prow:last-child{margin-bottom:0}
+.suit{display:flex;align-items:center;justify-content:center;font-size:13px}
+.cell{height:30px;border-radius:3px;background:#171717;color:#C9C9C4;font-size:12px;border:1px solid transparent;
+  font-family:'JetBrains Mono',ui-monospace,Menlo,monospace}
+.cell.on{background:#E8B33C;color:#000;border-color:#E8B33C;font-weight:700}
+.cell.off{background:#050505;color:#3A3A36}
+.cell.dim{opacity:.45}
+.ans{padding:12px;margin-bottom:12px;font-size:14px}
+.ansrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sub{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:#8A9A93}
+.summary{padding:12px;margin-bottom:12px;border-color:#E8B33C}
+.srow{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:14px}
+.srow .st{color:#8A8A85;width:42px;font-size:12px}
+.srow .nut{width:66px;font-family:'JetBrains Mono',ui-monospace,Menlo,monospace}
+.acts{display:flex;gap:8px;margin-bottom:16px}
+.go{flex:1;padding:12px;border-radius:6px;font-weight:700;font-size:14px;background:#E8B33C;color:#000}
+.go[disabled]{background:#151515;color:#4A4A46}
+.alt{padding:12px 16px;border-radius:6px;font-size:14px;background:#0B0B0B;color:#8A8A85;border:1px solid #262626}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;padding:10px 12px}
+.stats b{display:block;font-size:17px;font-family:'JetBrains Mono',ui-monospace,Menlo,monospace}
+.stats span{font-size:10px;color:#8A8A85}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:11px;color:#8A8A85}
+.foot button{text-decoration:underline;color:#8A8A85;font-size:11px}
+@media(max-width:400px){.lg{width:46px;height:64px}.lg .r{font-size:19px}.lg .p{font-size:17px}.empty{width:46px;height:64px}
+  .cell{height:27px;font-size:11px}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+
+var RANK_CHARS=["2","3","4","5","6","7","8","9","T","J","Q","K","A"];
+var SUITS=[{k:"s",sym:"\u2660",color:"#1B2320"},{k:"h",sym:"\u2665",color:"#C7413A"},
+           {k:"d",sym:"\u2666",color:"#2F7DBF"},{k:"c",sym:"\u2663",color:"#2E8B57"}];
+var DECK=[];
+for(var r=0;r<13;r++)for(var s=0;s<4;s++)DECK.push({id:r*4+s,r:r+2,s:s});
+var CAT_NAMES=["high card","pair","two pair","trips","straight","flush","full house","quads","straight flush"];
+
+function eval5(c0,c1,c2,c3,c4){
+  var ranks=[c0.r,c1.r,c2.r,c3.r,c4.r].sort(function(a,b){return b-a;});
+  var isFlush=c0.s===c1.s&&c1.s===c2.s&&c2.s===c3.s&&c3.s===c4.s;
+  var sh=0;
+  if(ranks[0]!==ranks[1]&&ranks[1]!==ranks[2]&&ranks[2]!==ranks[3]&&ranks[3]!==ranks[4]){
+    if(ranks[0]-ranks[4]===4)sh=ranks[0];
+    else if(ranks[0]===14&&ranks[1]===5)sh=5;
+  }
+  var counts={};
+  for(var i=0;i<5;i++)counts[ranks[i]]=(counts[ranks[i]]||0)+1;
+  var groups=[];
+  for(var k in counts)groups.push({r:+k,c:counts[k]});
+  groups.sort(function(a,b){return b.c-a.c||b.r-a.r;});
+  var cat,kick;
+  if(sh&&isFlush){cat=8;kick=[sh];}
+  else if(groups[0].c===4){cat=7;kick=[groups[0].r,groups[1].r];}
+  else if(groups[0].c===3&&groups[1].c===2){cat=6;kick=[groups[0].r,groups[1].r];}
+  else if(isFlush){cat=5;kick=ranks;}
+  else if(sh){cat=4;kick=[sh];}
+  else if(groups[0].c===3){cat=3;kick=[groups[0].r,groups[1].r,groups[2].r];}
+  else if(groups[0].c===2&&groups[1].c===2){cat=2;kick=[groups[0].r,groups[1].r,groups[2].r];}
+  else if(groups[0].c===2){cat=1;kick=[groups[0].r,groups[1].r,groups[2].r,groups[3].r];}
+  else{cat=0;kick=ranks;}
+  var score=cat;
+  for(var j=0;j<5;j++)score=score*15+(kick[j]||0);
+  return score;
+}
+function bestScore(cards){
+  var n=cards.length;
+  if(n===5)return eval5(cards[0],cards[1],cards[2],cards[3],cards[4]);
+  var mx=-1;
+  for(var a=0;a<n-4;a++)for(var b=a+1;b<n-3;b++)for(var c=b+1;c<n-2;c++)
+    for(var d=c+1;d<n-1;d++)for(var e=d+1;e<n;e++){
+      var s=eval5(cards[a],cards[b],cards[c],cards[d],cards[e]);
+      if(s>mx)mx=s;
+    }
+  return mx;
+}
+function catOf(s){return Math.floor(s/759375);}
+function describe(score){
+  var cat=catOf(score);
+  if(cat===8)return (Math.floor(score/50625)%15)===14?"royal flush":"straight flush";
+  return CAT_NAMES[cat];
+}
+function hasStraight(rs){
+  for(var hi=14;hi>=5;hi--){
+    var ok=true;
+    for(var i=0;i<5;i++){var r=hi-i;if(r===1)r=14;if(!rs[r]){ok=false;break;}}
+    if(ok)return true;
+  }
+  return false;
+}
+var DRAW_KEYS=[
+  {key:"flushMade",label:"Flush already possible"},
+  {key:"flushDraw",label:"Flush draw (someone can have 4 to a flush)"},
+  {key:"straightMade",label:"Straight already possible"},
+  {key:"oesd",label:"8-out straight draw (open-ender or double gutter)"},
+  {key:"gutshot",label:"Gutshot straight draw (4 outs)"},
+  {key:"paired",label:"Board paired (trips / boat possible)"}
+];
+var RIVER_KEYS=[
+  {key:"cat8",label:"Straight flush"},
+  {key:"cat7",label:"Quads"},
+  {key:"cat6",label:"Full house"},
+  {key:"cat5",label:"Flush"},
+  {key:"cat4",label:"Straight"}
+];
+function analyze(board){
+  var used={},i,j;
+  for(i=0;i<board.length;i++)used[board[i].id]=1;
+  var deck=DECK.filter(function(c){return !used[c.id];});
+  var isRiver=board.length===5;
+  var flags={flushMade:false,flushDraw:false,straightMade:false,oesd:false,gutshot:false,paired:false};
+  var examples={};
+  var seen={},dup=false;
+  for(i=0;i<board.length;i++){if(seen[board[i].r])dup=true;seen[board[i].r]=1;}
+  flags.paired=dup;
+  var top=-1,results=[],byCat={};
+  for(i=0;i<deck.length;i++)for(j=i+1;j<deck.length;j++){
+    var hole=[deck[i],deck[j]];
+    var all=board.concat(hole);
+    var sc=bestScore(all);
+    results.push({sc:sc,hole:hole});
+    if(sc>top)top=sc;
+    var cat=catOf(sc);
+    if(!byCat[cat]||sc>byCat[cat].score)byCat[cat]={score:sc,hole:hole};
+    if(isRiver)continue;
+    var sct=[0,0,0,0],m;
+    for(m=0;m<all.length;m++)sct[all[m].s]++;
+    var mxs=Math.max(sct[0],sct[1],sct[2],sct[3]);
+    if(mxs>=5){if(!flags.flushMade){flags.flushMade=true;examples.flushMade=hole;}}
+    else if(mxs===4&&!flags.flushDraw){flags.flushDraw=true;examples.flushDraw=hole;}
+    var rs={};
+    for(m=0;m<all.length;m++)rs[all[m].r]=1;
+    if(hasStraight(rs)){if(!flags.straightMade){flags.straightMade=true;examples.straightMade=hole;}}
+    else if(!flags.oesd||!flags.gutshot){
+      var outs=0;
+      for(var r2=2;r2<=14;r2++){
+        if(rs[r2])continue;
+        rs[r2]=1;
+        if(hasStraight(rs))outs++;
+        delete rs[r2];
+      }
+      if(outs>=2&&!flags.oesd){flags.oesd=true;examples.oesd=hole;}
+      else if(outs===1&&!flags.gutshot){flags.gutshot=true;examples.gutshot=hole;}
+    }
+  }
+  var pairs=[[8,"cat8"],[7,"cat7"],[6,"cat6"],[5,"cat5"],[4,"cat4"]];
+  for(i=0;i<pairs.length;i++){
+    var c2=pairs[i][0],key=pairs[i][1];
+    flags[key]=!!byCat[c2];
+    if(byCat[c2])examples[key]=byCat[c2].hole;
+  }
+  var nutCombos=results.filter(function(x){return x.sc===top;}).map(function(x){return x.hole;});
+  var second=-1;
+  for(i=0;i<results.length;i++)if(results[i].sc<top&&results[i].sc>second)second=results[i].sc;
+  var secondCombo=null;
+  if(second>-1)for(i=0;i<results.length;i++)if(results[i].sc===second){secondCombo=results[i].hole;break;}
+  return {flags:flags,examples:examples,byCat:byCat,top:top,nutCombos:nutCombos,
+          second:second,secondCombo:secondCombo,isRiver:isRiver};
+}
+function coordinated(board){
+  for(var i=0;i<board.length;i++)for(var j=i+1;j<board.length;j++){
+    if(board[i].s===board[j].s)return true;
+    if(Math.abs(board[i].r-board[j].r)<=4)return true;
+  }
+  return false;
+}
+function draw(n){
+  var pool=DECK.slice(),out=[];
+  for(var i=0;i<n;i++)out.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+  return out;
+}
+function dealBoard(n,want){
+  for(var a=0;a<300;a++){
+    var b=draw(n).sort(function(x,y){return y.r-x.r;});
+    if(!want||coordinated(b))return b;
+  }
+  return DECK.slice(0,n);
+}
+function dealRunout(want){
+  for(var a=0;a<300;a++){
+    var c=draw(5);
+    var flop=c.slice(0,3).sort(function(x,y){return y.r-x.r;});
+    if(want&&!coordinated(flop))continue;
+    return flop.concat(c.slice(3));
+  }
+  return DECK.slice(0,5);
+}
+function handStr(h){return h.map(function(c){return RANK_CHARS[c.r-2]+SUITS[c.s].sym;}).join(" ");}
+function cardHTML(c,size){
+  var s=SUITS[c.s];
+  return '<div class="card '+size+'" style="color:'+s.color+'"><span class="r">'+
+    RANK_CHARS[c.r-2]+'</span><span class="p">'+s.sym+'</span></div>';
+}
+function loadStats(key,empty){
+  try{
+    var v=localStorage.getItem(key);
+    if(v){var o=JSON.parse(v),out={},k;for(k in empty)out[k]=(k in o)?o[k]:empty[k];return out;}
+  }catch(e){}
+  var c={};for(var k2 in empty)c[k2]=empty[k2];return c;
+}
+function storeStats(key,st){try{localStorage.setItem(key,JSON.stringify(st));}catch(e){}}
+function pct(a,b){return b?Math.round(a/b*100)+"%":"0%";}
+
+/* shared UI blocks */
+function drawsHTML(active,picks,an,revealed,heading){
+  if(!active.length)return "";
+  var h='<div class="q"><span>'+heading+'</span></div><div class="list">';
+  active.forEach(function(d){
+    var on=!!picks[d.key],truth=an.flags[d.key],cls="item";
+    if(!revealed){if(on)cls+=" on";}
+    else{
+      if(truth)cls+=" hit";
+      else if(on)cls+=" missed";
+      else cls+=" void";
+    }
+    var ex="";
+    if(revealed&&truth){
+      if(an.examples[d.key])ex='<span class="ex">'+handStr(an.examples[d.key])+'</span>';
+      else if(d.key==="paired")ex='<span class="ex">board</span>';
+    }
+    h+='<button class="'+cls+'" data-act="draw" data-key="'+d.key+'">'+
+       '<span class="box'+(on?" on":"")+'">'+(on?"\u2713":"")+'</span>'+
+       '<span class="lbl">'+d.label+'</span>'+ex+'</button>';
+  });
+  return h+'</div>';
+}
+function pickerHTML(boardIds,pickedIds,revealed){
+  var h='<div class="panel picker">';
+  SUITS.forEach(function(s,si){
+    h+='<div class="prow"><div class="suit" style="color:'+(si===0?"#C9D2CD":s.color)+'">'+s.sym+'</div>';
+    RANK_CHARS.forEach(function(rc,ri){
+      var card=DECK[ri*4+si],cls="cell";
+      if(pickedIds[card.id])cls+=" on";
+      else if(boardIds[card.id])cls+=" off";
+      else if(revealed)cls+=" dim";
+      h+='<button class="'+cls+'" data-act="card" data-id="'+card.id+'"'+
+         ((boardIds[card.id]||revealed)?" disabled":"")+'>'+rc+'</button>';
+    });
+    h+='</div>';
+  });
+  return h+'</div>';
+}
+function nutsHTML(picked,revealed,ok){
+  var h='<div class="q"><span>2. Name the nuts</span><span class="mono">'+picked.length+'/2</span></div>';
+  h+='<div class="picked">';
+  picked.forEach(function(c){h+='<button data-act="card" data-id="'+c.id+'">'+cardHTML(c,"md")+'</button>';});
+  for(var i=picked.length;i<2;i++)h+='<div class="pslot"></div>';
+  if(revealed)h+='<span class="verdict '+(ok?"good":"bad")+'">'+(ok?"Correct":"Miss")+'</span>';
+  return h+'</div>';
+}
+function answerHTML(an,extra){
+  var boardPlays=an.nutCombos.length>40;
+  var h='<div class="panel ans">';
+  h+='<div class="ansrow"><span class="mut">Nuts:</span>';
+  if(boardPlays)h+='<b>board plays, any two cards</b>';
+  else{
+    an.nutCombos[0].forEach(function(c){h+=cardHTML(c,"sm");});
+    h+='<b>'+describe(an.top)+'</b>';
+    if(an.nutCombos.length>1)h+='<span class="mut" style="font-size:12px">('+an.nutCombos.length+' combos tie)</span>';
+  }
+  if(extra)h+=extra;
+  h+='</div>';
+  if(an.secondCombo&&!boardPlays)
+    h+='<div class="sub"><span>Second nuts:</span><span class="mono">'+handStr(an.secondCombo)+
+       '</span><span>'+describe(an.second)+'</span></div>';
+  return h+'</div>';
+}
+function statsHTML(cells,foot){
+  var h='<div class="panel stats">';
+  cells.forEach(function(c){h+='<div><b>'+c[0]+'</b><span>'+c[1]+'</span></div>';});
+  h+='</div><div class="foot"><span>'+foot+'</span><button data-act="reset">reset stats</button></div>';
+  return h;
+}
+
+
+var KEY1="boardcallout.single.v1";
+var EMPTY1={boards:0,drawsAsked:0,drawsRight:0,nutsRight:0,streak:0,best:0,totalMs:0};
+var S1={street:"flop",coord:true,board:null,an:null,picked:[],draws:{},revealed:false,
+       stats:loadStats(KEY1,EMPTY1),start:Date.now()};
+
+function newBoard1(){
+  var n=S1.street==="flop"?3:S1.street==="turn"?4:S1.street==="river"?5:[3,4,5][Math.floor(Math.random()*3)];
+  S1.board=dealBoard(n,S1.coord);
+  S1.an=analyze(S1.board);
+  S1.picked=[];S1.draws={};S1.revealed=false;S1.start=Date.now();
+  render1();
+}
+function activeKeys1(){
+  return S1.board.length===5?RIVER_KEYS:DRAW_KEYS;
+}
+function nutsOK1(){return S1.picked.length===2&&bestScore(S1.board.concat(S1.picked))===S1.an.top;}
+function drawsOK1(){return activeKeys1().every(function(d){return !!S1.draws[d.key]===S1.an.flags[d.key];});}
+
+function check1(scored){
+  if(S1.revealed)return;
+  var ms=Date.now()-S1.start,st=S1.stats;
+  var nr=scored&&nutsOK1(),dr=scored&&drawsOK1();
+  var streak=(nr&&dr)?st.streak+1:0;
+  S1.stats={boards:st.boards+1,drawsAsked:st.drawsAsked+1,drawsRight:st.drawsRight+(dr?1:0),
+           nutsRight:st.nutsRight+(nr?1:0),streak:streak,best:Math.max(st.best,streak),totalMs:st.totalMs+ms};
+  storeStats(KEY1,S1.stats);
+  S1.revealed=true;
+  render1();
+}
+function render1(){
+  var an=S1.an,b=S1.board,st=S1.stats;
+  var bi={},pi={};
+  b.forEach(function(c){bi[c.id]=1;});
+  S1.picked.forEach(function(c){pi[c.id]=1;});
+  var h=modesHTML();
+  h+='<div class="bar">';
+  ["flop","turn","river","mixed"].forEach(function(s){
+    h+='<button class="tab'+(S1.street===s?" on":"")+'" data-act="street" data-val="'+s+'">'+s+'</button>';
+  });
+  h+='<span class="grow"></span><button class="tab'+(S1.coord?" done":"")+'" data-act="coord">'+
+     (S1.coord?"Wet boards only":"Any board")+'</button></div>';
+  h+='<div class="panel board">';
+  b.forEach(function(c){h+='<div class="slotwrap">'+cardHTML(c,"lg")+'<span class="tag"></span></div>';});
+  h+='</div>';
+  h+=drawsHTML(activeKeys1(),S1.draws,an,S1.revealed,an.isRiver?"1. What got there?":"1. What is out there?");
+  h+=nutsHTML(S1.picked,S1.revealed,nutsOK1());
+  h+=pickerHTML(bi,pi,S1.revealed);
+  if(S1.revealed)h+=answerHTML(an,"");
+  h+='<div class="acts">';
+  if(!S1.revealed)
+    h+='<button class="go" data-act="check"'+(S1.picked.length!==2?" disabled":"")+'>Check</button>'+
+       '<button class="alt" data-act="show">Show me</button>';
+  else h+='<button class="go" data-act="next">Next board</button>';
+  h+='</div>';
+  h+=statsHTML([[st.boards,"boards"],[pct(st.drawsRight,st.drawsAsked),"draws"],
+                [pct(st.nutsRight,st.boards),"nuts"],[st.streak,"streak"]],
+               "best streak "+st.best);
+  document.getElementById("app").innerHTML=h;
+}
+
+
+var KEY2="boardcallout.runout.v1";
+var EMPTY2={hands:0,streets:0,nutsRight:0,drawsAsked:0,drawsRight:0,clean:0,streak:0,best:0,totalMs:0};
+var STREETS2=["Flop","Turn","River"];
+var S2={coord:true,full:null,idx:0,an:null,picked:[],draws:{},revealed:false,hist:[],
+       stats:loadStats(KEY2,EMPTY2),start:Date.now()};
+
+function resetStreet2(){S2.picked=[];S2.draws={};S2.revealed=false;S2.start=Date.now();}
+function setStreet2(i){
+  S2.idx=i;
+  S2.an=analyze(S2.full.slice(0,3+i));
+  resetStreet2();
+  render2();
+}
+function newHand2(){S2.full=dealRunout(S2.coord);S2.hist=[];setStreet2(0);}
+function activeKeys2(){
+  return S2.idx===2?RIVER_KEYS:DRAW_KEYS;
+}
+function visible2(){return S2.full.slice(0,3+S2.idx);}
+function nutsOK2(){return S2.picked.length===2&&bestScore(visible2().concat(S2.picked))===S2.an.top;}
+function drawsOK2(){return activeKeys2().every(function(d){return !!S2.draws[d.key]===S2.an.flags[d.key];});}
+
+function check2(scored){
+  if(S2.revealed)return;
+  var ms=Date.now()-S2.start,st=S2.stats,an=S2.an;
+  var boardPlays=an.nutCombos.length>40;
+  var entry={top:an.top,desc:describe(an.top),nut:boardPlays?null:an.nutCombos[0],
+             nutsRight:scored&&nutsOK2(),drawsRight:scored&&drawsOK2()};
+  S2.hist.push(entry);
+  var last=S2.idx===2;
+  var clean=last&&S2.hist.every(function(h){return h.nutsRight&&h.drawsRight;});
+  var streak=last?(clean?st.streak+1:0):st.streak;
+  S2.stats={hands:st.hands+(last?1:0),streets:st.streets+1,nutsRight:st.nutsRight+(entry.nutsRight?1:0),
+           drawsAsked:st.drawsAsked+1,drawsRight:st.drawsRight+(entry.drawsRight?1:0),
+           clean:st.clean+(clean?1:0),streak:streak,best:Math.max(st.best,streak),totalMs:st.totalMs+ms};
+  storeStats(KEY2,S2.stats);
+  S2.revealed=true;
+  render2();
+}
+function advance2(){if(S2.idx<2)setStreet2(S2.idx+1);else newHand2();}
+
+function render2(){
+  var an=S2.an,b=visible2(),st=S2.stats;
+  var bi={},pi={};
+  b.forEach(function(c){bi[c.id]=1;});
+  S2.picked.forEach(function(c){pi[c.id]=1;});
+  var h=modesHTML();
+  h+='<div class="bar">';
+  STREETS2.forEach(function(s,i){
+    var mark="";
+    if(i<S2.idx&&S2.hist[i]){
+      var okk=S2.hist[i].nutsRight&&S2.hist[i].drawsRight;
+      mark=' <span class="'+(okk?"good":"bad")+'">'+(okk?"\u2713":"\u2717")+'</span>';
+    }
+    h+='<button class="tab grow'+(i===S2.idx?" on":(i<S2.idx?" done":""))+'" disabled>'+s+mark+'</button>';
+  });
+  h+='<button class="tab'+(S2.coord?" done":"")+'" data-act="coord">'+(S2.coord?"Wet":"Any")+'</button></div>';
+  h+='<div class="panel board">';
+  b.forEach(function(c,i){
+    var isNew=i===b.length-1&&S2.idx>0;
+    h+='<div class="slotwrap">'+(isNew?'<div class="new">'+cardHTML(c,"lg")+'</div>':cardHTML(c,"lg"))+
+       '<span class="tag">'+(i===3?"turn":i===4?"river":"")+'</span></div>';
+  });
+  for(var k=b.length;k<5;k++)h+='<div class="slotwrap"><div class="empty"></div><span class="tag"></span></div>';
+  h+='</div>';
+  h+=drawsHTML(activeKeys2(),S2.draws,an,S2.revealed,S2.idx===2?"1. What got there?":"1. What is out there?");
+  h+=nutsHTML(S2.picked,S2.revealed,nutsOK2());
+  h+=pickerHTML(bi,pi,S2.revealed);
+  if(S2.revealed){
+    var extra="";
+    if(S2.idx>0&&S2.hist[S2.idx-1]){
+      var ch=S2.hist[S2.idx-1].top!==an.top;
+      extra='<span style="margin-left:auto;font-size:12px;font-weight:700" class="'+(ch?"gold":"mut")+'">'+
+            (ch?"nuts changed":"nuts unchanged")+'</span>';
+    }
+    h+=answerHTML(an,extra);
+  }
+  if(S2.idx===2&&S2.revealed){
+    h+='<div class="panel summary"><div class="q"><span>How the nuts moved</span></div>';
+    S2.hist.forEach(function(x,i){
+      var okk=x.nutsRight&&x.drawsRight;
+      h+='<div class="srow"><span class="st">'+STREETS2[i]+'</span>'+
+         '<span class="nut">'+(x.nut?handStr(x.nut):"board")+'</span>'+
+         '<span class="lbl">'+x.desc+'</span>'+
+         (i>0?'<span style="font-size:11px" class="'+(S2.hist[i-1].top!==x.top?"gold":"mut")+'">'+
+              (S2.hist[i-1].top!==x.top?"changed":"same")+'</span>':'')+
+         '<span class="'+(okk?"good":"bad")+'">'+(okk?"\u2713":"\u2717")+'</span></div>';
+    });
+    h+='</div>';
+  }
+  h+='<div class="acts">';
+  if(!S2.revealed)
+    h+='<button class="go" data-act="check"'+(S2.picked.length!==2?" disabled":"")+'>Check</button>'+
+       '<button class="alt" data-act="show">Show me</button>';
+  else{
+    h+='<button class="go" data-act="next">'+(S2.idx===0?"Deal the turn":S2.idx===1?"Deal the river":"Next hand")+'</button>';
+    if(S2.idx<2)h+='<button class="alt" data-act="newhand">New hand</button>';
+  }
+  h+='</div>';
+  h+=statsHTML([[st.hands,"hands"],[pct(st.drawsRight,st.drawsAsked),"draws"],
+                [pct(st.nutsRight,st.streets),"nuts"],[st.clean,"clean"]],
+               "streak "+st.streak+" / best "+st.best);
+  document.getElementById("app").innerHTML=h;
+}
+
+
+/* ---------------- mode shell ---------------- */
+var MODE_KEY="boardcallout.mode.v1";
+var MODE=0;
+try{var mv=localStorage.getItem(MODE_KEY);if(mv==="1")MODE=1;}catch(e){}
+
+function modesHTML(){
+  return '<div class="modes">'+
+    '<button class="mode'+(MODE===0?" on":"")+'" data-act="mode" data-val="0">Single street<small>one board, one answer</small></button>'+
+    '<button class="mode'+(MODE===1?" on":"")+'" data-act="mode" data-val="1">Full runout<small>flop to river</small></button>'+
+  '</div>';
+}
+function render(){ if(MODE===0)render1(); else render2(); }
+function setMode(m){
+  MODE=m;
+  try{localStorage.setItem(MODE_KEY,String(m));}catch(e){}
+  if(m===0)newBoard1(); else newHand2();
+}
+
+document.getElementById("app").addEventListener("click",function(e){
+  var t=e.target.closest("[data-act]");
+  if(!t)return;
+  var act=t.getAttribute("data-act");
+  if(act==="mode"){setMode(+t.getAttribute("data-val"));return;}
+  if(MODE===0){
+  var t=e.target.closest("[data-act]");
+  if(!t)return;
+  var act=t.getAttribute("data-act");
+  if(act==="street"){S1.street=t.getAttribute("data-val");newBoard1();}
+  else if(act==="coord"){S1.coord=!S1.coord;newBoard1();}
+  else if(act==="draw"){if(S1.revealed)return;var k=t.getAttribute("data-key");S1.draws[k]=!S1.draws[k];render1();}
+  else if(act==="card"){
+    if(S1.revealed)return;
+    var id=+t.getAttribute("data-id");
+    if(S1.board.some(function(c){return c.id===id;}))return;
+    var idx=S1.picked.findIndex(function(c){return c.id===id;});
+    if(idx>=0)S1.picked.splice(idx,1);
+    else if(S1.picked.length<2)S1.picked.push(DECK[id]);
+    render1();
+  }
+  else if(act==="check")check1(true);
+  else if(act==="show")check1(false);
+  else if(act==="next")newBoard1();
+  else if(act==="reset"){S1.stats=loadStats("__none__",EMPTY1);storeStats(KEY1,S1.stats);render1();}}
+  else{
+  var t=e.target.closest("[data-act]");
+  if(!t)return;
+  var act=t.getAttribute("data-act");
+  if(act==="coord"){S2.coord=!S2.coord;newHand2();}
+  else if(act==="draw"){if(S2.revealed)return;var k=t.getAttribute("data-key");S2.draws[k]=!S2.draws[k];render2();}
+  else if(act==="card"){
+    if(S2.revealed)return;
+    var id=+t.getAttribute("data-id");
+    if(visible2().some(function(c){return c.id===id;}))return;
+    var idx=S2.picked.findIndex(function(c){return c.id===id;});
+    if(idx>=0)S2.picked.splice(idx,1);
+    else if(S2.picked.length<2)S2.picked.push(DECK[id]);
+    render2();
+  }
+  else if(act==="check")check2(true);
+  else if(act==="show")check2(false);
+  else if(act==="next")advance2();
+  else if(act==="newhand")newHand2();
+  else if(act==="reset"){S2.stats=loadStats("__none__",EMPTY2);storeStats(KEY2,S2.stats);render2();}}
+});
+document.addEventListener("keydown",function(e){
+  if(e.key!=="Enter")return;
+  e.preventDefault();
+  if(MODE===0){
+    if(S1.revealed)newBoard1();
+    else if(S1.picked.length===2)check1(true);
+  }else{
+    if(S2.revealed)advance2();
+    else if(S2.picked.length===2)check2(true);
+  }
+});
+if(MODE===0)newBoard1(); else newHand2();
+
+</script>
+</body>
+</html>
