@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pot Odds Trainer</title>
+<style>
+:root{
+  --bg:#000;
+  --panel:#0b0b0d;
+  --panel2:#101014;
+  --line:#1e1e22;
+  --ink:#ece9e2;
+  --dim:#7a7a83;
+  --gold:#e3b34d;
+  --green:#4a9d6e;
+  --red:#c0454d;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink)}
+body{
+  font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;
+  padding:18px 14px 60px;
+  min-height:100vh;
+}
+.wrap{max-width:600px;margin:0 auto}
+
+/* header */
+.top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:16px}
+.brand{font-family:var(--mono);font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold)}
+.brand span{color:var(--dim)}
+.tol{
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--dim);background:var(--panel);border:1px solid var(--line);
+  padding:7px 10px;border-radius:2px;cursor:pointer;white-space:nowrap;
+}
+.tol:hover{color:var(--ink);border-color:#33333a}
+.tol b{color:var(--gold);font-weight:600}
+
+/* tabs */
+.tabs{display:flex;gap:0;border:1px solid var(--line);border-radius:2px;overflow:hidden;margin-bottom:18px}
+.tab{
+  flex:1;background:var(--panel);border:0;border-right:1px solid var(--line);
+  color:var(--dim);font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;
+  text-transform:uppercase;padding:11px 4px;cursor:pointer;line-height:1.3;
+}
+.tab:last-child{border-right:0}
+.tab.on{background:var(--panel2);color:var(--gold);box-shadow:inset 0 -2px 0 var(--gold)}
+.tab:hover{color:var(--ink)}
+
+/* question card */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:20px 18px}
+.eyebrow{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--dim);display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;
+}
+.clock{color:var(--gold);font-variant-numeric:tabular-nums}
+
+/* cards */
+.cards{margin:0 0 16px}
+.crow{display:flex;align-items:center;gap:12px;padding:6px 0}
+.crow .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--dim);width:62px;flex:none}
+.cd{display:inline-block;font-family:var(--mono);font-size:19px;font-weight:600;background:#131318;
+  border:1px solid #26262d;border-radius:3px;padding:5px 7px;margin-right:5px;min-width:36px;text-align:center}
+.cd.sm{font-size:12.5px;padding:2px 4px;min-width:26px;margin:0 4px 4px 0;font-weight:500}
+.obox{margin-top:14px}
+.obox .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:7px}
+.obox .cards2{display:flex;flex-wrap:wrap}
+.trow{font-family:var(--mono);font-size:11.5px;color:var(--dim);line-height:2;display:flex;gap:8px;align-items:center}
+.figs.ansrow{margin:14px 0 4px}
+.fig.ans{border-color:#3d3117;background:#13110a}
+.fig.ans .v{color:var(--gold)}
+.fig .v.miss{color:var(--red)}
+.lines{font-family:var(--mono);font-size:11.5px;line-height:1.75;color:#5f5f68;
+  margin:-4px 0 15px;padding-left:11px;border-left:1px solid var(--line)}
+.lines div:last-child{color:#a6a6ae}
+.lines:empty{display:none}
+.figs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}.fig{flex:1;min-width:88px;background:var(--panel2);border:1px solid var(--line);border-radius:2px;padding:10px 12px}
+.fig .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.fig .v{font-family:var(--mono);font-size:24px;font-weight:600;margin-top:3px;letter-spacing:-.01em}
+.fig .v em{font-style:normal;font-size:12px;color:var(--dim);margin-left:2px}
+
+.brk{font-family:var(--mono);font-size:11.5px;letter-spacing:.02em;color:#6f6f78;margin:-8px 0 14px}
+.brk:empty{display:none}
+.brk b{color:var(--gold);font-weight:600}
+
+.ask{font-size:15px;line-height:1.45;color:var(--ink);margin:0 0 14px}
+.ask b{color:var(--gold);font-weight:600}
+
+/* input */
+.row{display:flex;gap:8px}
+input[type=text]{
+  flex:1;background:#000;border:1px solid #2a2a30;border-radius:2px;color:var(--ink);
+  font-family:var(--mono);font-size:26px;font-weight:600;padding:10px 14px;width:100%;
+  text-align:center;letter-spacing:.02em;
+}
+input[type=text]:focus{outline:none;border-color:var(--gold)}
+input[type=text]::placeholder{color:#3a3a42;font-weight:400}
+.go{
+  background:var(--gold);color:#000;border:0;border-radius:2px;cursor:pointer;
+  font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+  font-weight:700;padding:0 20px;
+}
+.go:hover{filter:brightness(1.1)}
+.choices{display:flex;gap:10px}
+.choice{
+  flex:1;background:var(--panel2);border:1px solid #2a2a30;border-radius:2px;color:var(--ink);
+  font-family:var(--mono);font-size:15px;letter-spacing:.14em;text-transform:uppercase;
+  font-weight:600;padding:18px 0;cursor:pointer;
+}
+.choice:hover{border-color:var(--gold);color:var(--gold)}
+.choice u{text-decoration:none;color:var(--dim);font-size:11px}
+.choice:hover u{color:var(--gold)}
+
+/* feedback */
+.fb{margin-top:18px;border-top:1px solid var(--line);padding-top:16px}
+.verdict{font-family:var(--mono);font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:12px}
+.verdict.good{color:var(--green)}
+.verdict.bad{color:var(--red)}
+.verdict.thin{color:var(--gold)}
+.verdict span{float:right;color:var(--dim);font-weight:400;letter-spacing:.06em}
+
+/* the gap bar */
+.bar{position:relative;height:34px;margin:18px 0 10px}
+.track{position:absolute;top:14px;left:0;right:0;height:3px;background:#1a1a1e;border-radius:2px}
+.fill{position:absolute;top:14px;height:3px;border-radius:2px}
+.pin{position:absolute;top:6px;width:2px;height:19px;transform:translateX(-1px)}
+.pin i{
+  position:absolute;top:-9px;left:50%;transform:translateX(-50%);
+  font-family:var(--mono);font-style:normal;font-size:9px;letter-spacing:.1em;
+  text-transform:uppercase;white-space:nowrap;
+}
+.scale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:#3f3f47;letter-spacing:.1em}
+
+.math{font-family:var(--mono);font-size:12.5px;line-height:1.85;color:var(--dim)}
+.math b{color:var(--ink);font-weight:600}
+.math i{font-style:normal;color:#5b5b64;font-size:10.5px;letter-spacing:.04em}
+.math .hi{color:var(--gold)}
+.note{font-size:12px;line-height:1.5;color:var(--dim);margin-top:10px;padding-left:10px;border-left:1px solid var(--line)}
+
+/* buckets for SPR */
+.buckets{display:flex;gap:2px;margin:16px 0 8px}
+.bk{flex:1;padding:8px 4px;text-align:center;background:var(--panel2);border:1px solid var(--line);border-radius:2px}
+.bk.on{border-color:var(--gold);background:#171208}
+.bk .n{font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.06em}
+.bk .l{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#4d4d55;margin-top:3px}
+.bk.on .n,.bk.on .l{color:var(--gold)}
+
+/* stats */
+.stats{display:flex;gap:10px;margin-top:16px}
+.st{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:10px 12px;text-align:center}
+.st .k{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.st .v{font-family:var(--mono);font-size:19px;font-weight:600;margin-top:2px}
+.dots{display:flex;gap:4px;margin-top:12px;justify-content:center;min-height:6px}
+.dot{width:6px;height:6px;border-radius:50%;background:#26262c}
+.dot.g{background:var(--green)}
+.dot.b{background:var(--red)}
+
+/* cheat sheet */
+details{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:2px}
+summary{
+  cursor:pointer;list-style:none;padding:12px 16px;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
+}
+summary::-webkit-details-marker{display:none}
+summary:hover{color:var(--gold)}
+.sheet{padding:0 16px 16px;font-size:13px;line-height:1.6;color:var(--dim)}
+.sheet h4{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin:16px 0 6px;font-weight:600}
+.sheet code{font-family:var(--mono);color:var(--ink);font-size:12.5px}
+.sheet table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;margin-top:6px}
+.sheet td{padding:3px 0;border-bottom:1px solid #17171b}
+.sheet td:last-child{text-align:right;color:var(--ink)}
+.sheet table.sizing td{padding:5px 0}
+.sheet table.sizing td:nth-child(2){text-align:right;color:var(--gold);font-weight:600}
+.sheet table.sizing td:nth-child(3){text-align:right;color:var(--dim);width:66px}
+.sheet table.sizing tr.hdr td{color:#4d4d55;font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;border-bottom:1px solid var(--line);font-weight:400}
+.sheet table.sizing tr.key td{background:#13110b}
+.sheet table.sizing tr.key td:first-child{color:var(--ink)}
+
+.reset{margin-top:18px;text-align:center}
+.reset button{background:none;border:0;color:#3f3f47;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
+.reset button:hover{color:var(--red)}
+
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+@media (prefers-reduced-motion:no-preference){
+  .fb{animation:rise .18s ease-out}
+  @keyframes rise{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+}
+@media(max-width:420px){
+  .fig .v{font-size:20px}
+  input[type=text]{font-size:22px}
+  .tab{font-size:9px;letter-spacing:.03em;padding:9px 2px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div class="brand">Pot Odds <span>/ trainer</span></div>
+    <button class="tol" id="tolBtn"></button>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-m="odds">Price to call</button>
+    <button class="tab" data-m="toeq">Outs &rarr; equity</button>
+    <button class="tab" data-m="equity">Count outs</button>
+    <button class="tab" data-m="decision">Call or fold</button>
+    <button class="tab" data-m="spr">SPR</button>
+  </div>
+
+  <div class="card">
+    <div class="eyebrow"><span id="street">—</span><span class="clock" id="clock">0.0s</span></div>
+    <div class="lines" id="lines"></div>
+    <div class="cards" id="cards"></div>
+    <div class="figs" id="figs"></div>
+    <div class="brk" id="brk"></div>
+    <p class="ask" id="ask"></p>
+    <div id="inputArea"></div>
+    <div id="fb"></div>
+  </div>
+
+  <div class="stats">
+    <div class="st"><div class="k">Accuracy</div><div class="v" id="sAcc">—</div></div>
+    <div class="st"><div class="k">Avg time</div><div class="v" id="sTime">—</div></div>
+    <div class="st"><div class="k">Streak</div><div class="v" id="sStreak">0</div></div>
+    <div class="st"><div class="k">Hands</div><div class="v" id="sHands">0</div></div>
+  </div>
+  <div class="dots" id="dots"></div>
+
+  <div id="ref-odds">
+  <details>
+    <summary>Price by bet size</summary>
+    <div class="sheet">
+      <p style="margin-top:0">Bet measured against the pot before it went in. The pot size itself never matters: a half pot bet prices you at 25% whether the pot is 4bb or 40bb, so learn the sizings, not the arithmetic.</p>
+      <table class="sizing">
+        <tr class="hdr"><td>Bet</td><td>You need</td><td>Odds</td></tr>
+        <tr class="key"><td>25% pot</td><td>16.7%</td><td>5 : 1</td></tr>
+        <tr class="key"><td>33% pot</td><td>20.0%</td><td>4 : 1</td></tr>
+        <tr><td>40% pot</td><td>22.2%</td><td>3.5 : 1</td></tr>
+        <tr class="key"><td>50% pot</td><td>25.0%</td><td>3 : 1</td></tr>
+        <tr><td>60% pot</td><td>27.3%</td><td>2.7 : 1</td></tr>
+        <tr><td>66% pot</td><td>28.6%</td><td>2.5 : 1</td></tr>
+        <tr class="key"><td>75% pot</td><td>30.0%</td><td>2.3 : 1</td></tr>
+        <tr class="key"><td>1x pot</td><td>33.3%</td><td>2 : 1</td></tr>
+        <tr><td>1.25x pot</td><td>35.7%</td><td>1.8 : 1</td></tr>
+        <tr><td>1.5x pot</td><td>37.5%</td><td>1.7 : 1</td></tr>
+        <tr><td>2x pot</td><td>40.0%</td><td>1.5 : 1</td></tr>
+      </table>
+      <h4>The five to actually memorize</h4>
+      <p>Quarter <b style="color:var(--ink)">17</b>, third <b style="color:var(--ink)">20</b>, half <b style="color:var(--ink)">25</b>, three-quarters <b style="color:var(--ink)">30</b>, pot <b style="color:var(--ink)">33</b>. Everything else sits between two of those, so interpolate instead of calculating. A 60% pot bet is between 25 and 30, so call it 27.</p>
+      <h4>Where it tops out</h4>
+      <p>Overbets move the price less than they feel like they do. Going from a pot bet to a 2x pot bet only costs you 7 points, and even an infinite bet caps at 50%.</p>
+      <h4>From the big blind, facing an open</h4>
+      <p>Your 1bb is already in the pot, so a 3bb open costs you 2, not 3. Heads up the price is <code>(R &minus; 1) / (2R + 0.5)</code>.</p>
+      <table class="sizing">
+        <tr class="hdr"><td>Open</td><td>Heads up</td><td>SB calls</td></tr>
+        <tr class="key"><td>2bb</td><td>22.2%</td><td>16.7%</td></tr>
+        <tr><td>2.5bb</td><td>27.3%</td><td>20.0%</td></tr>
+        <tr class="key"><td>3bb</td><td>30.8%</td><td>22.2%</td></tr>
+        <tr><td>3.5bb</td><td>33.3%</td><td>23.8%</td></tr>
+        <tr class="key"><td>4bb</td><td>35.3%</td><td>25.0%</td></tr>
+        <tr><td>5bb</td><td>38.1%</td><td>26.7%</td></tr>
+      </table>
+      <p style="margin-top:8px">Anchor on 3bb heads up at <b style="color:var(--ink)">31</b> and 3bb with a caller at <b style="color:var(--ink)">22</b>. A cold caller is worth about 9 points to you.</p>
+
+      <h4>3-bets and 4-bets</h4>
+      <p>Facing someone else's 3-bet you are squeezed. BTN opens 3bb, SB 3-bets to 12bb, you call 11 into 16 for 40.7%. That is why the BB folds nearly everything there.</p>
+      <p>When you 3-bet and get 4-bet the price flips the other way. You make it 12bb, he 4-bets to 27bb, and you call 15 into 39.5 for 27.5%. Your own 12 is dead money, so the number is far better than the 27 makes it feel.</p>
+
+      <h4>Preflop has no outs</h4>
+      <p>Every number above is a floor, not a target. You are comparing to raw equity against his opening range, and out of position you realize about 85% of it. Add 4 or 5 points before you call.</p>
+
+      <h4>When someone calls ahead of you</h4>
+      <p>The chart assumes you are next to act. Every cold caller adds a bet to the pot without adding one to your cost, so your price improves. A half pot bet is 25% heads up, but 20% once a player calls in front of you. This is the most common leak in limped, multiway pots.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>The math, if you need it</summary>
+    <div class="sheet">
+      <h4>Price to call</h4>
+      <p>Count it in the order you see it at the table. Pot in front of the dealer, plus the bet in front of him, is the pot now. Then:</p>
+      <p><code>call / (pot now + call)</code></p>
+      <p>He bets 10 into a 20 pot. Pot now is 30, you call 10, so <code>10 / 40 = 25%</code>. Note the bet also tells you the sizing: 10 into 20 is half pot, and half pot is always 25%.</p>
+      <p>Two ways to get there, same answer. Count the chips when the numbers are awkward, use the sizing when they are clean.</p>
+
+      <h4>Outs → equity</h4>
+      <p>One card to come: <code>outs × 2</code>. Two cards to come: <code>outs × 4</code>, then subtract about <code>outs − 8</code> once you have more than 8 outs (the 4x rule runs hot on big draws).</p>
+      <table>
+        <tr><td>4 outs (gutshot)</td><td>8% / 17%</td></tr>
+        <tr><td>8 outs (open-ender)</td><td>17% / 32%</td></tr>
+        <tr><td>9 outs (flush draw)</td><td>19% / 35%</td></tr>
+        <tr><td>12 outs (gutshot + flush)</td><td>26% / 45%</td></tr>
+        <tr><td>15 outs (open-ender + flush)</td><td>32% / 54%</td></tr>
+      </table>
+      <p style="margin-top:8px">Left number is one card to come, right is two.</p>
+
+      <h4>Why one card, not two</h4>
+      <p>On the flop you only get to see the turn for the price you're paying now. The river usually costs another bet. Use <code>×4</code> only when the money is already in the middle.</p>
+
+      <h4>SPR</h4>
+      <p><code>effective stack / pot</code>, measured on the flop. It tells you how strong a hand you need before stacks go in.</p>
+      <table>
+        <tr><td>under 1</td><td>already committed</td></tr>
+        <tr><td>1–3</td><td>top pair good kicker</td></tr>
+        <tr><td>4–6</td><td>overpair, two pair</td></tr>
+        <tr><td>7–13</td><td>sets and better</td></tr>
+        <tr><td>13+</td><td>near nuts</td></tr>
+      </table>
+
+      <h4>What this drill ignores</h4>
+      <p>Pure price only. No implied odds, no fold equity, no blockers. Those move the answer at a real table, but you can't weigh them until the raw number is instant.</p>
+    </div>
+  </details>
+  </div>
+
+  <div id="ref-equity" style="display:none">
+  <details>
+    <summary>Common draws and their outs</summary>
+    <div class="sheet">
+      <table class="sizing">
+        <tr class="hdr"><td>Draw</td><td>Outs</td><td>One card</td><td>Two cards</td></tr>
+        <tr><td>Backdoor flush or straight</td><td>1</td><td>2%</td><td>4%</td></tr>
+        <tr class="key"><td>Pocket pair to a set</td><td>2</td><td>4%</td><td>8%</td></tr>
+        <tr><td>One overcard</td><td>3</td><td>7%</td><td>13%</td></tr>
+        <tr class="key"><td>Gutshot</td><td>4</td><td>9%</td><td>17%</td></tr>
+        <tr><td>Two pair to a full house</td><td>4</td><td>9%</td><td>17%</td></tr>
+        <tr><td>Pair to two pair or trips</td><td>5</td><td>11%</td><td>20%</td></tr>
+        <tr class="key"><td>Two overcards</td><td>6</td><td>13%</td><td>24%</td></tr>
+        <tr><td>Set to a full house or quads</td><td>7</td><td>15%</td><td>28%</td></tr>
+        <tr class="key"><td>Open-ended straight draw</td><td>8</td><td>17%</td><td>32%</td></tr>
+        <tr class="key"><td>Flush draw</td><td>9</td><td>19%</td><td>35%</td></tr>
+        <tr><td>Gutshot plus two overcards</td><td>10</td><td>22%</td><td>39%</td></tr>
+        <tr><td>Open-ender plus one overcard</td><td>11</td><td>24%</td><td>42%</td></tr>
+        <tr class="key"><td>Flush draw plus a gutshot</td><td>12</td><td>26%</td><td>45%</td></tr>
+        <tr><td>Flush draw plus a pair</td><td>14</td><td>30%</td><td>51%</td></tr>
+        <tr class="key"><td>Flush draw plus an open-ender</td><td>15</td><td>32%</td><td>54%</td></tr>
+      </table>
+      <p style="margin-top:10px">One card is the next card only, two cards is turn and river together. Highlighted rows come up often enough to be worth knowing cold. On the flop there are two cards to come, but you only get to see both if the money goes in now, so facing a bet you use the one card column.</p>
+
+      <h4>Combo draws are not just addition</h4>
+      <p>Add the two pieces, then take out whatever you counted twice. The overlap is always a card that belongs to both draws:</p>
+      <table>
+        <tr><td>Flush draw + gutshot</td><td>9 + 4 − 1 = 12</td></tr>
+        <tr><td>Flush draw + pair</td><td>9 + 6 − 1 = 14</td></tr>
+        <tr><td>Flush draw + open-ender</td><td>9 + 8 − 2 = 15</td></tr>
+        <tr><td>Gutshot + one overcard</td><td>4 + 3 − 0 = 7</td></tr>
+        <tr><td>Gutshot + two overcards</td><td>4 + 6 − 0 = 10</td></tr>
+      </table>
+      <p style="margin-top:8px">Take the flush draw plus a gutshot. Nine cards of your suit fill the flush, four cards of one rank fill the straight, but one of those four is your suit and already sits inside the nine. Count it once and you have 12, count it twice and you talk yourself into a call with 13.</p>
+      <p>The open-ender version subtracts two, one card at each end. The straight and flush pieces never overlap on the overcard draws, since an overcard out is a rank you hold and the straight card is a different rank, so nothing comes out.</p>
+
+      <h4>Why the count moves</h4>
+      <p>The chart is the starting point, not the answer. Your own cards and the board change it every hand:</p>
+      <p>An overcard out is dead if it pairs him instead. A straight card that puts a third suit out there is not an out against a flush. Two of your flush outs may also be straight outs, so counting both double counts. When the board pairs, every out that fills your straight can be filling his boat.</p>
+
+      <h4>How to count</h4>
+      <p>Name the hand you are drawing to, count the cards that make it, then take away the ones that make him something better. What is left is the number you multiply by 2.</p>
+    </div>
+  </details>
+  </div>
+
+  <div class="reset"><button id="resetBtn">Reset session</button></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- storage (optional, degrades silently) ---------- */
+var store = {
+  get:function(k){ try{ return window.localStorage.getItem(k); }catch(e){ return null; } },
+  set:function(k,v){ try{ window.localStorage.setItem(k,v); }catch(e){} }
+};
+
+/* ---------- state ---------- */
+var MODES = ['odds','toeq','equity','decision','spr'];
+var mode = 'odds';
+var strict = store.get('po_strict') === '1';
+var q = null, answered = false, t0 = 0, tick = null, answeredAt = 0;
+var stats = { correct:0, total:0, time:0, streak:0, best:0, hist:[] };
+
+var TOL = {
+  odds:    {strict:1,   loose:3},
+  equity:  {strict:0,   loose:1},
+  toeq:    {strict:1,   loose:2},
+  spr:     {strict:0.2, loose:0.6}
+};
+
+/* ---------- helpers ---------- */
+function r(a,b){ return a + Math.random()*(b-a); }
+function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+function half(x){ return Math.max(0.5, Math.round(x*2)/2); }
+function bb(x){ var s = (Math.round(x*10)/10).toFixed(1); return s.replace(/\.0$/,''); }
+function pct(x){ return (Math.round(x*10)/10).toFixed(1).replace(/\.0$/,'') + '%'; }
+function el(h){ var d=document.createElement('div'); d.innerHTML=h.trim(); return d.firstChild; }
+
+/* ---------- cards and hand evaluation ---------- */
+var RSTR='23456789TJQKA';
+var SGLY=['\u2660','\u2665','\u2666','\u2663'];
+var SCOL=['#e9e9e7','#d1454f','#4a90d9','#4f9d72'];
+var CATS=['high card','a pair','two pair','trips','a straight','a flush','a full house','quads','a straight flush'];
+
+function cardHTML(c, sm){
+  return '<span class="cd'+(sm?' sm':'')+'" style="color:'+SCOL[c&3]+'">'+RSTR[c>>2]+SGLY[c&3]+'</span>';
+}
+function cardsHTML(a, sm){ return a.map(function(c){ return cardHTML(c, sm); }).join(''); }
+
+var COMBO = {};
+function combos(n){
+  if(COMBO[n]) return COMBO[n];
+  var out=[], idx=[0,1,2,3,4];
+  (function walk(start, acc){
+    if(acc.length===5){ out.push(acc.slice()); return; }
+    for(var i=start;i<n;i++){ acc.push(i); walk(i+1, acc); acc.pop(); }
+  })(0, []);
+  COMBO[n]=out; return out;
+}
+
+function eval5(cs){
+  var rc=[0,0,0,0,0,0,0,0,0,0,0,0,0], sc=[0,0,0,0], i, r;
+  for(i=0;i<5;i++){ rc[cs[i]>>2]++; sc[cs[i]&3]++; }
+  var flush = sc[0]===5||sc[1]===5||sc[2]===5||sc[3]===5;
+  var ranks=[]; for(r=12;r>=0;r--) if(rc[r]) ranks.push(r);
+  var sHigh=-1;
+  if(ranks.length===5){
+    if(ranks[0]-ranks[4]===4) sHigh=ranks[0];
+    else if(ranks[0]===12 && ranks[1]===3 && ranks[4]===0) sHigh=3;
+  }
+  var g = ranks.slice().sort(function(a,b){ return rc[b]-rc[a] || b-a; });
+  var cat;
+  if(sHigh>=0 && flush) cat=8;
+  else if(rc[g[0]]===4) cat=7;
+  else if(rc[g[0]]===3 && rc[g[1]]===2) cat=6;
+  else if(flush) cat=5;
+  else if(sHigh>=0) cat=4;
+  else if(rc[g[0]]===3) cat=3;
+  else if(rc[g[0]]===2 && rc[g[1]]===2) cat=2;
+  else if(rc[g[0]]===2) cat=1;
+  else cat=0;
+  if(cat===8||cat===4) return cat*8000000 + sHigh;
+  var v=0; for(i=0;i<g.length;i++) v = v*13 + g[i];
+  return cat*8000000 + v;
+}
+function evalBest(cs){
+  var ks=combos(cs.length), best=-1, i, f=[0,0,0,0,0];
+  for(i=0;i<ks.length;i++){
+    var k=ks[i];
+    f[0]=cs[k[0]];f[1]=cs[k[1]];f[2]=cs[k[2]];f[3]=cs[k[3]];f[4]=cs[k[4]];
+    var v=eval5(f); if(v>best) best=v;
+  }
+  return best;
+}
+function catOf(score){ return Math.floor(score/8000000); }
+function shuffled(){
+  var d=[],i,j,t; for(i=0;i<52;i++) d.push(i);
+  for(i=51;i>0;i--){ j=Math.floor(Math.random()*(i+1)); t=d[i]; d[i]=d[j]; d[j]=t; }
+  return d;
+}
+
+/* true equity: unseen cards are 47 on the flop, 46 on the turn */
+function equityOneCard(outs, street){ return outs / (street==='flop' ? 47 : 46) * 100; }
+function equityTwoCards(outs){ return (1 - ((47-outs)/47)*((46-outs)/46)) * 100; }
+
+/* ---------- 5NL hand construction ---------- */
+function d1(x){ return Math.round(x*10)/10; }
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+function startStack(){ return pick([100,100,100,100,100,100,100,100,100,125,80,75,150]); }
+
+/* preflop spots, weighted toward what actually shows up at 5NL 6-max */
+var PRE_SPOTS = [
+  {w:7, line:'2 limpers, you check the BB',                   pot:3.5,  players:3, inv:1},
+  {w:5, line:'3 limpers, you check the BB',                   pot:4.5,  players:4, inv:1},
+  {w:3, line:'You limp, 2 limp behind, BB checks',            pot:4.5,  players:4, inv:1},
+  {w:9, line:'You open 3bb, BB calls',                        pot:6.5,  players:2, inv:3},
+  {w:9, line:'You open 3bb, BTN calls',                       pot:7.5,  players:2, inv:3},
+  {w:6, line:'You open 3bb, 2 callers behind',                pot:10.5, players:3, inv:3},
+  {w:5, line:'You open 3bb, BTN and BB call',                 pot:9.5,  players:3, inv:3},
+  {w:5, line:'CO opens 2bb, you call in the BB',              pot:4.5,  players:2, inv:2},
+  {w:5, line:'BTN opens 2.5bb, you call in the BB',           pot:5.5,  players:2, inv:2.5},
+  {w:4, line:'LJ opens 2.5bb, BTN calls, you call in the BB', pot:8,    players:3, inv:2.5},
+  {w:3, line:'HJ opens 4bb, you call in the BB',              pot:8.5,  players:2, inv:4},
+  {w:4, line:'2 limpers, you raise to 5bb, one calls',        pot:12.5, players:2, inv:5},
+  {w:2, line:'You open 3bb, BB 3-bets to 11bb, you call',     pot:22.5, players:2, inv:11},
+  {w:2, line:'BTN opens 3bb, you 3-bet to 12bb, BTN calls',   pot:24.5, players:2, inv:12},
+  {w:1, line:'You open 3bb, BTN 3-bets to 10bb, you 4-bet to 24bb, BTN calls', pot:49.5, players:2, inv:24}
+];
+var PRE_BAG = [];
+PRE_SPOTS.forEach(function(s){ for(var i=0;i<s.w;i++) PRE_BAG.push(s); });
+
+/* bet sizings villains actually use at small stakes, by street */
+var SIZES = {
+  flop:  [0.2,0.25,0.3,0.33,0.33,0.4,0.5,0.5,0.5,0.6,0.66,0.75,1],
+  turn:  [0.3,0.4,0.5,0.5,0.6,0.66,0.75,0.75,1,1.25],
+  river: [0.33,0.4,0.5,0.5,0.6,0.66,0.75,0.75,1,1,1.25,1.75]
+};
+var ORDER = ['flop','turn','river'];
+
+var DRAWS = [
+  {outs:4,  name:'gutshot'},
+  {outs:6,  name:'two overcards'},
+  {outs:8,  name:'open-ended straight draw'},
+  {outs:9,  name:'flush draw'},
+  {outs:12, name:'gutshot plus a flush draw'},
+  {outs:15, name:'open-ender plus a flush draw'},
+  {outs:2,  name:'pocket pair looking for a set'},
+  {outs:7,  name:'gutshot plus one overcard'},
+  {outs:14, name:'flush draw plus a pair'},
+  {outs:3,  name:'one overcard'},
+  {outs:11, name:'open-ender plus one overcard'}
+];
+
+/* play the hand up to the start of the given street */
+function runIn(street){
+  var pre = pick(PRE_BAG);
+  var stack = d1(startStack() - pre.inv);
+  var pot = pre.pot, players = pre.players, lines = [pre.line];
+  var idx = ORDER.indexOf(street);
+  for(var i=0;i<idx;i++){
+    var s = ORDER[i];
+    if(Math.random() < 0.25){
+      lines.push(cap(s)+' '+bb(pot)+'bb, checks through');
+      continue;
+    }
+    var b = Math.max(1, d1(pot * pick(SIZES[s])));
+    if(b > stack*0.6) b = Math.max(1, d1(stack*0.6));   /* keep money behind for the street that matters */
+    var extra = (players > 2 && Math.random() < 0.3) ? 1 : 0;
+    lines.push(cap(s)+' '+bb(pot)+'bb, villain bets '+bb(b)+'bb'+(extra?' and gets a caller':'')+', you call');
+    pot = d1(pot + b*(2+extra));
+    stack = d1(stack - b);
+    players = 2 + extra;
+  }
+  return {pot:pot, stack:stack, players:players, lines:lines};
+}
+
+/* add a bet on the current street that hero has to answer */
+function faceBet(street, forceAllIn){
+  var g = runIn(street);
+  var bet, shove = false;
+  /* a jam only makes sense when the stack is close to the pot, and even then it stays uncommon */
+  var canJam = g.stack <= g.pot * 2.2;
+  if(canJam && (forceAllIn || Math.random() < 0.20)){
+    bet = g.stack; shove = true;
+  } else {
+    bet = Math.max(1, d1(g.pot * pick(SIZES[street])));
+    var maxBet = d1(g.stack * 0.7);                 /* villain keeps something behind */
+    if(bet > maxBet) bet = Math.max(1, maxBet);
+    if(bet >= g.stack){ bet = g.stack; shove = true; }
+  }
+  var caller = (g.players > 2 && Math.random() < 0.35) ? 1 : 0;
+  g.lines.push(cap(street)+' '+bb(g.pot)+'bb, villain bets '+bb(bet)+'bb'+(shove?' all-in':'')+(caller?', one player calls':''));
+  return {
+    potBefore: g.pot,
+    pot: d1(g.pot + bet*(1+caller)),
+    bet: bet, stack: g.stack, shove: shove, caller: caller,
+    lines: g.lines, players: g.players
+  };
+}
+function seatLabel(f){ return f.caller ? ' · 3 players' : ' · heads up'; }
+
+/* ---------- question builders ---------- */
+/* preflop, hero always in the BB. pot = everything in front of you before you act,
+   your own 1bb included. call = what it costs you on top of what you already posted. */
+var PRE_FACE = [
+  {w:6, pot:3.5,  call:1,  pl:2, line:'BTN min-raises to 2bb, SB folds'},
+  {w:5, pot:4,    call:1.5,pl:2, line:'CO opens 2.5bb, SB folds'},
+  {w:6, pot:4.5,  call:2,  pl:2, line:'BTN opens 3bb, SB folds'},
+  {w:2, pot:5,    call:2.5,pl:2, line:'HJ opens 3.5bb, SB folds'},
+  {w:3, pot:5.5,  call:3,  pl:2, line:'LJ opens 4bb, SB folds'},
+  {w:4, pot:5,    call:1,  pl:3, line:'BTN min-raises to 2bb, SB calls'},
+  {w:3, pot:6,    call:1.5,pl:3, line:'CO opens 2.5bb, SB calls'},
+  {w:4, pot:7,    call:2,  pl:3, line:'BTN opens 3bb, SB calls'},
+  {w:2, pot:9,    call:3,  pl:3, line:'HJ opens 4bb, SB calls'},
+  {w:3, pot:5.5,  call:1,  pl:3, line:'LJ min-raises to 2bb, BTN calls, SB folds'},
+  {w:2, pot:6.5,  call:1.5,pl:3, line:'CO opens 2.5bb, BTN calls, SB folds'},
+  {w:3, pot:7.5,  call:2,  pl:3, line:'HJ opens 3bb, BTN calls, SB folds'},
+  {w:2, pot:9.5,  call:3,  pl:3, line:'LJ opens 4bb, CO calls, SB folds'},
+  {w:2, pot:7.5,  call:1,  pl:4, line:'CO min-raises to 2bb, BTN and SB call'},
+  {w:2, pot:10.5, call:2,  pl:4, line:'LJ opens 3bb, HJ and BTN call, SB folds'},
+  {w:3, pot:3,    call:1,  pl:2, line:'Folds to the SB, who min-raises to 2bb'},
+  {w:3, pot:4,    call:2,  pl:2, line:'Folds to the SB, who raises to 3bb'},
+  {w:1, pot:5,    call:3,  pl:2, line:'Folds to the SB, who raises to 4bb'},
+  {w:2, pot:6.5,  call:3,  pl:2, line:'BTN limps, CO raises to 4bb, BTN and SB fold'},
+  {w:2, pot:7.5,  call:4,  pl:2, line:'HJ limps, BTN raises to 5bb, HJ and SB fold'},
+  {w:2, pot:9.5,  call:3,  pl:3, line:'CO limps, BTN raises to 4bb, CO calls, SB folds'},
+  {w:2, pot:8.5,  call:4,  pl:2, line:'2 limpers, BTN raises to 5bb, both fold, SB folds'},
+  {w:1, pot:10.5, call:3,  pl:3, line:'2 limpers, CO raises to 4bb, one limper calls, SB folds'},
+  {w:1, pot:16,   call:11, pl:3, line:'BTN opens 3bb, SB 3-bets to 12bb'},
+  {w:1, pot:13,   call:8,  pl:3, line:'CO opens 2.5bb, BTN 3-bets to 9bb, SB folds'},
+  {w:1, pot:9.5,  call:5,  pl:3, line:'CO min-raises to 2bb, BTN 3-bets to 6bb, SB folds'},
+  {w:1, pot:21,   call:13, pl:4, line:'LJ opens 3bb, BTN calls, SB 3-bets to 14bb'},
+  {w:1, pot:39.5, call:15, pl:2, inv:12, line:'BTN opens 3bb, you 3-bet to 12bb, BTN 4-bets to 27bb'},
+  {w:1, pot:35.5, call:13, pl:2, inv:11, line:'CO opens 2.5bb, you 3-bet to 11bb, CO 4-bets to 24bb'},
+  {w:1, pot:29.5, call:11, pl:2, inv:9,  line:'BTN min-raises to 2bb, you 3-bet to 9bb, BTN 4-bets to 20bb'}
+];
+var PRE_FACE_BAG = [];
+PRE_FACE.forEach(function(s){ for(var i=0;i<s.w;i++) PRE_FACE_BAG.push(s); });
+
+function buildPre(){
+  var s = pick(PRE_FACE_BAG);
+  var inv = s.inv || 1;
+  return {
+    kind:'num', isPre:true,
+    street:'PREFLOP \u00b7 big blind \u00b7 ' + (s.pl===2 ? 'heads up' : s.pl+' players'),
+    lines:[s.line],
+    figs:[['Pot',bb(s.pot)],['To call',bb(s.call)]],
+    ask:'How often do you need to win to break even on the call?',
+    unit:'%', correct: s.call/(s.pot + s.call)*100,
+    pot:s.pot, potBefore:s.pot, bet:s.call, inv:inv, caller:0, shove:false
+  };
+}
+
+function buildOdds(){
+  var street = pick(['pre','pre','flop','flop','flop','turn','turn','river']);
+  if(street==='pre') return buildPre();
+  var f = faceBet(street);
+  var need = f.bet/(f.pot + f.bet)*100;
+  return {
+    kind:'num', street: street.toUpperCase() + seatLabel(f), lines:f.lines,
+    figs:[['Pot',bb(f.potBefore)],['Bet',bb(f.bet)],['Pot now',bb(f.pot)]],
+    ask:'How often do you need to win to break even on the call?',
+    unit:'%', correct:need,
+    pot:f.pot, potBefore:f.potBefore, bet:f.bet, caller:f.caller, shove:f.shove
+  };
+}
+
+/* ---------- draw recognition, so the spot is one you would actually be in ---------- */
+function rankMask(cs){ var m=0,i; for(i=0;i<cs.length;i++) m |= 1<<(cs[i]>>2); return m; }
+function hasStraight(m){
+  for(var i=0;i<=8;i++){ var w=31<<i; if((m&w)===w) return true; }
+  var wheel=(1<<12)|1|2|4|8;
+  return (m&wheel)===wheel;
+}
+/* how many RANKS complete a straight for you and not for the board on its own */
+function drawRanks(hero, board){
+  var hb=rankMask(hero.concat(board)), bo=rankMask(board), n=0, r;
+  if(hasStraight(hb)) return 0;
+  for(r=0;r<13;r++){
+    var bit=1<<r;
+    if(hb & bit) continue;
+    if(hasStraight(hb|bit) && !hasStraight(bo|bit)) n++;
+  }
+  return n;
+}
+/* four to a flush, at least one of them yours, board not already three-suited past you */
+function drawSuit(hero, board){
+  var sc=[0,0,0,0], hs=[0,0,0,0], bs=[0,0,0,0], i;
+  for(i=0;i<hero.length;i++){ sc[hero[i]&3]++; hs[hero[i]&3]++; }
+  for(i=0;i<board.length;i++){ sc[board[i]&3]++; bs[board[i]&3]++; }
+  for(i=0;i<4;i++) if(sc[i]===4 && hs[i]>=1 && bs[i]<=3) return i;
+  return -1;
+}
+/* he needs a hand worth stacking off with, or there is nothing to draw against */
+function villHasHand(vill, board, vNow){
+  var cat = catOf(vNow);
+  if(cat >= 2) return true;
+  if(cat !== 1) return false;
+  var br=[], i;
+  for(i=0;i<board.length;i++) br.push(board[i]>>2);
+  var maxB = Math.max.apply(null, br);
+  var v0 = vill[0]>>2, v1 = vill[1]>>2;
+  if(v0===v1) return v0 >= maxB;                 /* overpair or a set already caught above */
+  var paired = br.indexOf(v0)>=0 ? v0 : (br.indexOf(v1)>=0 ? v1 : -1);
+  return paired === maxB;                        /* top pair, nothing weaker */
+}
+
+/* hands someone would actually be holding on the flop */
+function playable(h){
+  var r0=h[0]>>2, r1=h[1]>>2, hi=Math.max(r0,r1), lo=Math.min(r0,r1), gap=hi-lo;
+  if(r0===r1) return true;                              /* any pocket pair */
+  if((h[0]&3)===(h[1]&3)) return gap<=4 || hi===12 || lo>=8;   /* suited: connected, ace, or broadway */
+  return lo>=8 || (hi===12 && lo>=6) || (gap<=2 && lo>=5);     /* offsuit: broadway or connected */
+}
+
+function outsSpot(loose){
+  var d = shuffled();
+  var hero=[d[0],d[1]], vill=[d[2],d[3]];
+  if(!playable(hero) || !playable(vill)) return null;
+
+  var onTurn = Math.random() < 0.35;
+  var board=[d[4],d[5],d[6]]; if(onTurn) board.push(d[7]);
+
+  var hNow = evalBest(hero.concat(board)), vNow = evalBest(vill.concat(board));
+  if(hNow >= vNow) return null;                  /* you have to be behind to be drawing */
+  if(catOf(hNow) >= 4) return null;              /* already a straight or better, not a draw */
+  if(!villHasHand(vill, board, vNow)) return null;
+
+  /* what are you actually drawing to */
+  var fs = drawSuit(hero, board);
+  var sr = drawRanks(hero, board);
+  var bmax = board[0]>>2, bi;
+  for(bi=1;bi<board.length;bi++) if((board[bi]>>2) > bmax) bmax = board[bi]>>2;
+  var over = ((hero[0]>>2) > bmax ? 1:0) + ((hero[1]>>2) > bmax ? 1:0);
+  /* a pair only counts as yours if a hole card made it, not if the board paired itself */
+  var br0 = hero[0]>>2, br1 = hero[1]>>2, hitBoard = false;
+  for(bi=0;bi<board.length;bi++){ if((board[bi]>>2)===br0 || (board[bi]>>2)===br1) hitBoard = true; }
+  var paired = (br0 === br1) || hitBoard;
+
+  /* flush draws and open-enders always play, the weaker stuff shows up less */
+  var live;
+  if(fs>=0 || sr>=2) live = true;
+  else if(sr===1) live = loose || Math.random() < (paired ? 0.28 : 0.45);
+  else if(!paired && over===2) live = loose || Math.random() < 0.25;
+  else if(paired) live = loose || Math.random() < 0.12;
+  else live = false;
+  if(!live) return null;
+
+  /* if he holds one of your outs the count is arguable, so throw the hand away */
+  for(var i=0;i<2;i++){ if(evalBest(hero.concat(board,[vill[i]])) > vNow) return null; }
+
+  var seen = hero.concat(board, vill), outs=[], chop=[];
+  var hr0 = hero[0]>>2, hr1 = hero[1]>>2, hcat = catOf(hNow);
+  var chartN = 0, blocked = [];
+  for(var c=0;c<52;c++){
+    if(seen.indexOf(c) >= 0) continue;
+    var nb = board.concat([c]);
+    var h = evalBest(hero.concat(nb)), v = evalBest(vill.concat(nb));
+    var hc = catOf(h), cr = c>>2;
+    /* would you have counted this card off the chart? a straight or better, or a card
+       that pairs one of your own hole cards in a way that matters */
+    var counted = (hc >= 4) ||
+                  ((cr===hr0 || cr===hr1) && hc > hcat && (paired || cr > bmax));
+    if(counted) chartN++;
+    if(h > v) outs.push(c);
+    else if(h === v) chop.push(c);
+    else if(counted) blocked.push({c:c, h:h, v:v});
+  }
+  var n = outs.length;
+  if(n < 2 || n > 17) return null;
+
+  var parts = [];
+  if(fs >= 0) parts.push('a flush draw');
+  if(sr >= 2) parts.push('an open-ender');
+  else if(sr === 1) parts.push('a gutshot');
+  if(paired) parts.push('a pair');
+  else if(over === 2) parts.push('two overcards');
+  else if(over === 1) parts.push('one overcard');
+  /* only explain the chart count when it actually reconciles */
+  var clean = (chartN - blocked.length === n);
+
+  return {
+    kind:'num', isOuts:true, ph:'outs',
+    street:(onTurn?'TURN':'FLOP') + ' \u00b7 one card to come',
+    cardsHTML:
+      '<div class="crow"><div class="k">You</div><div>'+cardsHTML(hero)+'</div></div>'+
+      '<div class="crow"><div class="k">Board</div><div>'+cardsHTML(board)+'</div></div>'+
+      '<div class="crow"><div class="k">He shows</div><div>'+cardsHTML(vill)+'</div></div>',
+    figs:[],
+    ask:'How many cards give you the winning hand?',
+    correct:n, outs:outs, taint:blocked, chop:chop, onTurn:onTurn,
+    label: parts.length ? parts.join(' plus ') : 'a live hand',
+    chartOuts: chartN, clean: clean
+  };
+}
+
+function buildEquity(){
+  var q=null, i;
+  for(i=0;i<1200 && !q;i++) q = outsSpot(false);
+  for(i=0;i<2000 && !q;i++) q = outsSpot(true);   /* loose ignores the frequency gates */
+  return q;
+}
+
+function decisionCandidate(){
+  var street = Math.random() < 0.65 ? 'flop' : 'turn';
+  var allIn = street==='flop' && Math.random() < 0.03;
+  var f = faceBet(street, allIn);
+  var d = pick(DRAWS);
+  var need = f.bet/(f.pot + f.bet)*100;
+  var cards = (f.shove && street==='flop') ? 2 : 1;
+  var eq = cards===2 ? equityTwoCards(d.outs) : equityOneCard(d.outs, street);
+  return {
+    kind:'choice',
+    street: street.toUpperCase() + (f.shove ? ' · all-in' : '') + seatLabel(f), lines:f.lines,
+    figs:[['Pot',bb(f.potBefore)],['Bet',bb(f.bet)],['Pot now',bb(f.pot)],['Outs',String(d.outs)]],
+    ask:'You have a <b>'+d.name+'</b>. On price alone, call or fold?',
+    correct: eq >= need ? 'call' : 'fold',
+    need:need, eq:eq, thin: Math.abs(eq-need) < 1,
+    pot:f.pot, potBefore:f.potBefore, bet:f.bet, outs:d.outs, cards:cards,
+    allIn:f.shove, caller:f.caller, drawName:d.name
+  };
+}
+
+/* aim for a roughly even split so the answer is never guessable */
+function buildDecision(){
+  var want = Math.random() < 0.45 ? 'call' : 'fold';
+  var best = null;
+  for(var i=0;i<40;i++){
+    var c = decisionCandidate();
+    if(!best) best = c;
+    if(c.correct === want){ return c; }
+  }
+  return best;
+}
+
+function buildSPR(){
+  var street = Math.random() < 0.7 ? 'flop' : 'turn';
+  var g = runIn(street);
+  return {
+    kind:'num', street: street.toUpperCase() + ' · before any bet', lines:g.lines,
+    figs:[['Pot',bb(g.pot)],['Eff. stack',bb(g.stack)]],
+    ask:'What is the stack-to-pot ratio?',
+    unit:'', correct: g.stack/g.pot, isSPR:true,
+    pot:g.pot, stack:g.stack
+  };
+}
+
+/* the chart, drilled straight. w = how often it shows up in a real session */
+var CHART = [
+  {w:1, outs:1,  name:'a backdoor flush draw',                 brk:'1 running card to even get live'},
+  {w:3, outs:2,  name:'a pocket pair looking for a set',        brk:'2 cards of your rank left'},
+  {w:2, outs:3,  name:'one overcard',                           brk:'3 cards pair it'},
+  {w:6, outs:4,  name:'a gutshot',                              brk:'4 fill the middle'},
+  {w:2, outs:4,  name:'two pair looking for a full house',      brk:'2 + 2, either pair fills up'},
+  {w:2, outs:5,  name:'a pair looking for two pair or trips',   brk:'2 trips + 3 two pair'},
+  {w:4, outs:6,  name:'two overcards',                          brk:'3 + 3, one rank each'},
+  {w:2, outs:7,  name:'a set looking for a boat or quads',      brk:'6 board pairs + 1 quad'},
+  {w:2, outs:7,  name:'a gutshot plus one overcard',            brk:'4 straight + 3 overcard'},
+  {w:6, outs:8,  name:'an open-ended straight draw',            brk:'4 + 4, both ends'},
+  {w:7, outs:9,  name:'a flush draw',                           brk:'13 of the suit, 4 already seen'},
+  {w:2, outs:10, name:'a gutshot plus two overcards',           brk:'4 straight + 6 overcards'},
+  {w:2, outs:11, name:'an open-ender plus one overcard',        brk:'8 straight + 3 overcard'},
+  {w:4, outs:12, name:'a flush draw plus a gutshot',            brk:'9 flush + 4 straight \u2212 1 shared',
+        why:'One of the four straight cards is your suit, so it is already inside the nine. Count it once.'},
+  {w:2, outs:14, name:'a flush draw plus a pair',               brk:'9 flush + 5 pair (2 trips, 3 two pair)',
+        why:'Nothing overlaps. The cards that pair you are not your suit, so the nine and the five just add.'},
+  {w:3, outs:15, name:'a flush draw plus an open-ender',        brk:'9 flush + 8 straight \u2212 2 shared',
+        why:'Two of the eight straight cards are your suit and already sit inside the nine. 17 minus those 2 is 15.'}
+];
+var CHART_BAG = [];
+CHART.forEach(function(d){ for(var i=0;i<d.w;i++) CHART_BAG.push(d); });
+
+/* the spot decides the rule, not a label: only a flop jam gets you both cards */
+var TOEQ_SPOTS = [
+  {w:4, street:'flop', jam:false},
+  {w:3, street:'turn', jam:false},
+  {w:2, street:'turn', jam:true},
+  {w:3, street:'flop', jam:true}
+];
+var TOEQ_BAG = [];
+TOEQ_SPOTS.forEach(function(s){ for(var i=0;i<s.w;i++) TOEQ_BAG.push(s); });
+
+function buildToEq(){
+  var d = pick(CHART_BAG), s = pick(TOEQ_BAG);
+  var cards = (s.street==='flop' && s.jam) ? 2 : 1;
+  var eq = cards===2 ? equityTwoCards(d.outs) : equityOneCard(d.outs, s.street);
+  return {
+    kind:'num',
+    street: s.street.toUpperCase() + ' \u00b7 ' + (s.jam ? 'villain is all-in' : 'villain bets'),
+    figs:[['Outs',String(d.outs)]],
+    brk: d.brk ? d.brk + ' = ' + d.outs : '',
+    ask:'You have <b>'+d.name+'</b>. How much equity?',
+    unit:'%', correct:eq, isToEq:true,
+    outs:d.outs, cards:cards, drawName:d.name, why:d.why||'',
+    onTurn:(s.street==='turn'), jam:s.jam
+  };
+}
+
+var BUILD = {odds:buildOdds, toeq:buildToEq, equity:buildEquity, decision:buildDecision, spr:buildSPR};
+
+/* ---------- render ---------- */
+function tolFor(){
+  if(mode==='decision') return null;
+  var t = strict ? TOL[mode].strict : TOL[mode].loose;
+  if(mode==='spr' && q) t = Math.max(t, q.correct * (strict ? 0.04 : 0.10));
+  return t;
+}
+function paintTolBtn(){
+  var b = document.getElementById('tolBtn');
+  if(mode==='decision'){ b.innerHTML = strict ? 'Grading <b>exact</b>' : 'Grading <b>close</b>'; return; }
+  var t = tolFor();
+  if(mode==='equity'){ b.innerHTML = strict ? 'Exact <b>count</b>' : 'Close <b>±1 out</b>'; return; }
+  b.innerHTML = (strict?'Exact ':'Close ') + '<b>±' + (mode==='spr' ? t.toFixed(1) : t) + (mode==='spr'?'':'%') + '</b>';
+}
+
+function newHand(){
+  q = BUILD[mode]();
+  answered = false;
+  document.getElementById('street').textContent = q.street;
+  document.getElementById('lines').innerHTML = (q.lines||[]).map(function(l){
+    return '<div>'+l+'</div>';
+  }).join('');
+  document.getElementById('cards').innerHTML = q.cardsHTML || '';
+  document.getElementById('ref-odds').style.display   = (mode==='odds')   ? 'block' : 'none';
+  document.getElementById('ref-equity').style.display = (mode==='equity' || mode==='toeq') ? 'block' : 'none';
+  document.getElementById('figs').innerHTML = (q.figs||[]).map(function(f){
+    var isbb = (f[0]!=='Outs' && f[0]!=='Cards to come');
+    return '<div class="fig"><div class="k">'+f[0]+'</div><div class="v">'+f[1]+(isbb?'<em>bb</em>':'')+'</div></div>';
+  }).join('');
+  document.getElementById('brk').innerHTML = q.brk ? q.brk.replace(/= (\d+)$/, '= <b>$1</b>') : '';
+  document.getElementById('ask').innerHTML = q.ask;
+  document.getElementById('fb').innerHTML = '';
+
+  var area = document.getElementById('inputArea');
+  if(q.kind==='num'){
+    area.innerHTML = '<div class="row">'+
+      '<input type="text" id="ans" inputmode="decimal" autocomplete="off" placeholder="'+(q.ph||(q.isSPR?'0.0':'%'))+'">'+
+      '<button class="go" id="goBtn">Check</button></div>';
+    document.getElementById('goBtn').onclick = submitNum;
+    var i = document.getElementById('ans');
+    i.onkeydown = function(e){
+      if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); submitNum(); }
+    };
+    setTimeout(function(){ i.focus(); }, 30);
+  } else {
+    area.innerHTML = '<div class="choices">'+
+      '<button class="choice" data-a="call">Call <u>C</u></button>'+
+      '<button class="choice" data-a="fold">Fold <u>F</u></button></div>';
+    Array.prototype.forEach.call(area.querySelectorAll('.choice'), function(b){
+      b.onclick = function(){ submitChoice(b.getAttribute('data-a')); };
+    });
+  }
+  paintTolBtn();
+  startClock();
+}
+
+function startClock(){
+  t0 = Date.now();
+  clearInterval(tick);
+  tick = setInterval(function(){
+    document.getElementById('clock').textContent = ((Date.now()-t0)/1000).toFixed(1)+'s';
+  }, 100);
+}
+
+/* ---------- grading ---------- */
+function submitNum(){
+  if(answered) return nextHand();
+  var box = document.getElementById('ans');
+  var v = parseFloat(box.value.replace(/[%\s]/g,''));
+  if(isNaN(v)) return;
+  box.blur();
+  var t = tolFor();
+  var off = Math.abs(v - q.correct);
+  var ok = off <= t + 1e-9;
+  finish(ok, v, off);
+}
+
+function submitChoice(a){
+  if(answered) return nextHand();
+  var ok = (a === q.correct) || q.thin;
+  finish(ok, a, 0);
+}
+
+function finish(ok, given, off){
+  answered = true;
+  answeredAt = Date.now();
+  clearInterval(tick);
+  var secs = (Date.now()-t0)/1000;
+  stats.total++; stats.time += secs;
+  if(ok){ stats.correct++; stats.streak++; if(stats.streak>stats.best) stats.best=stats.streak; }
+  else { stats.streak = 0; }
+  stats.hist.push(ok); if(stats.hist.length>16) stats.hist.shift();
+  paintStats();
+  paintFeedback(ok, given, off, secs);
+}
+
+/* ---------- feedback ---------- */
+function pin(x, color, label, up){
+  var p = Math.max(0, Math.min(100, x));
+  return '<div class="pin" style="left:'+p+'%;background:'+color+'">'+
+         (label?'<i style="color:'+color+';'+(up?'top:-9px':'top:20px')+'">'+label+'</i>':'')+'</div>';
+}
+
+/* spell out the pot the way you would count it at the table */
+function potChain(q){
+  return '<b>'+bb(q.potBefore)+'</b> <i>pot</i> + <b>'+bb(q.bet)+'</b> <i>his bet</i>'+
+         (q.caller ? ' + <b>'+bb(q.bet)+'</b> <i>the caller</i>' : '')+
+         ' = <b>'+bb(q.pot)+'</b>';
+}
+
+/* correct answer first, always, whether right or wrong */
+function answerRow(correctTxt, yourTxt, ok){
+  return '<div class="figs ansrow">'+
+    '<div class="fig ans"><div class="k">Answer</div><div class="v">'+correctTxt+'</div></div>'+
+    '<div class="fig"><div class="k">You said</div><div class="v'+(ok?'':' miss')+'">'+yourTxt+'</div></div>'+
+  '</div>';
+}
+
+function paintFeedback(ok, given, off, secs){
+  var f = document.getElementById('fb');
+  var h = '';
+
+  if(mode==='decision'){
+    var v = q.thin ? 'thin' : (ok?'good':'bad');
+    var word = q.thin ? 'Coin flip spot' : (ok?'Correct':'Wrong');
+    h += '<div class="fb"><div class="verdict '+v+'">'+word+
+         '<span>'+secs.toFixed(1)+'s</span></div>';
+    h += answerRow(q.correct.toUpperCase(), String(given).toUpperCase(), ok);
+    h += '<div class="bar"><div class="track"></div>'+
+         '<div class="fill" style="left:'+Math.min(q.need,q.eq)+'%;width:'+Math.abs(q.eq-q.need)+'%;background:'+
+           (q.eq>=q.need?'var(--green)':'var(--red)')+'"></div>'+
+         pin(q.need,'var(--gold)','price',true)+
+         pin(q.eq,(q.eq>=q.need?'var(--green)':'var(--red)'),'you',false)+
+         '</div><div class="scale"><span>0%</span><span>50%</span><span>100%</span></div>';
+    h += '<div class="math">Pot now &nbsp;'+potChain(q)+'<br>'+
+         'Price &nbsp;<b>'+bb(q.bet)+'</b> <i>your call</i> / (<b>'+bb(q.pot)+'</b> + <b>'+bb(q.bet)+'</b>) = <span class="hi">'+pct(q.need)+'</span><br>'+
+         'Equity &nbsp;<b>'+q.outs+' outs, '+(q.cards===2?'two cards':'one card')+'</b> = <span class="hi">'+pct(q.eq)+'</span><br>'+
+         'Margin &nbsp;<b>'+(q.eq>=q.need?'+':'')+pct(q.eq-q.need)+'</b></div>';
+    if(q.thin) h += '<div class="note">Inside a point either way. Fold equity or implied odds decide this one, not the price.</div>';
+    else if(q.caller) h += '<div class="note">The extra caller pays for part of your call. Villain bet '+pct(q.bet/q.potBefore*100)+' of the pot but you are getting '+pct(q.need)+'.</div>';
+    else if(!q.allIn && q.outs>=9) h += '<div class="note">One card to come. The river is a separate decision and usually costs another bet.</div>';
+    h += '</div>';
+
+  } else if(mode==='spr'){
+    h += '<div class="fb"><div class="verdict '+(ok?'good':'bad')+'">'+(ok?'Correct':'Wrong')+
+         '<span>'+(ok?'':'off by '+off.toFixed(1)+' · ')+secs.toFixed(1)+'s</span></div>';
+    h += answerRow(q.correct.toFixed(1), String(given), ok);
+    var bks = [[0,1,'under 1','committed'],[1,3,'1–3','top pair'],[3,7,'3–7','overpair'],[7,13,'7–13','sets+'],[13,99,'13+','near nuts']];
+    h += '<div class="buckets">'+bks.map(function(b){
+      var on = q.correct>=b[0] && q.correct<b[1];
+      return '<div class="bk'+(on?' on':'')+'"><div class="n">'+b[2]+'</div><div class="l">'+b[3]+'</div></div>';
+    }).join('')+'</div>';
+    h += '<div class="math">SPR &nbsp;<b>'+bb(q.stack)+' / '+bb(q.pot)+'</b> = <span class="hi">'+q.correct.toFixed(1)+'</span></div>';
+    h += '</div>';
+
+  } else if(mode==='equity'){
+    h += '<div class="fb"><div class="verdict '+(ok?'good':'bad')+'">'+(ok?'Correct':'Wrong')+
+         '<span>'+secs.toFixed(1)+'s</span></div>';
+    h += answerRow(String(q.correct)+' outs', String(given), ok);
+    h += '<div class="math" style="margin:14px 0 4px">You hold &nbsp;<b>'+q.label+'</b>'+
+         (q.clean ? '<br>Chart &nbsp;<b>'+q.chartOuts+'</b> cards get you there'+
+            (q.taint.length ? ', <b>'+q.taint.length+'</b> of them still lose' : ', all of them win') : '')+
+         '<br>Outs &nbsp;<span class="hi">'+q.correct+'</span></div>';
+    h += '<div class="obox"><div class="k">The '+q.correct+' cards that win</div>'+
+         '<div class="cards2">'+cardsHTML(q.outs, true)+'</div></div>';
+    if(q.taint.length){
+      h += '<div class="obox"><div class="k">Improve your hand, still lose</div>';
+      h += q.taint.slice(0,4).map(function(t){
+        return '<div class="trow">'+cardHTML(t.c,true)+'<span>you make '+CATS[catOf(t.h)]+', he makes '+CATS[catOf(t.v)]+'</span></div>';
+      }).join('');
+      if(q.taint.length>4) h += '<div class="trow"><span>plus '+(q.taint.length-4)+' more</span></div>';
+      h += '</div>';
+    }
+    if(q.chop.length) h += '<div class="obox"><div class="k">Split the pot</div><div class="cards2">'+cardsHTML(q.chop,true)+'</div></div>';
+    var eqOne = q.correct/(q.onTurn?46:47)*100;
+    h += '<div class="math" style="margin-top:14px">Rule of 2 &nbsp;<b>'+q.correct+' × 2 = '+(q.correct*2)+'%</b> &nbsp; true <span class="hi">'+pct(eqOne)+'</span>'+
+         (q.onTurn ? '' : '<br>Both cards &nbsp;<b>'+pct(equityTwoCards(q.correct))+'</b> if the money goes in now')+'</div>';
+
+  } else if(mode==='toeq'){
+    h += '<div class="fb"><div class="verdict '+(ok?'good':'bad')+'">'+(ok?'Correct':'Wrong')+
+         '<span>'+(ok?'':'off by '+off.toFixed(1)+' \u00b7 ')+secs.toFixed(1)+'s</span></div>';
+    h += answerRow(pct(q.correct), given+'%', ok);
+    h += '<div class="bar"><div class="track"></div>'+
+         pin(q.correct,'var(--green)','answer',true)+
+         pin(given,(ok?'var(--gold)':'var(--red)'),'you',false)+
+         '</div><div class="scale"><span>0%</span><span>50%</span><span>100%</span></div>';
+    var m = q.cards===2 ? 4 : 2;
+    h += '<div class="math">Outs &nbsp;<b>'+(q.brk||String(q.outs))+'</b><br>'+
+         'Spot &nbsp;<b>'+(q.cards===2 ? 'flop, all-in, both cards' : (q.onTurn?'turn, one card':'flop, one card'))+'</b> so rule of <span class="hi">'+m+'</span><br>'+
+         'Shortcut &nbsp;<b>'+q.outs+' \u00d7 '+m+' = '+(q.outs*m)+'%</b> &nbsp; true <span class="hi">'+pct(q.correct)+'</span><br>'+
+         'Chart row &nbsp;<b>'+q.outs+(q.outs===1?' out':' outs')+'</b> = '+pct(equityOneCard(q.outs,q.onTurn?'turn':'flop'))+' one card / '+pct(equityTwoCards(q.outs))+' both</div>';
+    if(q.why) h += '<div class="note">'+q.why+'</div>';
+    if(q.cards===2 && q.outs>8) h += '<div class="note">Past 8 outs the 4x rule runs hot. Subtract about '+(q.outs-8)+(q.outs-8===1?' point':' points')+' and you land on the real number.</div>';
+    else if(q.cards===1 && !q.jam) h += '<div class="note">He bet and can bet again, so you are only buying one card. That is what makes this rule of 2 and not rule of 4.</div>';
+    h += '</div>';
+
+  } else {
+    h += '<div class="fb"><div class="verdict '+(ok?'good':'bad')+'">'+(ok?'Correct':'Wrong')+
+         '<span>'+(ok?'':'off by '+off.toFixed(1)+' · ')+secs.toFixed(1)+'s</span></div>';
+    h += answerRow(pct(q.correct), given+'%', ok);
+    h += '<div class="bar"><div class="track"></div>'+
+         pin(q.correct,'var(--green)','answer',true)+
+         pin(given,(ok?'var(--gold)':'var(--red)'),'you',false)+
+         '</div><div class="scale"><span>0%</span><span>50%</span><span>100%</span></div>';
+    var sizePct = q.bet/q.potBefore*100;
+    if(q.isPre){
+      h += '<div class="math">Pot &nbsp;<b>'+bb(q.pot)+'</b> in front of you, your '+bb(q.inv)+'bb included<br>'+
+           'To call &nbsp;<b>'+bb(q.bet)+'</b>, not '+bb(q.bet+q.inv)+', since '+bb(q.inv)+' is already in<br>'+
+           'Price &nbsp;<b>'+bb(q.bet)+'</b> <i>your call</i> / (<b>'+bb(q.pot)+'</b> + <b>'+bb(q.bet)+'</b>) = <span class="hi">'+pct(q.correct)+'</span></div>';
+      if(q.inv > 1) h += '<div class="note">Your 3-bet is dead money now. The price is on the '+bb(q.bet)+' you still owe, not the '+bb(q.bet+q.inv)+' total, which is why 4-bets get folded to far too often.</div>';
+      else if(q.correct < 20) h += '<div class="note">A small raise with callers behind it is the cheapest price you will ever get. Suited and connected hands play fine here, the trouble starts postflop out of position.</div>';
+      else if(q.correct > 36) h += '<div class="note">Steep for a hand with no outs yet. You need real equity against his opening range, not a hand that flops well.</div>';
+      else h += '<div class="note">No outs preflop, so this number is a floor. Out of position you realize maybe 85% of your equity, so add 4 or 5 points before you call.</div>';
+      h += '</div>';
+      f.innerHTML = h;
+      var areaP = document.getElementById('inputArea');
+      areaP.innerHTML = '<button class="go" id="nextBtn" style="width:100%;padding:14px 0">Next hand &nbsp;\u21b5</button>';
+      document.getElementById('nextBtn').onclick = function(){ newHand(); };
+      document.getElementById('nextBtn').focus();
+      return;
+    }
+    h += '<div class="math">Pot now &nbsp;'+potChain(q)+'<br>'+
+         'Price &nbsp;<b>'+bb(q.bet)+'</b> <i>your call</i> / (<b>'+bb(q.pot)+'</b> + <b>'+bb(q.bet)+'</b>) = <span class="hi">'+pct(q.correct)+'</span></div>';
+    if(q.caller) h += '<div class="note">Villain bet '+pct(sizePct)+' of the pot, but the extra caller improved your price to '+pct(q.correct)+'.</div>';
+    else if(q.shove) h += '<div class="note">A shove is priced like any other bet. '+pct(sizePct)+' of the pot means you need '+pct(q.correct)+'.</div>';
+    else h += '<div class="note">That bet was '+pct(sizePct)+' of the pot. Same sizing, same price, whatever the pot happens to be.</div>';
+    h += '</div>';
+  }
+
+  f.innerHTML = h;
+
+  var area = document.getElementById('inputArea');
+  area.innerHTML = '<button class="go" id="nextBtn" style="width:100%;padding:14px 0">Next hand &nbsp;↵</button>';
+  document.getElementById('nextBtn').onclick = function(){ newHand(); };
+  document.getElementById('nextBtn').focus();
+}
+
+function nextHand(){
+  if(answered && Date.now() - answeredAt < 400) return;  /* keep the answer on screen */
+  newHand();
+}
+
+/* ---------- stats ---------- */
+function paintStats(){
+  document.getElementById('sAcc').textContent = stats.total ? Math.round(stats.correct/stats.total*100)+'%' : '—';
+  document.getElementById('sTime').textContent = stats.total ? (stats.time/stats.total).toFixed(1)+'s' : '—';
+  document.getElementById('sStreak').textContent = stats.streak;
+  document.getElementById('sHands').textContent = stats.total;
+  document.getElementById('dots').innerHTML = stats.hist.map(function(x){
+    return '<div class="dot '+(x?'g':'b')+'"></div>';
+  }).join('');
+}
+
+/* ---------- wiring ---------- */
+document.getElementById('tabs').addEventListener('click', function(e){
+  var b = e.target.closest('.tab'); if(!b) return;
+  mode = b.getAttribute('data-m');
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(t){
+    t.classList.toggle('on', t===b);
+  });
+  newHand();
+});
+
+document.getElementById('tolBtn').onclick = function(){
+  strict = !strict;
+  store.set('po_strict', strict?'1':'0');
+  paintTolBtn();
+};
+
+document.getElementById('resetBtn').onclick = function(){
+  stats = { correct:0, total:0, time:0, streak:0, best:0, hist:[] };
+  paintStats(); newHand();
+};
+
+document.addEventListener('keydown', function(e){
+  if(!q) return;
+  var onBtn = document.activeElement && document.activeElement.id === 'nextBtn';
+  if(answered && e.key==='Enter' && !onBtn){ e.preventDefault(); nextHand(); return; }
+  if(q.kind==='choice' && !answered){
+    if(e.key==='c'||e.key==='C') submitChoice('call');
+    if(e.key==='f'||e.key==='F') submitChoice('fold');
+  }
+});
+
+paintStats();
+newHand();
+})();
+</script>
+</body>
+</html>
