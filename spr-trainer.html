@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SPR Trainer — 6-max cash</title>
+<style>
+:root{
+  --ground:#171b21;
+  --panel:#1e242c;
+  --panel2:#232a33;
+  --line:#2f3843;
+  --line2:#3d4855;
+  --ink:#e6e9ed;
+  --dim:#828e9c;
+  --dimmer:#5d6874;
+  --brass:#d4a24c;
+  --z1:#e5544b;
+  --z2:#e08a3c;
+  --z3:#d4a24c;
+  --z4:#57a2b5;
+  --z5:#7089d6;
+  --ok:#5fb87a;
+  --bad:#e5544b;
+  --mono:ui-monospace,"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{padding:22px 16px 70px}
+.wrap{max-width:780px;margin:0 auto}
+
+/* labels — tracker-software vernacular */
+.lab{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dimmer)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* header */
+header{border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:20px}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+h1{font-size:17px;font-weight:600;letter-spacing:-.01em}
+.sub{font-family:var(--mono);font-size:11px;color:var(--dimmer);letter-spacing:.06em}
+nav{display:flex;gap:2px;margin-top:14px}
+nav button{background:none;border:none;border-bottom:2px solid transparent;color:var(--dim);
+  font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  padding:7px 13px;cursor:pointer}
+nav button:hover{color:var(--ink)}
+nav button[aria-selected="true"]{color:var(--brass);border-bottom-color:var(--brass)}
+nav button:focus-visible,input:focus-visible,.btn:focus-visible,.opt:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:16px}
+.panel + .panel{margin-top:12px}
+section[hidden]{display:none}
+
+/* inputs */
+.inputs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.field label{display:block;margin-bottom:6px}
+.field input{width:100%;background:var(--ground);border:1px solid var(--line2);border-radius:3px;
+  color:var(--ink);font-family:var(--mono);font-size:22px;font-variant-numeric:tabular-nums;
+  padding:9px 11px;text-align:right}
+.field .unit{font-size:11px;color:var(--dimmer);font-family:var(--mono)}
+
+.presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.chip{background:var(--panel2);border:1px solid var(--line2);border-radius:2px;color:var(--dim);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;padding:5px 9px;cursor:pointer}
+.chip:hover{color:var(--ink);border-color:var(--dim)}
+
+/* readout */
+.readout{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center}
+.sprbig{font-family:var(--mono);font-size:62px;line-height:.9;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.zonename{font-size:17px;font-weight:600;letter-spacing:-.01em;margin-bottom:3px}
+.zonehand{color:var(--dim);font-size:13.5px}
+.effline{margin-top:2px}
+.effline .num{color:var(--ink)}
+
+/* SIGNATURE: commitment bar */
+.cbar{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.track{position:relative;height:9px;border-radius:2px;
+  background:linear-gradient(90deg,var(--z1) 0%,var(--z2) 16%,var(--z3) 34%,var(--z4) 62%,var(--z5) 100%)}
+.track .tick{position:absolute;top:-4px;width:1px;height:17px;background:var(--ground);opacity:.75}
+.marker{position:absolute;top:-7px;width:3px;height:23px;background:var(--ink);border-radius:1px;
+  box-shadow:0 0 0 2px var(--panel);transition:left .22s cubic-bezier(.2,.7,.3,1)}
+.scale{position:relative;height:15px;margin-top:5px}
+.scale span{position:absolute;transform:translateX(-50%);font-family:var(--mono);font-size:9.5px;color:var(--dimmer)}
+.zonelabels{display:flex;justify-content:space-between;margin-top:2px}
+.zonelabels span{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--dimmer)}
+
+/* SIGNATURE: sizing ladder */
+.ladder{margin-top:14px}
+.rung{display:grid;grid-template-columns:42px 1fr 74px;gap:10px;align-items:center;margin-bottom:6px}
+.rung .st{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dimmer)}
+.rung .barwrap{height:20px;background:var(--ground);border-radius:2px;overflow:hidden}
+.rung .bar{height:100%;background:var(--brass);opacity:.85;border-radius:2px;transition:width .25s ease}
+.rung .amt{font-family:var(--mono);font-size:13px;text-align:right;font-variant-numeric:tabular-nums}
+.plannote{color:var(--dim);font-size:13px;margin-top:10px}
+.plannote b{color:var(--ink);font-weight:600}
+.alt{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);color:var(--dim);font-size:13px}
+.warn{color:var(--z2)}
+
+/* drill */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:3px;overflow:hidden;margin-bottom:12px}
+.stat{background:var(--panel);padding:10px 12px}
+.stat .v{font-family:var(--mono);font-size:20px;font-variant-numeric:tabular-nums;margin-top:2px}
+.qtype{margin-bottom:12px}
+.scenario{background:var(--ground);border:1px solid var(--line);border-radius:3px;padding:13px 14px;margin-bottom:14px}
+.action{color:var(--dim);font-size:13.5px;margin-bottom:11px;font-style:normal}
+.stacks{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.sk .v{font-family:var(--mono);font-size:19px;font-variant-numeric:tabular-nums;margin-top:1px}
+.sk .v small{font-size:11px;color:var(--dimmer);margin-left:2px}
+.qtext{font-size:16px;margin-bottom:12px}
+.answer{display:flex;gap:8px;align-items:center}
+.answer input{width:130px;background:var(--ground);border:1px solid var(--line2);border-radius:3px;color:var(--ink);
+  font-family:var(--mono);font-size:22px;padding:8px 11px;text-align:right;font-variant-numeric:tabular-nums}
+.opts{display:grid;gap:6px}
+.opt{display:grid;grid-template-columns:20px 1fr;gap:10px;align-items:start;text-align:left;
+  background:var(--panel2);border:1px solid var(--line2);border-radius:3px;color:var(--ink);
+  padding:10px 12px;cursor:pointer;font-size:14px;font-family:inherit}
+.opt:hover:not(:disabled){border-color:var(--dim)}
+.opt:disabled{cursor:default;opacity:.55}
+.opt .k{font-family:var(--mono);font-size:11px;color:var(--dimmer);padding-top:2px}
+.opt.right{border-color:var(--ok);background:rgba(95,184,122,.09);opacity:1}
+.opt.wrong{border-color:var(--bad);background:rgba(229,84,75,.09);opacity:1}
+.btn{background:var(--brass);border:none;border-radius:3px;color:#1a1408;font-family:var(--mono);
+  font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:11px 18px;cursor:pointer}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:none;border:1px solid var(--line2);color:var(--dim)}
+.btn.ghost:hover{color:var(--ink);border-color:var(--dim)}
+.fb{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.verdict{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:7px}
+.verdict.ok{color:var(--ok)} .verdict.no{color:var(--bad)}
+.fbbody{font-size:14px;color:var(--dim)}
+.fbbody b{color:var(--ink);font-weight:600}
+.fbmath{font-family:var(--mono);font-size:13px;color:var(--ink);margin:7px 0}
+.row{display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap}
+.hint{font-family:var(--mono);font-size:10px;color:var(--dimmer);letter-spacing:.06em}
+
+/* reference */
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dimmer);font-weight:400;padding:0 10px 8px 0;border-bottom:1px solid var(--line)}
+td{padding:9px 10px 9px 0;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.swatch{display:inline-block;width:7px;height:7px;border-radius:1px;margin-right:7px;vertical-align:middle}
+h2{font-size:13px;font-weight:600;margin-bottom:12px;letter-spacing:-.005em}
+.pnote{color:var(--dim);font-size:13.5px;margin-top:12px}
+.pnote + .pnote{margin-top:7px}
+
+@media (max-width:620px){
+  .inputs{grid-template-columns:1fr 1fr}
+  .readout{grid-template-columns:1fr;gap:8px}
+  .sprbig{font-size:48px}
+  .stats{grid-template-columns:1fr 1fr}
+  .rung{grid-template-columns:38px 1fr 66px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="brand">
+    <h1>SPR Trainer</h1>
+    <span class="sub">6-MAX CASH · ALL AMOUNTS IN BB</span>
+  </div>
+  <nav role="tablist">
+    <button role="tab" id="t-calc" aria-selected="true" onclick="tab('calc')">Calculator</button>
+    <button role="tab" id="t-drill" aria-selected="false" onclick="tab('drill')">Drill</button>
+    <button role="tab" id="t-ref" aria-selected="false" onclick="tab('ref')">Reference</button>
+  </nav>
+</header>
+
+<!-- ============ CALCULATOR ============ -->
+<section id="calc">
+  <div class="panel">
+    <div class="inputs">
+      <div class="field">
+        <label class="lab">Your stack</label>
+        <input id="i-me" class="num" type="number" step="0.5" value="97.5" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label class="lab">Villain stack</label>
+        <input id="i-vil" class="num" type="number" step="0.5" value="97.5" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label class="lab">Pot on flop</label>
+        <input id="i-pot" class="num" type="number" step="0.5" value="5.5" inputmode="decimal">
+      </div>
+    </div>
+    <div class="presets">
+      <span class="lab" style="align-self:center;margin-right:3px">Fill from 100bb</span>
+      <button class="chip" onclick="preset(99,3)">Limped</button>
+      <button class="chip" onclick="preset(97.5,5.5)">2.5x SRP</button>
+      <button class="chip" onclick="preset(97,7.5)">3x SRP</button>
+      <button class="chip" onclick="preset(97.5,8)">SRP 3-way</button>
+      <button class="chip" onclick="preset(91,18.5)">3-bet pot</button>
+      <button class="chip" onclick="preset(88,26.5)">Squeeze pot</button>
+      <button class="chip" onclick="preset(77,46.5)">4-bet pot</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="readout">
+      <div>
+        <div class="lab">SPR</div>
+        <div class="sprbig num" id="o-spr">17.7</div>
+      </div>
+      <div>
+        <div class="zonename" id="o-zone">Very deep</div>
+        <div class="zonehand" id="o-hand">—</div>
+        <div class="effline lab">Effective stack <span class="num" id="o-eff">97.5</span> bb</div>
+      </div>
+    </div>
+
+    <div class="cbar">
+      <div class="lab" style="margin-bottom:9px">Commitment scale</div>
+      <div class="track" id="track">
+        <div class="marker" id="marker" style="left:0%"></div>
+      </div>
+      <div class="scale" id="scale"></div>
+      <div class="zonelabels">
+        <span>Commit</span><span>Standard</span><span>Pot control</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="lab" style="margin-bottom:3px">Getting stacks in</div>
+    <div class="plannote" id="o-plan">—</div>
+    <div class="ladder" id="o-ladder"></div>
+    <div class="alt" id="o-alt"></div>
+  </div>
+</section>
+
+<!-- ============ DRILL ============ -->
+<section id="drill" hidden>
+  <div class="stats">
+    <div class="stat"><div class="lab">Correct</div><div class="v" id="s-score">0 / 0</div></div>
+    <div class="stat"><div class="lab">Accuracy</div><div class="v" id="s-acc">—</div></div>
+    <div class="stat"><div class="lab">Streak</div><div class="v" id="s-streak">0</div></div>
+    <div class="stat"><div class="lab">Best</div><div class="v" id="s-best">0</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="qtype lab" id="d-type">Question</div>
+    <div class="scenario">
+      <div class="action" id="d-action">—</div>
+      <div class="stacks">
+        <div class="sk"><div class="lab">Your stack</div><div class="v" id="d-me">—<small>bb</small></div></div>
+        <div class="sk"><div class="lab">Villain stack</div><div class="v" id="d-vil">—<small>bb</small></div></div>
+        <div class="sk"><div class="lab">Pot</div><div class="v" id="d-pot">—<small>bb</small></div></div>
+      </div>
+    </div>
+
+    <div class="qtext" id="d-q">—</div>
+
+    <div id="d-numeric" hidden>
+      <div class="answer">
+        <input id="d-input" class="num" type="number" step="0.1" inputmode="decimal" placeholder="0.0">
+        <button class="btn" onclick="submitNum()">Check</button>
+      </div>
+    </div>
+    <div class="opts" id="d-opts" hidden></div>
+
+    <div class="fb" id="d-fb" hidden>
+      <div class="verdict" id="d-verdict">—</div>
+      <div class="fbbody" id="d-explain"></div>
+      <div class="cbar" style="border-top:none;padding-top:12px;margin-top:12px">
+        <div class="track"><div class="marker" id="d-marker" style="left:0%"></div></div>
+        <div class="scale" id="d-scale"></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <button class="btn" id="d-next" onclick="nextQ()" hidden>Next hand</button>
+      <button class="btn ghost" onclick="resetStats()">Reset stats</button>
+      <span class="hint">Enter to submit and advance · 1–5 to pick</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ REFERENCE ============ -->
+<section id="ref" hidden>
+  <div class="panel">
+    <h2>Stack-off thresholds</h2>
+    <table>
+      <thead><tr><th style="width:74px">SPR</th><th>Zone</th><th>Weakest hand you stack off</th></tr></thead>
+      <tbody id="r-zones"></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Typical SPR by preflop line (100bb start)</h2>
+    <table>
+      <thead><tr><th>Line</th><th style="width:66px">Pot</th><th style="width:66px">Stack</th><th style="width:56px">SPR</th></tr></thead>
+      <tbody id="r-lines"></tbody>
+    </table>
+    <p class="pnote">Halve the effective stack and you halve the SPR. A 50bb villain in a 3-bet pot puts you at
+      SPR 2, not 4.4, and top pair becomes a stack-off.</p>
+  </div>
+
+  <div class="panel">
+    <h2>Flop size that gets stacks in by the river</h2>
+    <table>
+      <thead><tr><th>Flop size</th><th style="width:80px">SPR it clears</th><th>Over</th></tr></thead>
+      <tbody id="r-sizes"></tbody>
+    </table>
+    <p class="pnote">Pick the size backward from the river. At SPR 6 with a set, start at 2/3 pot and the river
+      shove arrives on its own. Start at 1/3 and you leave 40bb behind.</p>
+  </div>
+
+  <div class="panel">
+    <h2>The routine at the table</h2>
+    <table>
+      <tbody>
+        <tr><td class="n" style="width:22px;color:var(--dimmer)">1</td><td>Read the effective stack in bb before you act preflop. Smaller of the two.</td></tr>
+        <tr><td class="n" style="color:var(--dimmer)">2</td><td>Count the pot when the flop comes.</td></tr>
+        <tr><td class="n" style="color:var(--dimmer)">3</td><td>Divide.</td></tr>
+        <tr><td class="n" style="color:var(--dimmer)">4</td><td>Pick the flop size that makes the river bet natural.</td></tr>
+      </tbody>
+    </table>
+    <p class="pnote">The spot that costs money on Ignition is the 40bb reg. In a 3-bet pot that is SPR 1.5,
+      and AK on an ace-high flop is a stack-off rather than a two-street value hand. Check the stack before
+      the hand starts.</p>
+  </div>
+</section>
+
+</div>
+
+<script>
+/* ---------- zones ---------- */
+const ZONES=[
+ {min:0,   max:1.5,  name:"Commit",      color:"var(--z1)",
+  hand:"Any top pair, overpair, strong second pair",
+  full:"You are pot-committed. One bet gets it in. Do not fold top pair here."},
+ {min:1.5, max:3,    name:"Near-commit", color:"var(--z2)",
+  hand:"Top pair good kicker and up",
+  full:"Two bets get it in. Top pair good kicker stacks off, weak top pair does not."},
+ {min:3,   max:6,    name:"Standard",    color:"var(--z3)",
+  hand:"Two pair, sets, TPTK on dry boards, big combo draws",
+  full:"Three bets get it in. Top pair top kicker stacks off on dry boards only."},
+ {min:6,   max:13,   name:"Deep",        color:"var(--z4)",
+  hand:"Sets, straights, flushes, nutted draws",
+  full:"One pair is a two-street hand. Stacking off with an overpair burns money."},
+ {min:13,  max:1e9,  name:"Very deep",   color:"var(--z5)",
+  hand:"Near-nuts only",
+  full:"One pair is pot control, full stop. Getting 100bb in needs three large bets and one pair almost never wants that."}
+];
+const zoneOf=s=>ZONES.find(z=>s>=z.min&&s<z.max)||ZONES[ZONES.length-1];
+
+/* ---------- geometric sizing ----------
+   3 streets: S = 4f^3 + 6f^2 + 3f      2 streets: S = 2f^2 + 2f   */
+function f3(S){let lo=.01,hi=3;for(let i=0;i<60;i++){const m=(lo+hi)/2;
+  (4*m**3+6*m**2+3*m<S)?lo=m:hi=m;}return (lo+hi)/2;}
+const f2=S=>(-1+Math.sqrt(1+2*S))/2;
+function sizeName(f){
+  const opts=[[1/3,"1/3 pot"],[1/2,"1/2 pot"],[2/3,"2/3 pot"],[3/4,"3/4 pot"],[1,"full pot"]];
+  let best=opts[0];for(const o of opts) if(Math.abs(o[0]-f)<Math.abs(best[0]-f)) best=o;
+  return f>1.15?"an overbet":best[1];
+}
+/* MCQ bucket for the sizing question */
+function sizeBucket(S){
+  if(S<1.3) return "Just shove the flop";
+  if(S<2.6) return "1/3 pot";
+  if(S<4.6) return "1/2 pot";
+  if(S<9)   return "2/3 pot";
+  return "Pot or bigger";
+}
+const SIZE_OPTS=["Just shove the flop","1/3 pot","1/2 pot","2/3 pot","Pot or bigger"];
+
+/* ---------- commitment bar scale (compressed at the top) ---------- */
+const pos=s=>Math.max(0,Math.min(100, 100*Math.log(1+Math.min(s,30))/Math.log(31)));
+function drawScale(el){
+  el.innerHTML="";
+  [0.5,1,2,3,6,13,30].forEach(v=>{
+    const t=document.createElement("span");
+    t.style.left=pos(v)+"%"; t.textContent=(v>=30?"30+":v);
+    el.appendChild(t);
+  });
+  const tr=el.previousElementSibling;
+  tr.querySelectorAll(".tick").forEach(n=>n.remove());
+  [1.5,3,6,13].forEach(v=>{
+    const d=document.createElement("div"); d.className="tick"; d.style.left=pos(v)+"%"; tr.appendChild(d);
+  });
+}
+
+/* ---------- tabs ---------- */
+function tab(id){
+  ["calc","drill","ref"].forEach(k=>{
+    document.getElementById(k).hidden = k!==id;
+    document.getElementById("t-"+k).setAttribute("aria-selected", k===id);
+  });
+  if(id==="drill" && !cur) nextQ();
+}
+
+/* ============ CALCULATOR ============ */
+const $=id=>document.getElementById(id);
+function preset(stack,pot){ $("i-me").value=stack; $("i-vil").value=stack; $("i-pot").value=pot; calc(); }
+
+function calc(){
+  const me=+$("i-me").value||0, vil=+$("i-vil").value||0, pot=+$("i-pot").value||0;
+  const eff=Math.min(me,vil);
+  if(pot<=0||eff<=0){ $("o-spr").textContent="—"; return; }
+  const S=eff/pot, z=zoneOf(S);
+
+  $("o-spr").textContent = S<10 ? S.toFixed(1) : Math.round(S);
+  $("o-spr").style.color = z.color;
+  $("o-zone").textContent = z.name;
+  $("o-zone").style.color = z.color;
+  $("o-hand").textContent = z.hand;
+  $("o-eff").textContent = eff.toFixed(1).replace(/\.0$/,"");
+  $("marker").style.left = pos(S)+"%";
+
+  /* sizing ladder */
+  const three=f3(S), two=f2(S);
+  let f,streets;
+  if(S<1.05){ f=null; streets=1; }
+  else if(three<=1.1){ f=three; streets=3; }
+  else { f=two; streets=2; }
+
+  const L=$("o-ladder"); L.innerHTML="";
+  if(streets===1){
+    $("o-plan").innerHTML = `<b>Shove the flop.</b> ${eff.toFixed(1).replace(/\.0$/,"")}bb into ${pot.toFixed(1).replace(/\.0$/,"")}bb is `+
+      (S<1?"under":"about")+` a pot-sized bet. There is nothing to plan.`;
+    $("o-alt").textContent="";
+  }else{
+    const names=["Flop","Turn","River"], bets=[]; let p=pot;
+    for(let i=0;i<streets;i++){ const b=f*p; bets.push(b); p=p+2*b; }
+    const max=Math.max(...bets);
+    names.slice(0,streets).forEach((n,i)=>{
+      const r=document.createElement("div"); r.className="rung";
+      r.innerHTML=`<div class="st">${n}</div>
+        <div class="barwrap"><div class="bar" style="width:${(bets[i]/max*100).toFixed(1)}%"></div></div>
+        <div class="amt">${bets[i].toFixed(1)} bb</div>`;
+      L.appendChild(r);
+    });
+    $("o-plan").innerHTML = `Bet <b>${sizeName(f)}</b> on each of ${streets} street${streets>1?"s":""} `+
+      `and the last bet is exactly your stack.`;
+    $("o-alt").innerHTML = streets===3
+      ? `Over two streets instead: <b>${sizeName(f2(S))}</b> twice. Over one: unrealistic at this depth.`
+      : `Three streets would need ${sizeName(three)}, which is bigger than a pot bet. Two streets is the clean line.`;
+  }
+}
+["i-me","i-vil","i-pot"].forEach(id=>$(id).addEventListener("input",calc));
+
+/* ============ DRILL ============ */
+const LINES=[
+ {t:"You limp BTN, SB completes, BB checks",                       inv:1,    pot:3},
+ {t:"You open 2.5 from CO, BB calls",                              inv:2.5,  pot:5.5},
+ {t:"You open 2.5 from BTN, BB calls",                             inv:2.5,  pot:5.5},
+ {t:"You open 3 from UTG, BTN calls",                              inv:3,    pot:7.5},
+ {t:"You open 2.5 from HJ, BTN calls, BB calls",                   inv:2.5,  pot:8},
+ {t:"SB limps, you raise to 4.5 from BB, SB calls",                inv:4.5,  pot:9},
+ {t:"BTN opens 2.5, you 3-bet to 9 from BB, BTN calls",            inv:9,    pot:18.5},
+ {t:"You open 2.5 from CO, BTN 3-bets to 8.5, you call",           inv:8.5,  pot:18},
+ {t:"CO opens 2.5, you squeeze to 12 from BB, CO calls",           inv:12,   pot:26.5},
+ {t:"You open 2.5, BB 3-bets to 10, you 4-bet to 23, BB calls",    inv:23,   pot:46.5}
+];
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+function stack(){
+  const r=Math.random();
+  if(r<.30) return 100;                                  // auto-topped reg
+  if(r<.60) return Math.round((30+Math.random()*45)*2)/2;// short
+  if(r<.90) return Math.round((80+Math.random()*40)*2)/2;// near full
+  return Math.round((125+Math.random()*90)*2)/2;         // deep
+}
+function scenario(){
+  for(let i=0;i<200;i++){
+    const L=rnd(LINES), a=stack(), b=stack();
+    if(a<L.inv+6||b<L.inv+6) continue;
+    const me=+(a-L.inv).toFixed(1), vil=+(b-L.inv).toFixed(1);
+    const eff=Math.min(me,vil), S=eff/L.pot;
+    if(S<0.4||S>40) continue;
+    return {t:L.t,pot:L.pot,me,vil,eff,S};
+  }
+  return {t:"You open 2.5 from CO, BB calls",pot:5.5,me:97.5,vil:97.5,eff:97.5,S:17.7};
+}
+
+let cur=null,answered=false,st={n:0,c:0,streak:0,best:0};
+
+function nextQ(){
+  const sc=scenario();
+  const type=rnd(["spr","spr","zone","size"]);
+  cur={...sc,type};
+  answered=false;
+
+  $("d-action").textContent=sc.t;
+  $("d-me").innerHTML=fmt(sc.me)+'<small>bb</small>';
+  $("d-vil").innerHTML=fmt(sc.vil)+'<small>bb</small>';
+  $("d-pot").innerHTML=fmt(sc.pot)+'<small>bb</small>';
+  $("d-fb").hidden=true; $("d-next").hidden=true;
+  $("d-numeric").hidden=true; $("d-opts").hidden=true; $("d-opts").innerHTML="";
+
+  if(type==="spr"){
+    $("d-type").textContent="Compute the SPR";
+    $("d-q").textContent="Flop comes. What is your SPR?";
+    $("d-numeric").hidden=false;
+    $("d-input").value=""; $("d-input").focus();
+  }else if(type==="zone"){
+    $("d-type").textContent="Stack-off threshold";
+    $("d-q").textContent="Weakest hand you are happy to get all in with?";
+    buildOpts(ZONES.map(z=>z.hand), zoneOf(sc.S).hand);
+  }else{
+    $("d-type").textContent="Sizing plan";
+    $("d-q").textContent="You flop a set and want stacks in by the river. Flop size?";
+    buildOpts(SIZE_OPTS, sizeBucket(sc.S));
+  }
+}
+const fmt=v=>(+v).toFixed(1).replace(/\.0$/,"");
+
+function buildOpts(list,correct){
+  const box=$("d-opts"); box.hidden=false; box.innerHTML="";
+  cur.correct=correct; cur.list=list;
+  list.forEach((txt,i)=>{
+    const b=document.createElement("button");
+    b.className="opt"; b.type="button";
+    b.innerHTML=`<span class="k">${i+1}</span><span>${txt}</span>`;
+    b.onclick=()=>pick(i);
+    box.appendChild(b);
+  });
+}
+function pick(i){
+  if(answered) return;
+  const ok=cur.list[i]===cur.correct;
+  const btns=[...$("d-opts").children];
+  btns.forEach((b,j)=>{ b.disabled=true;
+    if(cur.list[j]===cur.correct) b.classList.add("right");
+    else if(j===i) b.classList.add("wrong");
+  });
+  finish(ok);
+}
+function submitNum(){
+  if(answered) return;
+  const v=parseFloat($("d-input").value);
+  if(isNaN(v)) return;
+  const tol=Math.max(0.4, cur.S*0.10);
+  finish(Math.abs(v-cur.S)<=tol);
+}
+
+function finish(ok){
+  answered=true;
+  st.n++; if(ok){st.c++; st.streak++; st.best=Math.max(st.best,st.streak);} else st.streak=0;
+  paintStats();
+
+  const z=zoneOf(cur.S), three=f3(cur.S);
+  $("d-verdict").textContent = ok?"Correct":"Miss";
+  $("d-verdict").className = "verdict "+(ok?"ok":"no");
+
+  const shorter = cur.me<=cur.vil ? "yours" : "villain's";
+  let html = `<div class="fbmath">${fmt(cur.eff)} ÷ ${fmt(cur.pot)} = SPR <b>${cur.S.toFixed(1)}</b>
+      &nbsp;·&nbsp; <span style="color:${z.color}">${z.name}</span></div>`;
+  html += `<div>Effective stack is ${shorter} at ${fmt(cur.eff)}bb. ${z.full}</div>`;
+  if(cur.type==="size"||cur.type==="zone"){
+    html += `<div style="margin-top:7px">Three streets of <b>${sizeName(three)}</b> puts the last ${fmt(cur.eff)}bb in.</div>`;
+  }
+  $("d-explain").innerHTML=html;
+  $("d-marker").style.left=pos(cur.S)+"%";
+  drawScale($("d-scale"));
+  $("d-fb").hidden=false;
+  $("d-next").hidden=false;
+  $("d-next").focus();
+}
+function paintStats(){
+  $("s-score").textContent=`${st.c} / ${st.n}`;
+  $("s-acc").textContent=st.n?Math.round(st.c/st.n*100)+"%":"—";
+  $("s-streak").textContent=st.streak;
+  $("s-best").textContent=st.best;
+}
+function resetStats(){ st={n:0,c:0,streak:0,best:0}; paintStats(); nextQ(); }
+
+document.addEventListener("keydown",e=>{
+  if(document.getElementById("drill").hidden) return;
+  if(e.key==="Enter"){
+    e.preventDefault();
+    if(answered) nextQ();
+    else if(cur&&cur.type==="spr") submitNum();
+  }
+  if(!answered && cur && cur.type!=="spr" && /^[1-5]$/.test(e.key)){
+    const i=+e.key-1; if(i<cur.list.length) pick(i);
+  }
+});
+
+/* ============ REFERENCE TABLES ============ */
+(function(){
+  const z=document.getElementById("r-zones");
+  const rng=["under 1.5","1.5 – 3","3 – 6","6 – 13","13+"];
+  ZONES.forEach((Z,i)=>{
+    z.insertAdjacentHTML("beforeend",
+      `<tr><td class="n">${rng[i]}</td>
+       <td><span class="swatch" style="background:${Z.color}"></span>${Z.name}</td>
+       <td style="color:var(--dim)">${Z.hand}</td></tr>`);
+  });
+
+  const l=document.getElementById("r-lines");
+  LINES.forEach(L=>{
+    const rem=100-L.inv, S=rem/L.pot, Z=zoneOf(S);
+    l.insertAdjacentHTML("beforeend",
+      `<tr><td>${L.t}</td><td class="n">${L.pot}</td><td class="n">${rem}</td>
+       <td class="n" style="color:${Z.color}">${S<10?S.toFixed(1):Math.round(S)}</td></tr>`);
+  });
+
+  const s=document.getElementById("r-sizes");
+  [[1/3,"1/3 pot"],[1/2,"1/2 pot"],[2/3,"2/3 pot"],[3/4,"3/4 pot"],[1,"Full pot"]].forEach(([f,n])=>{
+    const S3=4*f**3+6*f**2+3*f, S2=2*f**2+2*f;
+    s.insertAdjacentHTML("beforeend",
+      `<tr><td>${n}</td><td class="n">${S3.toFixed(1)}</td><td style="color:var(--dim)">3 streets`+
+      ` <span class="n" style="color:var(--dimmer)">· ${S2.toFixed(1)} over 2</span></td></tr>`);
+  });
+})();
+
+drawScale(document.getElementById("scale"));
+calc();
+paintStats();
+</script>
+</body>
+</html>
