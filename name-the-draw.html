@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Name the Draw</title>
+<style>
+:root{
+  --bg:#0a0a0b; --panel:#121214; --panel2:#191a1c; --line:#26262a;
+  --text:#e9e9ea; --muted:#8b8b90; --dim:#57575c;
+  --accent:#d9a441; --good:#5cc98a; --bad:#e0625c;
+  --s:#e9e9ea; --h:#e5625c; --d:#5b9bd5; --c:#57b877;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;
+  line-height:1.5;padding:22px 16px 60px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:620px;margin:0 auto}
+
+header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;
+  border-bottom:1px solid var(--line);padding-bottom:11px;margin-bottom:20px}
+h1{font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.stats{font-family:var(--mono);font-size:12px;color:var(--dim)}
+.stats b{color:var(--muted);font-weight:500}
+
+.tabs{display:flex;border-bottom:1px solid var(--line);margin-bottom:20px}
+.tab{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  padding:9px 16px;color:var(--dim);cursor:pointer;border:none;background:none;
+  border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab:hover{color:var(--muted)}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+
+.street{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:14px}
+.street .pos{color:var(--accent)}
+.row{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-end;margin-bottom:22px}
+.grp .lab{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:8px}
+.cards{display:flex;gap:5px}
+.card{width:46px;height:64px;border-radius:5px;background:var(--panel2);border:1px solid var(--line);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-family:var(--mono);line-height:1;animation:in .2s ease-out}
+.card .r{font-size:22px;font-weight:600}
+.card .u{font-size:15px;margin-top:2px}
+.card.s{color:var(--s)} .card.h{color:var(--h)} .card.d{color:var(--d)} .card.c{color:var(--c)}
+.card.new{border-color:var(--accent)}
+@keyframes in{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:none}}
+
+.prompt{font-size:14px;color:var(--muted);margin-bottom:12px}
+.chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(184px,1fr));gap:8px;margin-bottom:22px}
+.chip{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--panel);border:1px solid var(--line);border-radius:6px;
+  padding:11px 13px;cursor:pointer;text-align:left;font-family:var(--sans);
+  font-size:14px;letter-spacing:0;text-transform:none;color:var(--muted);
+  transition:border-color .12s,background .12s,color .12s}
+.chip:hover{border-color:#3a3a40;background:var(--panel2)}
+.chip .o{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--dim);
+  min-width:22px;text-align:right}
+.chip.sel{background:#1c1a13;border-color:var(--accent);color:var(--text)}
+.chip.sel .o{color:var(--accent)}
+.chip.right{background:#12251a;border-color:var(--good);color:var(--text)}
+.chip.right .o{color:var(--good)}
+.chip.wrong{background:#251514;border-color:var(--bad);color:var(--text)}
+.chip.wrong .o{color:var(--bad)}
+.chip.missed{border-color:var(--good);border-style:dashed;color:var(--muted)}
+.chip.extra{border-color:var(--accent);border-style:dashed;color:var(--muted)}
+.chip.extra .o{color:var(--accent)}
+.chip.missed .o{color:var(--good)}
+.chip:disabled{cursor:default}
+
+.bar{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;
+  border-top:1px solid var(--line);padding-top:18px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-family:var(--mono);font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim)}
+input[type=number]{width:96px;background:var(--panel);border:1px solid var(--line);border-radius:4px;
+  color:var(--text);font-family:var(--mono);font-size:19px;padding:9px 11px;outline:none;
+  -moz-appearance:textfield}
+input[type=number]:focus{border-color:var(--accent)}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+button.go{background:var(--panel2);border:1px solid var(--line);color:var(--text);
+  font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+  padding:11px 22px;border-radius:4px;cursor:pointer}
+button.go:hover{border-color:var(--accent);background:#212124}
+button.go:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.res{border-top:1px solid var(--line);padding-top:18px;margin-top:4px}
+.mark{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  margin-bottom:14px;display:inline-block}
+.mark.ok{color:var(--good)} .mark.no{color:var(--bad)}
+.nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:1px;
+  background:var(--line);border:1px solid var(--line);border-radius:5px;overflow:hidden;margin-bottom:16px}
+.n{background:var(--panel);padding:10px 12px}
+.n .k{font-family:var(--mono);font-size:9px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:5px}
+.n .v{font-family:var(--mono);font-size:20px;font-weight:600}
+.n .v small{font-size:11px;font-weight:400;color:var(--dim)}
+.n.hit .v{color:var(--good)} .n.miss .v{color:var(--bad)} .n.key .v{color:var(--accent)}
+.grid{margin-bottom:18px}
+.grid .lab{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:8px}
+.gr{display:grid;grid-template-columns:repeat(13,1fr);gap:3px;max-width:480px}
+.gc{aspect-ratio:1/1.28;border-radius:3px;background:#0f0f11;border:1px solid #1c1c20;
+  display:flex;align-items:center;justify-content:center;font-family:var(--mono);
+  font-size:11px;color:#2e2e33}
+.gc.live{color:var(--dim)}
+.gc.out{background:#17301f;border-color:var(--good);color:var(--good);font-weight:600}
+.gc.gone{opacity:.2}
+.suitrow{display:grid;grid-template-columns:repeat(13,1fr);gap:3px;max-width:480px}
+
+.note{font-size:13.5px;color:var(--muted);margin-bottom:16px;max-width:60ch}
+.note b{color:var(--text);font-weight:500}
+
+footer{margin-top:34px;padding-top:14px;border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;align-items:center;gap:10px}
+.kbd{font-family:var(--mono);font-size:11px;color:var(--dim)}
+.kbd kbd{background:var(--panel2);border:1px solid var(--line);border-radius:3px;padding:1px 5px;font-size:10px}
+.ghost{background:none;border:none;color:var(--dim);font-family:var(--mono);font-size:11px;
+  letter-spacing:.1em;text-transform:uppercase;cursor:pointer;padding:6px}
+.ghost:hover{color:var(--muted)}
+
+@media (max-width:520px){
+  .card{width:40px;height:56px} .card .r{font-size:18px}
+  .chips{grid-template-columns:1fr 1fr;gap:6px}
+  .chip{font-size:12.5px;padding:10px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Name the Draw</h1>
+  <div class="stats" id="stats"></div>
+</header>
+
+<div class="tabs">
+  <button class="tab" data-m="sf">Straights &amp; flushes</button>
+  <button class="tab" data-m="all">Any improvement</button>
+</div>
+
+<div id="app"></div>
+
+<footer>
+  <div class="kbd"><kbd>1</kbd>–<kbd>9</kbd> pick &nbsp;·&nbsp; <kbd>Enter</kbd> submit &nbsp;·&nbsp; <kbd>Space</kbd> next</div>
+  <button class="ghost" id="reset">Reset</button>
+</footer>
+
+</div>
+
+<script>
+/* ---------- cards ---------- */
+const RANKS='23456789TJQKA', SUITS='shdc';
+const rv=c=>RANKS.indexOf(c[0])+2;
+const UNI={s:'\u2660',h:'\u2665',d:'\u2666',c:'\u2663'};
+const deckAll=()=>{const d=[];for(const r of RANKS)for(const s of SUITS)d.push(r+s);return d;};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+
+function straightHigh(rs){
+  const u=[...new Set(rs)].sort((a,b)=>b-a);
+  if(u.includes(14))u.push(1);
+  let run=1;
+  for(let i=1;i<u.length;i++){ if(u[i]===u[i-1]-1){run++;if(run>=5)return u[i]+4;}else run=1; }
+  return 0;
+}
+function cat(cards){
+  const ranks=cards.map(rv), rc={}, sc={};
+  ranks.forEach(r=>rc[r]=(rc[r]||0)+1);
+  cards.forEach(c=>sc[c[1]]=(sc[c[1]]||0)+1);
+  let fs=null; for(const s in sc) if(sc[s]>=5) fs=s;
+  if(fs && straightHigh(cards.filter(c=>c[1]===fs).map(rv))) return 8;
+  const v=Object.values(rc), m=Math.max(...v);
+  if(m===4) return 7;
+  if(m===3 && v.filter(x=>x>=2).length>=2) return 6;
+  if(fs) return 5;
+  if(straightHigh(ranks)) return 4;
+  if(m===3) return 3;
+  if(v.filter(x=>x===2).length>=2) return 2;
+  if(m===2) return 1;
+  return 0;
+}
+const NAMES=['high card','a pair','two pair','trips','a straight','a flush','a full house','quads','a straight flush'];
+
+/* ---------- the answer key ---------- */
+const CHIPS=[
+  {k:'fd',   n:'Flush draw',        o:9},
+  {k:'oesd', n:'Open-ended',        o:8},
+  {k:'dgs',  n:'Double gutshot',    o:8},
+  {k:'gs',   n:'Gutshot',           o:4},
+  {k:'ov2',  n:'Two overcards',     o:6},
+  {k:'ov1',  n:'One overcard',      o:3},
+  {k:'bfd',  n:'Backdoor flush',    o:0},
+  {k:'bsd',  n:'Backdoor straight', o:0},
+  {k:'none', n:'No draw',           o:0}
+];
+const OVER=['ov2','ov1'];
+const BACK=['bfd','bsd'];
+const graded=s=>new Set([...s].filter(k=>!BACK.includes(k)));
+const readOk=(sel,key)=>{
+  const a=graded(sel), b=graded(key);
+  return a.size===b.size && [...b].every(k=>a.has(k));
+};
+const shown=()=>MODE==='all'?CHIPS:CHIPS.filter(c=>!OVER.includes(c.k));
+
+function completers(hero, board){
+  const hr=hero.map(rv), br=board.map(rv);
+  if(straightHigh(hr.concat(br))) return [];
+  const out=[];
+  for(let r=2;r<=14;r++){
+    const hi=straightHigh(hr.concat(br,[r]));
+    if(!hi) continue;
+    const need=[hi,hi-1,hi-2,hi-3,hi-4].map(x=>x===1?14:x);
+    if(!need.some(x=>hr.includes(x))) continue;
+    out.push(r);
+  }
+  return out;
+}
+function backdoorStraight(hero, board){
+  const hr=hero.map(rv), br=board.map(rv);
+  for(let lo=1;lo<=10;lo++){
+    const win=[0,1,2,3,4].map(i=>{const r=lo+i;return r===1?14:r;});
+    if(win.filter(r=>hr.includes(r)).length>=1 &&
+       win.filter(r=>hr.includes(r)||br.includes(r)).length>=3) return true;
+  }
+  return false;
+}
+function answerKey(hero, board){
+  const set=new Set(), back=new Set(), sc={};
+  hero.concat(board).forEach(c=>sc[c[1]]=(sc[c[1]]||0)+1);
+  for(const s in sc){
+    const mine=hero.filter(c=>c[1]===s).length;
+    if(!mine) continue;
+    if(sc[s]>=4) set.add('fd');
+    else if(sc[s]===3 && board.length===3) back.add('bfd');
+  }
+  const comp=completers(hero, board);
+  if(comp.length>=2) set.add(comp[comp.length-1]-comp[0]===5?'oesd':'dgs');
+  else if(comp.length===1) set.add('gs');
+  else if(board.length===3 && backdoorStraight(hero, board)) back.add('bsd');
+  back.forEach(k=>set.add(k));
+  if(MODE==='all'){
+    const top=Math.max(...board.map(rv)), over=hero.filter(c=>rv(c)>top).length;
+    if(over===2) set.add('ov2'); else if(over===1) set.add('ov1');
+  }
+  if(!set.size) set.add('none');
+  return set;
+}
+/* outs for the next card: straights, flushes, and pairing an overcard */
+function outsOf(hero, board, deck){
+  const top=Math.max(...board.map(rv)), hr=hero.map(rv);
+  return deck.filter(c=>{
+    if(cat(hero.concat(board,[c]))>=4) return true;
+    return MODE==='all' && hr.includes(rv(c)) && rv(c)>top;
+  });
+}
+function riverPct(hero, board, deck){
+  let hit=0,n=0;
+  for(let i=0;i<deck.length;i++) for(let j=i+1;j<deck.length;j++){
+    const b=board.concat(deck[i],deck[j]);
+    const mine=cat(hero.concat(b));
+    n++;
+    if(mine>=4 && mine>cat(b)) hit++;
+    else if(MODE==='all' && mine>=1 && mine>cat(b)) hit++;
+  }
+  return hit/n*100;
+}
+
+/* ---------- ranges ---------- */
+function expand(t){
+  const out=[];
+  for(const x of t){
+    if(x.endsWith('+')){
+      const b=x.slice(0,-1);
+      if(b[0]===b[1]) for(let i=RANKS.indexOf(b[0]);i<RANKS.length;i++) out.push(RANKS[i]+RANKS[i]);
+      else for(let i=RANKS.indexOf(b[1]);i<RANKS.indexOf(b[0]);i++) out.push(b[0]+RANKS[i]+b[2]);
+    } else out.push(x);
+  }
+  return out;
+}
+function combosOf(c){
+  const out=[];
+  if(c.length===2){ for(let i=0;i<4;i++) for(let j=i+1;j<4;j++) out.push([c[0]+SUITS[i],c[1]+SUITS[j]]); }
+  else if(c[2]==='s'){ for(const s of SUITS) out.push([c[0]+s,c[1]+s]); }
+  else { for(const a of SUITS) for(const b of SUITS) if(a!==b) out.push([c[0]+a,c[1]+b]); }
+  return out;
+}
+const build=t=>expand(t).flatMap(combosOf);
+const RANGES={
+  UTG:build(['44+','A2s','A3s','A4s','A5s','A9s+','K9s+','Q9s+','J9s+','T8s+','98s','87s','76s','AJo+','KQo']),
+  HJ: build(['33+','A2s+','K8s+','Q8s+','J8s+','T8s+','97s+','86s+','75s+','ATo+','KJo+','QJo']),
+  CO: build(['22+','A2s+','K5s+','Q7s+','J7s+','T7s+','96s+','85s+','74s+','64s+','A9o+','KTo+','QTo+','JTo']),
+  BTN:build(['22+','A2s+','K2s+','Q4s+','J6s+','T6s+','95s+','85s+','74s+','63s+','53s+','A2o+','K7o+','Q8o+','J8o+','T8o+','98o','87o']),
+  SB: build(['22+','A2s+','K4s+','Q6s+','J7s+','T7s+','96s+','86s+','75s+','64s+','54s','A2o+','K8o+','Q9o+','J9o+','T9o']),
+  BB: build(['22+','A2s+','K2s+','Q4s+','J6s+','T6s+','95s+','84s+','74s+','63s+','53s+','43s','A2o+','K5o+','Q7o+','J8o+','T8o+','97o+','87o','76o'])
+};
+const POSITIONS=Object.keys(RANGES);
+
+function newHand(){
+  const r=Math.random();
+  const want = r<0.24?'flush' : r<0.42?'oesd' : r<0.64?'gs' : r<0.76?'combo' : 'weak';
+  const pos=pick(POSITIONS);
+  for(let a=0;a<6000;a++){
+    const hero=pick(RANGES[pos]);
+    let deck=deckAll().filter(c=>c!==hero[0] && c!==hero[1]);
+    const board=[];
+    for(let i=0;i<3;i++){const k=Math.floor(Math.random()*deck.length);board.push(deck[k]);deck.splice(k,1);}
+    if(cat(hero.concat(board))!==0) continue;
+    const key=answerKey(hero,board);
+    const f=key.has('fd'), s=key.has('oesd')||key.has('dgs')||key.has('gs');
+    if(want==='flush' && !f) continue;
+    if(want==='oesd' && !(key.has('oesd')||key.has('dgs'))) continue;
+    if(want==='gs' && !key.has('gs')) continue;
+    if(want==='combo' && !(f&&s)) continue;
+    if(want==='weak'){
+      if(f||s) continue;
+      if(MODE!=='all' && key.has('none') && Math.random()>0.3) continue;
+    }
+    return {pos,hero,board,deck,key,outs:outsOf(hero,board,deck),river:riverPct(hero,board,deck)};
+  }
+  return newHand();
+}
+
+/* ---------- state ---------- */
+let MODE='all';
+try{const m=localStorage.getItem('nameDraw.mode'); if(m) MODE=m;}catch(e){}
+let H=null, step=0, sel=new Set(), ans=null;
+const KEY='nameDraw.v1';
+let S={hands:0,asked:0,ident:0,exact:0,err:0};
+try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r));}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
+const app=document.getElementById('app');
+function drawStats(){
+  const id=S.asked?Math.round(S.ident/S.asked*100):0;
+  const ex=S.asked?Math.round(S.exact/S.asked*100):0;
+  const av=S.asked?(S.err/S.asked).toFixed(1):'0.0';
+  document.getElementById('stats').innerHTML=
+    `<b>${S.hands}</b> hands &nbsp;·&nbsp; named <b>${id}%</b> &nbsp;·&nbsp; outs <b>${ex}%</b> &nbsp;·&nbsp; avg miss <b>${av}</b>`;
+}
+
+/* ---------- render ---------- */
+const cardHTML=(c,cls)=>`<div class="card ${c[1]} ${cls||''}"><span class="r">${c[0]}</span><span class="u">${UNI[c[1]]}</span></div>`;
+function table(n,label){
+  const b=H.board.slice(0,n);
+  return `<div class="street">${label} &nbsp;·&nbsp; <span class="pos">${H.pos}</span></div>
+  <div class="row">
+    <div class="grp"><div class="lab">Your hand</div><div class="cards">${H.hero.map(c=>cardHTML(c)).join('')}</div></div>
+    <div class="grp"><div class="lab">Board</div><div class="cards">${b.map((c,i)=>cardHTML(c,i===n-1&&n>3?'new':'')).join('')}</div></div>
+  </div>`;
+}
+function gridHTML(outs,deck){
+  const set=new Set(outs), live=new Set(deck);
+  let g='';
+  for(const s of SUITS) for(const r of RANKS){
+    const c=r+s;
+    g+=`<div class="gc ${set.has(c)?'out':(live.has(c)?'live':'gone')}">${r}</div>`;
+  }
+  const list=outs.length
+    ? outs.map(c=>`<span style="color:var(--${c[1]})">${c[0]}${UNI[c[1]]}</span>`).join(' ')
+    : 'none, you need two more cards';
+  return `<div class="grid"><div class="lab">Your outs &nbsp;\u2013&nbsp; ${list}</div><div class="gr">${g}</div></div>`;
+}
+function chipsHTML(isGraded){
+  const key=isGraded?H.key:null;
+  return `<div class="chips">`+shown().map((c,i)=>{
+    let cls='chip';
+    if(isGraded){
+      const inKey=key.has(c.k), picked=sel.has(c.k);
+      if(inKey && picked) cls+=' right';
+      else if(inKey) cls+=' missed';
+      else if(picked) cls+=BACK.includes(c.k)?' extra':' wrong';
+    } else if(sel.has(c.k)) cls+=' sel';
+    return `<button class="${cls}" data-k="${c.k}" ${isGraded?'disabled':''}>
+      <span>${c.n}</span><span class="o">${c.o}</span></button>`;
+  }).join('')+`</div>`;
+}
+
+function render(){
+  drawStats();
+  if(step===0 || step===2){
+    const n=step===0?3:4;
+    app.innerHTML=table(n,step===0?'Flop':'Turn')
+      +`<div class="prompt">Tap every draw you have, then enter your total outs.</div>`
+      +chipsHTML(false)
+      +`<div class="bar">
+          <div class="field"><label>Total outs</label><input type="number" id="o" min="0" max="25" autocomplete="off"></div>
+          <button class="go" id="go">Check</button>
+        </div>`;
+    wirePick(); return;
+  }
+  if(step===1 || step===3){
+    const flop=step===1;
+    const n=flop?3:4;
+    const outs=flop?H.outs:H.turnOuts;
+    const deck=flop?H.deck:H.deck2;
+    const t=outs.length, y=ans;
+    const named=readOk(sel,H.key);
+    const ok=y===t, exact=t/deck.length*100;
+    const listed=[...H.key].reduce((a,k)=>{const f=CHIPS.find(c=>c.k===k);return a+(f?f.o:0);},0);
+    let note='';
+    if(listed!==t && listed>0)
+      note+=`<div class="note">The labels add to <b>${listed}</b> but you only have <b>${t}</b>. Some cards do two jobs at once, so count the cards, not the labels.</div>`;
+    if(flop)
+      note+=`<div class="note">Turn card alone is <b>${exact.toFixed(1)}%</b>. By the river it is <b>${H.river.toFixed(1)}%</b>.</div>`;
+    if(H.key.has('bfd')||H.key.has('bsd'))
+      note+=`<div class="note">Backdoors are <b>0</b> outs since they need both cards, so they never count for or against your score. A runner-runner flush lands about <b>4%</b> of the time, worth roughly one extra out when you decide to continue.</div>`;
+    app.innerHTML=table(n,flop?'Flop':'Turn')
+      +chipsHTML(true)
+      +`<div class="res">
+        <span class="mark ${named&&ok?'ok':'no'}">${named?(ok?'Correct':'Right draw, wrong count'):'Missed the read'}</span>
+        <div class="nums">
+          <div class="n"><div class="k">Your outs</div><div class="v">${y}</div></div>
+          <div class="n ${ok?'hit':'miss'}"><div class="k">Actual</div><div class="v">${t}</div></div>
+          <div class="n key"><div class="k">Equity (2x)</div><div class="v">${t*2}<small>%</small></div></div>
+          <div class="n"><div class="k">Exact</div><div class="v">${exact.toFixed(1)}<small>%</small></div></div>
+        </div>`
+      +note+gridHTML(outs,deck)
+      +`<button class="go" id="next">${flop?'Deal turn':'Next hand'}</button></div>`;
+    wireNext(); return;
+  }
+  if(step===2.5){
+    const b4=H.board.slice(0,4);
+    app.innerHTML=table(4,'Turn')
+      +`<div class="res"><span class="mark ok">${cat(H.hero.concat(b4))>=4?'You got there':'You improved'}</span>
+        <div class="note">The turn gave you <b>${NAMES[cat(H.hero.concat(b4))]}</b>. Nothing left to count.</div>
+        <button class="go" id="next">Next hand</button></div>`;
+    wireNext(); return;
+  }
+}
+
+/* ---------- flow ---------- */
+function deal(){ H=newHand(); step=0; sel=new Set(); ans=null; render(); }
+function wirePick(){
+  const io=document.getElementById('o');
+  document.querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{
+    const k=b.dataset.k;
+    if(k==='none'){ sel=sel.has('none')?new Set():new Set(['none']); }
+    else { sel.delete('none'); sel.has(k)?sel.delete(k):sel.add(k); }
+    document.querySelectorAll('.chip').forEach(x=>x.classList.toggle('sel',sel.has(x.dataset.k)));
+  }));
+  const go=()=>{
+    const v=parseInt(io.value,10);
+    if(isNaN(v)) return io.focus();
+    ans=v; grade();
+  };
+  io.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();go();}});
+  document.getElementById('go').addEventListener('click',go);
+  io.focus();
+}
+function grade(){
+  const flop=step===0;
+  const t=(flop?H.outs:H.turnOuts).length;
+  const named=readOk(sel,H.key);
+  S.asked++;
+  if(named) S.ident++;
+  if(ans===t) S.exact++;
+  S.err+=Math.abs(ans-t);
+  save(); step=flop?1:3; render();
+}
+function advance(){
+  if(step===1){
+    const k=Math.floor(Math.random()*H.deck.length), turn=H.deck[k];
+    H.board.push(turn);
+    H.deck2=H.deck.filter(c=>c!==turn);
+    const b4=H.board.slice(0,4);
+    if(cat(H.hero.concat(b4))!==0){ step=2.5; }
+    else {
+      H.key=answerKey(H.hero,b4);
+      H.turnOuts=outsOf(H.hero,b4,H.deck2);
+      sel=new Set(); ans=null; step=2;
+    }
+    render();
+  } else { S.hands++; save(); deal(); }
+}
+function wireNext(){ const b=document.getElementById('next'); b.focus(); b.addEventListener('click',advance); }
+
+document.addEventListener('keydown',e=>{
+  if(e.key===' ' && document.getElementById('next')){ e.preventDefault(); advance(); return; }
+  if((step===0||step===2) && /^[1-9]$/.test(e.key) && document.activeElement.id!=='o'){
+    const c=shown()[+e.key-1];
+    if(c) document.querySelector(`.chip[data-k="${c.k}"]`).click();
+  }
+});
+document.querySelectorAll('.tab').forEach(b=>{
+  b.classList.toggle('on', b.dataset.m===MODE);
+  b.addEventListener('click',()=>{
+    MODE=b.dataset.m;
+    try{localStorage.setItem('nameDraw.mode',MODE);}catch(e){}
+    document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.m===MODE));
+    deal();
+  });
+});
+document.getElementById('reset').addEventListener('click',()=>{
+  S={hands:0,asked:0,ident:0,exact:0,err:0}; save(); drawStats();
+});
+deal();
+</script>
+</body>
+</html>
