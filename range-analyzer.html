@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Range Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0f1216;
+  --edge:#242a33;
+  --empty:#1e232a;
+  --text:#e6e9ed;
+  --dim:#8b95a3;
+  --pair:#d9a441;
+  --suited:#3f9e7c;
+  --offsuit:#5f74c9;
+  --hot:#e0603f;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--ink);color:var(--text);
+  font-family:'IBM Plex Mono',ui-monospace,monospace;
+  -webkit-font-smoothing:antialiased;
+  padding:18px 14px 48px;
+}
+.wrap{max-width:760px;margin:0 auto}
+header{display:flex;align-items:baseline;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+h1{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:30px;letter-spacing:.06em;text-transform:uppercase;margin:0}
+header .sub{color:var(--dim);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+
+.readout{display:flex;align-items:flex-end;gap:20px;border-bottom:1px solid var(--edge);padding-bottom:14px;margin-bottom:16px;flex-wrap:wrap}
+.big{font-family:'Barlow Condensed',sans-serif;font-size:62px;line-height:.85;font-weight:600;letter-spacing:-.01em}
+.big span{font-size:26px;color:var(--dim);margin-left:2px}
+.stat{font-size:11px;color:var(--dim);letter-spacing:.05em;line-height:1.7}
+.stat b{color:var(--text);font-weight:600}
+.mode{margin-left:auto;font-size:10px;letter-spacing:.14em;text-transform:uppercase;border:1px solid var(--edge);padding:4px 9px;color:var(--dim)}
+.mode.custom{color:var(--hot);border-color:var(--hot)}
+
+.slider-row{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:26px;background:transparent;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--edge)}
+input[type=range]::-moz-range-track{height:2px;background:var(--edge)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--text);margin-top:-7px;border:none}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--text);border:none}
+input[type=range]:focus-visible{outline:2px solid var(--hot);outline-offset:4px}
+.nudge{background:none;border:1px solid var(--edge);color:var(--dim);font-family:inherit;font-size:14px;width:30px;height:30px;cursor:pointer}
+.nudge:hover{color:var(--text);border-color:var(--dim)}
+
+.presets{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:22px}
+.presets button{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:600;letter-spacing:.04em;background:none;border:1px solid var(--edge);color:var(--dim);padding:5px 13px;cursor:pointer;transition:.12s}
+.presets button:hover{color:var(--text);border-color:var(--dim)}
+.presets button[aria-pressed=true]{background:var(--text);color:var(--ink);border-color:var(--text)}
+.presets .clear{margin-left:auto;border-color:transparent}
+
+.grid{display:grid;grid-template-columns:repeat(13,1fr);gap:2px;margin-bottom:20px}
+.cell{position:relative;aspect-ratio:1;border:none;padding:0;cursor:pointer;background:var(--empty);color:#5d6774;font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:clamp(8px,1.75vw,13px);display:flex;align-items:center;justify-content:center;transition:background .1s,color .1s;overflow:hidden}
+.cell span{position:relative;z-index:1}
+.cell:hover{outline:1px solid var(--dim);outline-offset:-1px;z-index:2}
+.cell:focus-visible{outline:2px solid var(--hot);outline-offset:-2px;z-index:2}
+.cell.on{color:#0f1216;font-weight:600}
+.cell.part{color:var(--text)}
+.cell.edge::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 2px rgba(224,96,63,.95);z-index:2}
+
+.legend{display:flex;gap:16px;font-size:10px;color:var(--dim);letter-spacing:.07em;margin-bottom:20px;flex-wrap:wrap}
+.legend i{display:inline-block;width:9px;height:9px;margin-right:5px;vertical-align:-1px}
+.out{border-top:1px solid var(--edge);padding-top:14px}
+.out .lbl{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;display:flex;align-items:center}
+.out .lbl button{margin-left:auto;background:none;border:1px solid var(--edge);color:var(--dim);font-family:inherit;font-size:10px;letter-spacing:.1em;padding:3px 9px;cursor:pointer;text-transform:uppercase}
+.out .lbl button:hover{color:var(--text);border-color:var(--dim)}
+.notation{font-size:12.5px;line-height:1.8;color:var(--text);word-break:break-word}
+.notation.empty{color:#4d5560}
+@media (max-width:420px){.big{font-size:48px}h1{font-size:24px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Range Analyzer</h1>
+    <div class="sub">169 hands / 1,326 combos</div>
+  </header>
+
+  <div class="readout">
+    <div class="big" id="pctBig">0<span>%</span></div>
+    <div class="stat">
+      <b id="combos">0</b> combos<br>
+      <b id="hands">0</b> hands<br>
+      last in: <b id="last">&ndash;</b>
+    </div>
+    <div class="mode" id="mode">Top %</div>
+  </div>
+
+  <div class="slider-row">
+    <button class="nudge" id="down" aria-label="Decrease 1%">&minus;</button>
+    <input type="range" id="slider" min="0" max="100" step="1" value="20" aria-label="Range percentage">
+    <button class="nudge" id="up" aria-label="Increase 1%">+</button>
+  </div>
+
+  <div class="presets" id="presets">
+    <button data-p="5">5%</button>
+    <button data-p="10">10%</button>
+    <button data-p="15">15%</button>
+    <button data-p="20">20%</button>
+    <button data-p="25">25%</button>
+    <button data-p="30">30%</button>
+    <button data-p="40">40%</button>
+    <button data-p="50">50%</button>
+    <button data-p="60">60%</button>
+    <button data-p="100">100%</button>
+    <button class="clear" id="clear">Clear</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="legend">
+    <span><i style="background:var(--pair)"></i>Pairs</span>
+    <span><i style="background:var(--suited)"></i>Suited</span>
+    <span><i style="background:var(--offsuit)"></i>Offsuit</span>
+    <span><i style="box-shadow:inset 0 0 0 2px var(--hot)"></i>Boundary hand (partly in)</span>
+  </div>
+
+  <div class="out">
+    <div class="lbl">Range <button id="copy">Copy</button></div>
+    <div class="notation empty" id="notation">Nothing selected</div>
+  </div>
+
+</div>
+
+<script>
+const RANKS = ['A','K','Q','J','T','9','8','7','6','5','4','3','2'];
+
+// Hands ordered strongest to weakest (standard preflop equity ranking)
+const ORDER = [
+"AA","KK","QQ","JJ","AKs","AKo","TT","AQs","AQo","99",
+"AJs","KQs","88","AJo","ATs","KJs","77","KQo","ATo","A9s",
+"KTs","QJs","66","A8s","KJo","QTs","A9o","JTs","55","A7s",
+"QJo","KTo","A5s","K9s","A6s","A8o","Q9s","JTo","A4s","44",
+"T9s","A3s","K8s","J9s","A7o","Q8s","A2s","K9o","QTo","33",
+"K7s","Q9o","T8s","J8s","A6o","98s","K6s","22","A5o","Q7s",
+"T9o","87s","K5s","J9o","Q6s","K8o","A4o","97s","J7s","Q5s",
+"T7s","76s","K4s","A3o","98o","Q8o","86s","J8o","K7o","65s",
+"K3s","Q4s","96s","T8o","A2o","J6s","54s","75s","K2s","Q3s",
+"J5s","T6s","87o","Q7o","64s","85s","J4s","Q2s","K6o","97o",
+"J3s","T5s","53s","76o","J7o","K5o","T7o","95s","J2s","43s",
+"T4s","Q6o","65o","74s","K4o","86o","T3s","84s","96o","52s",
+"62s","Q5o","T2s","63s","42s","32s","K3o","54o","75o","93s",
+"J6o","73s","Q4o","94s","K2o","85o","T6o","64o","J5o","92s",
+"83s","82s","72s","Q3o","95o","53o","T5o","J4o","74o","Q2o",
+"43o","63o","J3o","T4o","84o","52o","62o","J2o","94o","T3o",
+"42o","93o","73o","32o","83o","T2o","92o","82o","72o"
+];
+if (ORDER.length !== 169) console.error('Ranking list length', ORDER.length);
+
+const TOTAL = 1326;
+const weight = h => h.length === 2 ? 6 : (h.endsWith('s') ? 4 : 12);
+const kind = h => h.length === 2 ? 'pair' : (h.endsWith('s') ? 'suited' : 'offsuit');
+const COLOR = {pair:'#d9a441', suited:'#3f9e7c', offsuit:'#5f74c9'};
+const RANK_OF = {}; ORDER.forEach((h,i)=>RANK_OF[h]=i+1);
+
+// hand -> fraction of its combos that are in the range (0 to 1)
+let sel = new Map();
+let custom = false;
+
+const grid = document.getElementById('grid');
+const cells = {};
+for (let r = 0; r < 13; r++) {
+  for (let c = 0; c < 13; c++) {
+    const hand = r === c ? RANKS[r]+RANKS[c]
+               : r < c  ? RANKS[r]+RANKS[c]+'s'
+                        : RANKS[c]+RANKS[r]+'o';
+    const b = document.createElement('button');
+    b.className = 'cell';
+    b.innerHTML = '<span>' + hand + '</span>';
+    b.title = hand + ' \u00b7 #' + RANK_OF[hand] + ' \u00b7 ' + weight(hand) + ' combos';
+    b.onclick = () => toggle(hand);
+    grid.appendChild(b);
+    cells[hand] = b;
+  }
+}
+
+// exact top-% fill: whole hands, then a partial slice of the boundary hand
+function setFromPct(pct) {
+  custom = false;
+  const target = pct / 100 * TOTAL;
+  const m = new Map();
+  let sum = 0;
+  for (const h of ORDER) {
+    const w = weight(h);
+    if (sum + w <= target + 1e-9) { m.set(h, 1); sum += w; }
+    else {
+      const frac = (target - sum) / w;
+      if (frac > 1e-9) m.set(h, frac);
+      break;
+    }
+  }
+  sel = m;
+  render();
+}
+
+function toggle(hand) {
+  custom = true;
+  sel.has(hand) ? sel.delete(hand) : sel.set(hand, 1);
+  render();
+}
+
+function currentPct() {
+  let c = 0; sel.forEach((f,h) => c += f * weight(h));
+  return c / TOTAL * 100;
+}
+
+function nudge(dir) {
+  const next = Math.max(0, Math.min(100, Math.round(currentPct()) + dir));
+  setFromPct(next);
+}
+
+function notation(map) {
+  const idx = {}; RANKS.forEach((r,i)=>idx[r]=i);
+  const full = new Set(); const partial = [];
+  map.forEach((f,h) => f >= 0.999 ? full.add(h) : partial.push(h));
+  const parts = [];
+
+  const pairs = RANKS.filter(r => full.has(r+r)).map(r=>idx[r]).sort((a,b)=>a-b);
+  runs(pairs).forEach(([a,b]) => {
+    if (a === 0) parts.push(RANKS[b]+RANKS[b]+'+');
+    else if (a === b) parts.push(RANKS[a]+RANKS[a]);
+    else parts.push(RANKS[a]+RANKS[a]+'-'+RANKS[b]+RANKS[b]);
+  });
+
+  ['s','o'].forEach(sfx => {
+    RANKS.forEach((hi,i) => {
+      const ks = [];
+      for (let j = i+1; j < 13; j++) if (full.has(hi+RANKS[j]+sfx)) ks.push(j);
+      runs(ks).forEach(([a,b]) => {
+        if (a === i+1 && b > a) parts.push(hi+RANKS[b]+sfx+'+');
+        else if (a === b) parts.push(hi+RANKS[a]+sfx);
+        else parts.push(hi+RANKS[a]+sfx+'-'+hi+RANKS[b]+sfx);
+      });
+    });
+  });
+
+  partial.forEach(h => parts.push(h + ':' + map.get(h).toFixed(2)));
+  return parts;
+}
+
+function runs(arr) {
+  const out = [];
+  for (let i = 0; i < arr.length; i++) {
+    let j = i;
+    while (j+1 < arr.length && arr[j+1] === arr[j]+1) j++;
+    out.push([arr[i], arr[j]]); i = j;
+  }
+  return out;
+}
+
+function render() {
+  let combos = 0;
+  for (const h in cells) {
+    const f = sel.get(h) || 0;
+    const el = cells[h];
+    combos += f * weight(h);
+    el.classList.toggle('on', f >= 0.999);
+    el.classList.toggle('part', f > 0 && f < 0.999);
+    el.classList.remove('edge');
+    if (f <= 0) el.style.background = '';
+    else if (f >= 0.999) el.style.background = COLOR[kind(h)];
+    else {
+      const p = (f * 100).toFixed(1) + '%';
+      el.style.background = 'linear-gradient(to top, ' + COLOR[kind(h)] + ' ' + p + ', var(--empty) ' + p + ')';
+      el.classList.add('edge');
+    }
+  }
+
+  const inOrder = ORDER.filter(h => sel.has(h));
+  const last = inOrder[inOrder.length - 1];
+
+  const pct = combos / TOTAL * 100;
+  document.getElementById('pctBig').innerHTML = trim(pct) + '<span>%</span>';
+  document.getElementById('combos').textContent = trim(combos);
+  document.getElementById('hands').textContent = inOrder.length;
+  document.getElementById('last').textContent = last ? last + ' (#' + RANK_OF[last] + ')' : '\u2013';
+
+  const m = document.getElementById('mode');
+  m.textContent = custom ? 'Custom' : 'Top %';
+  m.classList.toggle('custom', custom);
+
+  const n = document.getElementById('notation');
+  const parts = notation(sel);
+  n.textContent = parts.length ? parts.join(', ') : 'Nothing selected';
+  n.classList.toggle('empty', !parts.length);
+
+  document.getElementById('slider').value = Math.round(pct);
+  document.querySelectorAll('#presets button[data-p]').forEach(b => {
+    b.setAttribute('aria-pressed', !custom && Math.abs(+b.dataset.p - pct) < 0.01);
+  });
+}
+
+function trim(x) {
+  const s = x.toFixed(1);
+  return s.endsWith('.0') ? s.slice(0, -2) : s;
+}
+
+document.getElementById('slider').oninput = e => setFromPct(+e.target.value);
+document.getElementById('up').onclick = () => nudge(1);
+document.getElementById('down').onclick = () => nudge(-1);
+document.getElementById('clear').onclick = () => { custom = false; sel = new Map(); render(); };
+document.querySelectorAll('#presets button[data-p]').forEach(b => {
+  b.onclick = () => setFromPct(+b.dataset.p);
+});
+document.getElementById('copy').onclick = async e => {
+  const txt = notation(sel).join(', ');
+  if (!txt) return;
+  try { await navigator.clipboard.writeText(txt); e.target.textContent = 'Copied'; }
+  catch { e.target.textContent = 'Copy failed'; }
+  setTimeout(() => e.target.textContent = 'Copy', 1200);
+};
+
+setFromPct(20);
+</script>
+</body>
+</html>
