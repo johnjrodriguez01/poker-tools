@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Poker Tools</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f1115">
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #181c23;
+    --card-hover: #212734;
+    --line: #2a313d;
+    --text: #e8ecf2;
+    --muted: #8b96a8;
+    --accent: #4ade80;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    padding: 28px 18px calc(40px + env(safe-area-inset-bottom));
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    max-width: 640px;
+    margin-inline: auto;
+  }
+  header { margin-bottom: 26px; }
+  h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.02em; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0; }
+  .group {
+    margin: 26px 0 10px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  a.tool {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 15px 16px;
+    margin-bottom: 9px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    text-decoration: none;
+    color: var(--text);
+    transition: background .15s, transform .1s;
+  }
+  a.tool:active { transform: scale(.985); background: var(--card-hover); }
+  @media (hover: hover) { a.tool:hover { background: var(--card-hover); } }
+  .ico {
+    flex: none;
+    width: 38px; height: 38px;
+    display: grid; place-items: center;
+    background: #232a35;
+    border-radius: 10px;
+    font-size: 18px;
+  }
+  .txt { min-width: 0; }
+  .name { font-weight: 600; font-size: 15px; }
+  .desc { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .chev { margin-left: auto; color: var(--muted); flex: none; }
+  footer { margin-top: 34px; color: var(--muted); font-size: 12px; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Poker Tools</h1>
+  <p class="sub">Add to Home Screen for one-tap access.</p>
+</header>
+
+<div class="group">Preflop</div>
+<a class="tool" href="Cash_Game_Preflop_Range_Charts.html">
+  <span class="ico">📊</span>
+  <span class="txt"><span class="name">Cash Game Preflop Range Charts</span>
+  <span class="desc">Opening and defending ranges by position</span></span>
+  <span class="chev">›</span></a>
+<a class="tool" href="my-range-drills.html">
+  <span class="ico">🎯</span>
+  <span class="txt"><span class="name">Range Drills</span>
+  <span class="desc">6-bucket hand reading</span></span>
+  <span class="chev">›</span></a>
+<a class="tool" href="range-analyzer.html">
+  <span class="ico">🔍</span>
+  <span class="txt"><span class="name">Range Analyzer</span>
+  <span class="desc">Break down a range's composition</span></span>
+  <span class="chev">›</span></a>
+
+<div class="group">Postflop</div>
+<a class="tool" href="board-callout.html">
+  <span class="ico">🃏</span>
+  <span class="txt"><span class="name">Board Callout</span>
+  <span class="desc">Read texture fast</span></span>
+  <span class="chev">›</span></a>
+<a class="tool" href="name-the-draw.html">
+  <span class="ico">✏️</span>
+  <span class="txt"><span class="name">Name the Draw</span>
+  <span class="desc">Identify draws on sight</span></span>
+  <span class="chev">›</span></a>
+<a class="tool" href="combo-trainer.html">
+  <span class="ico">🧮</span>
+  <span class="txt"><span class="name">Combo Trainer</span>
+  <span class="desc">Counting combinations</span></span>
+  <span class="chev">›</span></a>
+
+<div class="group">Math</div>
+<a class="tool" href="pot-odds-and-outs-trainer.html">
+  <span class="ico">💰</span>
+  <span class="txt"><span class="name">Pot Odds &amp; Outs</span>
+  <span class="desc">Price your calls</span></span>
+  <span class="chev">›</span></a>
+<a class="tool" href="spr-trainer.html">
+  <span class="ico">📐</span>
+  <span class="txt"><span class="name">SPR Trainer</span>
+  <span class="desc">Stack-to-pot ratio, 6-max cash</span></span>
+  <span class="chev">›</span></a>
+
+<div class="group">Other</div>
+<a class="tool" href="blackjack-trainer.html">
+  <span class="ico">♠️</span>
+  <span class="txt"><span class="name">Blackjack Basic Strategy</span>
+  <span class="desc">Chart and drills</span></span>
+  <span class="chev">›</span></a>
+
+<footer>Works offline once loaded · no accounts, no tracking</footer>
+</body>
+</html>
