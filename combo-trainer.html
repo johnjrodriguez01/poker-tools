@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Combo Trainer</title>
+<style>
+:root{
+  --bg:#000; --panel:#0b0b0d; --panel2:#101014; --line:#1e1e22;
+  --ink:#ece9e2; --dim:#7a7a83; --gold:#e3b34d; --green:#4a9d6e; --red:#c0454d;
+  --blue:#4a86c9;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink)}
+body{font-family:var(--sans);-webkit-font-smoothing:antialiased;padding:18px 14px 60px;min-height:100vh}
+.wrap{max-width:600px;margin:0 auto}
+
+.top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px}
+.brand{font-family:var(--mono);font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold)}
+.brand span{color:var(--dim)}
+.meta{font-family:var(--mono);font-size:11px;color:var(--dim);display:flex;gap:12px}
+.meta b{color:var(--ink);font-weight:600}
+
+.tabs{display:flex;border:1px solid var(--line);border-radius:2px;overflow:hidden;margin-bottom:14px}
+.tab{flex:1;background:var(--panel);border:none;border-right:1px solid var(--line);color:var(--dim);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  padding:11px 4px;cursor:pointer;line-height:1.25}
+.tab:last-child{border-right:none}
+.tab.on{background:var(--panel2);color:var(--gold)}
+.tab:focus-visible{outline:1px solid var(--gold);outline-offset:-2px}
+
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:16px;margin-bottom:12px}
+.lbl{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin-bottom:9px}
+.spot{font-size:15px;line-height:1.45;margin-bottom:4px}
+.ask{font-size:19px;line-height:1.35;font-weight:600;margin:2px 0 0}
+.ask em{font-style:normal;color:var(--gold)}
+
+.cards{display:flex;gap:5px;flex-wrap:wrap;margin:10px 0}
+.cards.brk>:nth-child(3){margin-right:10px}
+.cards.brk>:nth-child(4){margin-right:10px}
+.pc{width:38px;height:52px;background:var(--panel2);border:1px solid var(--line);border-radius:3px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-family:var(--mono);font-weight:600;line-height:1}
+.pc .r{font-size:16px} .pc .s{font-size:14px;margin-top:2px}
+.pc.s{color:var(--ink)} .pc.h{color:var(--red)} .pc.d{color:var(--blue)} .pc.c{color:var(--green)}
+.pc.dead{opacity:.4}
+
+.rng{font-family:var(--mono);font-size:11px;color:var(--dim);line-height:1.6;word-break:break-word}
+
+input[type=number]{width:100%;padding:14px;font-family:var(--mono);font-size:22px;font-weight:600;
+  text-align:center;background:var(--panel2);border:1px solid var(--line);border-radius:2px;color:var(--ink)}
+input[type=number]:focus{outline:none;border-color:var(--gold)}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
+
+.btn{width:100%;padding:13px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);
+  font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+  border-radius:2px;cursor:pointer;margin-top:10px}
+.btn.go{background:var(--gold);color:#000;border-color:var(--gold);font-weight:700}
+.btn:focus-visible{outline:1px solid var(--gold);outline-offset:2px}
+
+.pair{display:flex;gap:8px;margin-top:4px}
+.pair button{flex:1;padding:16px 8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);
+  font-family:var(--sans);font-size:15px;font-weight:600;border-radius:2px;cursor:pointer;line-height:1.3}
+.pair button:hover{border-color:var(--gold)}
+
+.chips{display:flex;flex-direction:column;gap:7px;margin-top:4px}
+.chip{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;
+  padding:12px 13px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);
+  font-family:var(--sans);font-size:14.5px;border-radius:2px;cursor:pointer;text-align:left}
+.chip .box{width:17px;height:17px;border:1px solid #3a3a42;border-radius:2px;flex:0 0 17px;
+  display:flex;align-items:center;justify-content:center;font-size:12px;color:#000}
+.chip[aria-pressed=true]{border-color:var(--gold)}
+.chip[aria-pressed=true] .box{background:var(--gold);border-color:var(--gold)}
+.chip[aria-pressed=true] .box::after{content:"\2713";font-weight:700}
+.chip .n{font-family:var(--mono);font-size:12px;color:var(--dim)}
+.chip.you{border-style:dashed;opacity:.75;cursor:default}
+.chip.mark-ok{border-color:var(--green)} .chip.mark-bad{border-color:var(--red)}
+
+.fb{border:1px solid var(--line);border-radius:2px;padding:15px;margin-top:12px;background:var(--panel)}
+.fb.ok{border-color:#24523a} .fb.no{border-color:#5a2028}
+.verd{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:9px}
+.verd.ok{color:var(--green)} .verd.no{color:var(--red)}
+.big{font-family:var(--mono);font-size:15px;line-height:1.7}
+.big b{color:var(--gold);font-weight:600}
+.expl{font-size:14px;line-height:1.6;color:#b8b5ae;margin-top:9px}
+.expl b{color:var(--ink);font-weight:600}
+.brkdn{font-family:var(--mono);font-size:12px;color:var(--dim);line-height:1.8;margin-top:8px;word-break:break-word}
+.brkdn b{color:var(--ink);font-weight:600}
+
+.ref{background:var(--panel);border:1px solid var(--line);border-radius:2px;margin-top:14px}
+.ref summary{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--dim);padding:12px 15px;cursor:pointer;list-style:none}
+.ref summary::-webkit-details-marker{display:none}
+.ref summary::before{content:"+ ";color:var(--gold)}
+.ref[open] summary::before{content:"\2212 "}
+.ref .body{padding:0 15px 15px;font-size:13.5px;line-height:1.65;color:#b8b5ae}
+.ref h4{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--gold);margin:14px 0 6px}
+.ref table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px;margin:4px 0}
+.ref td{padding:5px 0;border-bottom:1px solid var(--line)}
+.ref td:last-child{text-align:right;color:var(--gold);font-weight:600}
+.hide{display:none}
+@media(max-width:420px){
+  .pc{width:33px;height:46px}.pc .r{font-size:14px}.pc .s{font-size:12px}
+  .tab{font-size:9.5px;padding:10px 2px}
+  body{padding:14px 10px 50px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="top">
+  <div class="brand">Combo <span>Trainer</span></div>
+  <div class="meta"><span>hand <b id="mHand">1</b></span><span><b id="mAcc">0/0</b></span></div>
+</div>
+
+<div class="tabs" id="tabs">
+  <button class="tab on" data-m="basic">1 · Combos</button>
+  <button class="tab" data-m="board">2 · Board</button>
+  <button class="tab" data-m="more">3 · Bigger</button>
+  <button class="tab" data-m="beats">4 · Beats you</button>
+</div>
+
+<div class="card-panel">
+  <div class="lbl" id="qLbl">Question</div>
+  <div class="spot hide" id="qSpot"></div>
+  <div class="cards brk hide" id="qBoard"></div>
+  <div class="spot hide" id="qHeroLbl"></div>
+  <div class="cards hide" id="qHero"></div>
+  <div class="rng hide" id="qRange"></div>
+  <div class="ask" id="qAsk"></div>
+</div>
+
+<div id="answerArea"></div>
+<div id="fbArea"></div>
+
+<details class="ref" id="ref"><summary>Reference</summary><div class="body" id="refBody"></div></details>
+
+</div>
+<script>
+/* ============ cards + evaluator ============ */
+var RANKS="23456789TJQKA", SUITS="shdc";
+var GLYPH={s:"\u2660",h:"\u2665",d:"\u2666",c:"\u2663"};
+function rv(c){return RANKS.indexOf(c[0])+2}
+function sv(c){return c[1]}
+function fullDeck(){var d=[],i,j;for(i=0;i<13;i++)for(j=0;j<4;j++)d.push(RANKS[i]+SUITS[j]);return d}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+function rnd(n){return Math.floor(Math.random()*n)}
+function pick(a){return a[rnd(a.length)]}
+
+var SUBS=(function(){var o=[],a,b,c,d,e;
+  for(a=0;a<7;a++)for(b=a+1;b<7;b++)for(c=b+1;c<7;c++)for(d=c+1;d<7;d++)for(e=d+1;e<7;e++)o.push([a,b,c,d,e]);
+  return o})();
+
+function score5(cards){
+  var rs=cards.map(rv).sort(function(a,b){return b-a}), ss=cards.map(sv);
+  var flush=ss.every(function(s){return s===ss[0]});
+  var counts={}; rs.forEach(function(r){counts[r]=(counts[r]||0)+1});
+  var groups=Object.keys(counts).map(function(r){return [counts[r],+r]})
+    .sort(function(a,b){return b[0]-a[0]||b[1]-a[1]});
+  var uniq=rs.filter(function(v,i){return rs.indexOf(v)===i});
+  var straight=0;
+  if(uniq.length===5){
+    if(uniq[0]-uniq[4]===4) straight=uniq[0];
+    else if(uniq[0]===14&&uniq[1]===5) straight=5;
+  }
+  var cat,tie;
+  if(straight&&flush){cat=8;tie=[straight]}
+  else if(groups[0][0]===4){cat=7;tie=[groups[0][1],groups[1][1]]}
+  else if(groups[0][0]===3&&groups[1][0]===2){cat=6;tie=[groups[0][1],groups[1][1]]}
+  else if(flush){cat=5;tie=rs}
+  else if(straight){cat=4;tie=[straight]}
+  else if(groups[0][0]===3){cat=3;tie=groups.map(function(g){return g[1]})}
+  else if(groups[0][0]===2&&groups[1][0]===2){cat=2;tie=groups.map(function(g){return g[1]})}
+  else if(groups[0][0]===2){cat=1;tie=groups.map(function(g){return g[1]})}
+  else {cat=0;tie=rs}
+  var v=cat; for(var i=0;i<5;i++) v=v*15+(tie[i]||0);
+  return {v:v,cat:cat,tie:tie};
+}
+function bestOf(cards){
+  if(cards.length===5) return score5(cards);
+  var best=null,i,j,idx;
+  if(cards.length===6){
+    for(i=0;i<6;i++){
+      var sub=cards.slice(); sub.splice(i,1);
+      var s=score5(sub); if(!best||s.v>best.v) best=s;
+    }
+    return best;
+  }
+  for(i=0;i<SUBS.length;i++){
+    idx=SUBS[i];
+    var s2=score5([cards[idx[0]],cards[idx[1]],cards[idx[2]],cards[idx[3]],cards[idx[4]]]);
+    if(!best||s2.v>best.v) best=s2;
+  }
+  return best;
+}
+
+var RN={2:"twos",3:"threes",4:"fours",5:"fives",6:"sixes",7:"sevens",8:"eights",9:"nines",
+        10:"tens",11:"jacks",12:"queens",13:"kings",14:"aces"};
+var RS={2:"two",3:"three",4:"four",5:"five",6:"six",7:"seven",8:"eight",9:"nine",
+        10:"ten",11:"jack",12:"queen",13:"king",14:"ace"};
+function describe(s){
+  if(s.cat===0) return RS[s.tie[0]]+" high";
+  if(s.cat===1) return "one pair, "+RN[s.tie[0]];
+  if(s.cat===2) return "two pair, "+RN[s.tie[0]]+" and "+RN[s.tie[1]];
+  if(s.cat===3) return "three "+RN[s.tie[0]];
+  if(s.cat===4) return "a straight";
+  if(s.cat===5) return "a flush";
+  if(s.cat===6) return "a full house";
+  if(s.cat===7) return "four "+RN[s.tie[0]];
+  return "a straight flush";
+}
+
+/* ============ ranges ============ */
+function pairCombos(r){var o=[],i,j;for(i=0;i<4;i++)for(j=i+1;j<4;j++)o.push([r+SUITS[i],r+SUITS[j]]);return o}
+function npCombos(hi,lo,t){var o=[],i,j;
+  for(i=0;i<4;i++)for(j=0;j<4;j++){var su=i===j;
+    if(t==="s"&&!su)continue; if(t==="o"&&su)continue;
+    o.push([hi+SUITS[i],lo+SUITS[j]])}
+  return o}
+function ri(ch){return RANKS.indexOf(ch)}
+function parseRange(str){
+  var seen={},out=[];
+  function add(arr){arr.forEach(function(c){
+    var k=[c[0],c[1]].sort().join("");
+    if(!seen[k]){seen[k]=1;out.push(c)}})}
+  str.split(",").map(function(t){return t.trim()}).filter(Boolean).forEach(function(tok){
+    var m;
+    if((m=tok.match(/^([2-9TJQKA])\1-([2-9TJQKA])\2$/))){
+      var a=ri(m[1]),b=ri(m[2]);
+      for(var i=Math.min(a,b);i<=Math.max(a,b);i++) add(pairCombos(RANKS[i]));
+    } else if((m=tok.match(/^([2-9TJQKA])\1(\+)?$/))){
+      var p=ri(m[1]);
+      if(m[2]){for(var k=p;k<13;k++) add(pairCombos(RANKS[k]))} else add(pairCombos(m[1]));
+    } else if((m=tok.match(/^([2-9TJQKA])([2-9TJQKA])([so])?-([2-9TJQKA])([2-9TJQKA])([so])?$/))){
+      if(m[1]!==m[4]) return;
+      var c=ri(m[2]),d=ri(m[5]);
+      for(var j=Math.min(c,d);j<=Math.max(c,d);j++) add(npCombos(m[1],RANKS[j],m[3]));
+    } else if((m=tok.match(/^([2-9TJQKA])([2-9TJQKA])([so])?(\+)?$/))){
+      var hi=ri(m[1]),lo=ri(m[2]); if(hi===lo) return;
+      if(m[4]){for(var q=lo;q<hi;q++) add(npCombos(m[1],RANKS[q],m[3]))}
+      else add(npCombos(m[1],m[2],m[3]));
+    }
+  });
+  return out;
+}
+function comboKey(cb){
+  var a=cb[0],b=cb[1], hi=rv(a)>=rv(b)?a:b, lo=rv(a)>=rv(b)?b:a;
+  if(hi[0]===lo[0]) return hi[0]+lo[0];
+  return hi[0]+lo[0]+(sv(hi)===sv(lo)?"s":"o");
+}
+var RCACHE={};
+function rangeOf(str){if(!RCACHE[str])RCACHE[str]=parseRange(str);return RCACHE[str]}
+
+var R={
+  utg:"77+, ATs+, KJs+, QJs, JTs, T9s, AJo+, KQo",
+  hj:"66+, A9s+, A5s-A4s, KTs+, QTs+, JTs, T9s, 98s, ATo+, KJo+, QJo",
+  co:"22+, A2s+, K8s+, Q9s+, J9s+, T8s+, 97s+, 86s+, 75s+, 65s, ATo+, KJo+, QJo",
+  btn:"22+, A2s+, K2s+, Q4s+, J6s+, T6s+, 96s+, 85s+, 74s+, 63s+, 53s+, A2o+, K7o+, Q8o+, J8o+, T8o+, 98o, 87o",
+  sbo:"22+, A2s+, K2s+, Q3s+, J6s+, T6s+, 95s+, 85s+, 74s+, 64s+, 53s+, A2o+, K6o+, Q8o+, J8o+, T8o+, 97o+, 87o",
+  bbE:"22-JJ, A2s+, K7s+, Q9s+, J9s+, T9s, 98s, 87s, ATo+, KQo",
+  bbL:"22-JJ, A2s+, K3s+, Q6s+, J7s+, T7s+, 96s+, 86s+, 75s+, 64s+, 54s, A2o+, K9o+, Q9o+, J9o+, T9o, 98o",
+  three:"TT+, AJs+, KQs, A5s-A4s, 76s, AQo+, KQo",
+  cold:"TT-22, AQs-A8s, A5s-A4s, KQs-KTs, QJs, JTs, T9s, 98s, AQo, AJo, KQo",
+  limp:"22-99, A2s-AJs, K5s+, Q7s+, J7s+, T7s+, 96s+, 86s+, 75s+, 64s+, 54s, A2o-AJo, K8o+, Q8o+, J8o+, T8o+, 97o+, 86o+, 76o, 65o"
+};
+var SPOTS=[
+  {l:"UTG opens, you call in the BB",         v:"utg", h:"bbE"},
+  {l:"UTG opens, you call on the BTN",        v:"utg", h:"cold"},
+  {l:"HJ opens, you call in the BB",          v:"hj",  h:"bbE"},
+  {l:"HJ opens, you call on the BTN",         v:"hj",  h:"cold"},
+  {l:"CO opens, you call in the BB",          v:"co",  h:"bbL"},
+  {l:"CO opens, you call on the BTN",         v:"co",  h:"cold"},
+  {l:"BTN opens, you call in the BB",         v:"btn", h:"bbL"},
+  {l:"SB opens, you call in the BB",          v:"sbo", h:"bbL"},
+  {l:"You open UTG, BB calls",                v:"bbE", h:"utg"},
+  {l:"You open HJ, BB calls",                 v:"bbE", h:"hj"},
+  {l:"You open CO, BB calls",                 v:"bbL", h:"co"},
+  {l:"You open BTN, BB calls",                v:"bbL", h:"btn"},
+  {l:"You open CO, BTN calls",                v:"cold",h:"co"},
+  {l:"You open BTN, SB calls",                v:"cold",h:"btn"},
+  {l:"BB 3-bets, you call on the BTN",        v:"three",h:"cold"},
+  {l:"SB 3-bets, you call on the BTN",        v:"three",h:"cold"},
+  {l:"You 3-bet the BB, CO calls",            v:"co",  h:"three"},
+  {l:"Limped pot, BTN limps, you check the BB",v:"limp",h:"bbL"}
+];
+
+/* ============ board categories ============ */
+function boardRanks(board){
+  var u=[];
+  board.map(rv).forEach(function(r){if(u.indexOf(r)<0)u.push(r)});
+  return u.sort(function(a,b){return b-a});
+}
+/* 0 no pair · 1 weak pair · 2 second pair · 3 top pair or overpair
+   4 two pair · 5 set or trips · 6 straight or better */
+function classify(hole,board){
+  var s=bestOf(hole.concat(board));
+  if(s.cat>=4) return 6;
+  if(s.cat===3) return 5;
+  if(s.cat===2) return 4;
+  if(s.cat===1){
+    var pr=s.tie[0], br=boardRanks(board);
+    var above=br.filter(function(r){return r>pr}).length;
+    if(above===0) return 3;
+    if(above===1) return 2;
+    return 1;
+  }
+  return 0;
+}
+var CATNAME=["No pair","Weak pair","Second pair","Top pair or overpair","Two pair","Set or trips","Straight or better"];
+
+/* ============ target counters for tabs 2 and 3 ============ */
+function suitCounts(cards){var m={};cards.forEach(function(c){m[sv(c)]=(m[sv(c)]||0)+1});return m}
+function isBoardPaired(board){return boardRanks(board).length<board.length}
+
+var TARGETS={
+  set:{name:"a set",plural:"sets",
+    ok:function(b){return !isBoardPaired(b)},
+    f:function(h,b){return h[0][0]===h[1][0] && boardRanks(b).indexOf(rv(h[0]))>=0}},
+  twopair:{name:"two pair",plural:"two pair",
+    ok:function(b){return !isBoardPaired(b)},
+    f:function(h,b){return bestOf(h.concat(b)).cat===2}},
+  toppair:{name:"top pair",plural:"top pair",
+    ok:function(b){return !isBoardPaired(b)},
+    f:function(h,b){var s=bestOf(h.concat(b));
+      return s.cat===1 && s.tie[0]===boardRanks(b)[0] && h.map(rv).indexOf(s.tie[0])>=0}},
+  overpair:{name:"an overpair",plural:"overpairs",
+    ok:function(b){return boardRanks(b)[0]<14},
+    f:function(h,b){return h[0][0]===h[1][0] && rv(h[0])>boardRanks(b)[0]}},
+  fd:{name:"a flush draw",plural:"flush draws",
+    ok:function(b){var m=suitCounts(b);for(var k in m)if(m[k]===2)return true;return false},
+    f:function(h,b){var m=suitCounts(h.concat(b));
+      for(var k in m) if(m[k]===4 && (sv(h[0])===k||sv(h[1])===k)) return true;
+      return false}},
+  flush:{name:"a made flush",plural:"made flushes",
+    ok:function(b){var m=suitCounts(b);for(var k in m)if(m[k]>=3)return true;return false},
+    f:function(h,b){return bestOf(h.concat(b)).cat===5}},
+  straight:{name:"a straight",plural:"straights",
+    ok:function(b){return true},
+    f:function(h,b){return bestOf(h.concat(b)).cat===4}},
+  nopair:{name:"no pair at all",plural:"hands with no pair",
+    ok:function(b){return true},
+    f:function(h,b){return bestOf(h.concat(b)).cat===0}}
+};
+
+function countTarget(combos,board,key,dead){
+  var t=TARGETS[key], n=0, by={};
+  for(var i=0;i<combos.length;i++){
+    var cb=combos[i];
+    if(dead[cb[0]]||dead[cb[1]]) continue;
+    if(t.f(cb,board)){n++; var k=comboKey(cb); by[k]=(by[k]||0)+1}
+  }
+  return {n:n,by:by};
+}
+function byString(by){
+  return Object.keys(by).sort(function(a,b){return by[b]-by[a]||a.localeCompare(b)})
+    .map(function(k){return k+" \u2192 <b>"+by[k]+"</b>"}).join("  \u00b7  ");
+}
+
+/* ============ state ============ */
+var mode="basic", cur=null, answered=false, lastAt=0;
+var stats={basic:[0,0],board:[0,0],more:[0,0],beats:[0,0]};
+var $=function(id){return document.getElementById(id)};
+
+function el(tag,cls,html){var e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e}
+function cardEl(c,dead){
+  var d=el("div","pc "+sv(c)+(dead?" dead":""));
+  d.innerHTML='<span class="r">'+c[0]+'</span><span class="s">'+GLYPH[sv(c)]+'</span>';
+  return d;
+}
+function showCards(node,list,dead){
+  node.innerHTML=""; node.classList.remove("hide");
+  list.forEach(function(c){node.appendChild(cardEl(c,dead))});
+}
+function hideAll(){
+  ["qSpot","qBoard","qHeroLbl","qHero","qRange"].forEach(function(id){$(id).classList.add("hide")});
+  $("fbArea").innerHTML="";
+}
+
+/* ============ TAB 1 : basic combos ============ */
+function genBasic(){
+  var kinds=["pair","suited","offsuit","both"];
+  var kind=pick(kinds);
+  var withDead=Math.random()<0.5;
+  var r1=RANKS[rnd(13)], r2;
+  do{r2=RANKS[rnd(13)]}while(r2===r1);
+  var hi=rv(r1+"s")>rv(r2+"s")?r1:r2, lo=hi===r1?r2:r1;
+  var label,base,cards=[];
+  if(kind==="pair"){label=r1+r1;base=6}
+  else if(kind==="suited"){label=hi+lo+"s";base=4}
+  else if(kind==="offsuit"){label=hi+lo+"o";base=12}
+  else {label=hi+lo;base=16}
+
+  var dead=[],ans=base,note="";
+  if(withDead){
+    var deck=shuffle(fullDeck());
+    var want=kind==="pair"?[r1]:[hi,lo];
+    var howMany=1+rnd(2);
+    var chosen=[],i;
+    for(i=0;i<howMany;i++){
+      var wr=pick(want);
+      var opts=deck.filter(function(c){return c[0]===wr && chosen.indexOf(c)<0});
+      if(opts.length) chosen.push(pick(opts));
+    }
+    var filler=deck.filter(function(c){return want.indexOf(c[0])<0}).slice(0,1+rnd(2));
+    dead=shuffle(chosen.concat(filler));
+    if(!chosen.length) return genBasic();
+    var all=parseRange(label), dm={};
+    dead.forEach(function(c){dm[c]=1});
+    ans=all.filter(function(cb){return !dm[cb[0]]&&!dm[cb[1]]}).length;
+  }
+  return {kind:kind,label:label,base:base,dead:dead,ans:ans};
+}
+function renderBasic(){
+  cur=genBasic(); hideAll();
+  $("qLbl").textContent="Count the combos";
+  if(cur.dead.length){
+    $("qSpot").classList.remove("hide");
+    $("qSpot").textContent="These cards are already dealt, so they cannot be in his hand.";
+    showCards($("qBoard"),cur.dead,true);
+    $("qAsk").innerHTML="How many combos of <em>"+cur.label+"</em> are left?";
+  } else {
+    $("qAsk").innerHTML="How many combos of <em>"+cur.label+"</em> are there?";
+  }
+  numberInput();
+}
+
+/* ============ shared: deal a spot ============ */
+function dealSpot(needStreet){
+  for(var a=0;a<400;a++){
+    var sp=pick(SPOTS);
+    var street=needStreet||pick([3,3,4,5]);
+    var deck=shuffle(fullDeck());
+    var board=deck.slice(0,street);
+    var dead={}; board.forEach(function(c){dead[c]=1});
+    return {sp:sp,board:board,dead:dead,street:street,
+            vcombos:rangeOf(R[sp.v]),vstr:R[sp.v]};
+  }
+  return null;
+}
+function streetName(n){return n===3?"Flop":n===4?"Turn":"River"}
+
+/* ============ TAB 2 : count a holding on the board ============ */
+function renderBoard(){
+  var keys=Object.keys(TARGETS), t;
+  for(var a=0;a<300;a++){
+    t=dealSpot();
+    var avail=keys.filter(function(k){return TARGETS[k].ok(t.board)});
+    if(t.street===5) avail=avail.filter(function(k){return k!=="fd"});
+    shuffle(avail);
+    for(var i=0;i<avail.length;i++){
+      var res=countTarget(t.vcombos,t.board,avail[i],t.dead);
+      if(res.n>=2&&res.n<=90){ cur={t:t,key:avail[i],ans:res.n,by:res.by}; a=999; break; }
+    }
+    if(cur&&cur.key) break;
+  }
+  if(!cur||!cur.key){ return renderBoard(); }
+  hideAll();
+  $("qLbl").textContent=streetName(cur.t.street)+" \u00b7 count his combos";
+  $("qSpot").classList.remove("hide"); $("qSpot").textContent=cur.t.sp.l;
+  showCards($("qBoard"),cur.t.board);
+  $("qRange").classList.remove("hide");
+  $("qRange").innerHTML="HIS RANGE &nbsp;"+cur.t.vstr;
+  $("qAsk").innerHTML="How many combos of <em>"+TARGETS[cur.key].name+"</em> does he have?";
+  numberInput();
+}
+
+/* ============ TAB 3 : more or less ============ */
+function renderMore(){
+  var keys=Object.keys(TARGETS);
+  cur=null;
+  for(var a=0;a<400&&!cur;a++){
+    var t=dealSpot();
+    var avail=keys.filter(function(k){return TARGETS[k].ok(t.board)});
+    if(t.street===5) avail=avail.filter(function(k){return k!=="fd"});
+    shuffle(avail);
+    var res=avail.map(function(k){var r=countTarget(t.vcombos,t.board,k,t.dead);return {k:k,n:r.n}})
+                 .filter(function(x){return x.n>=2});
+    for(var i=0;i<res.length&&!cur;i++)
+      for(var j=i+1;j<res.length&&!cur;j++){
+        var big=res[i].n>res[j].n?res[i]:res[j], small=res[i].n>res[j].n?res[j]:res[i];
+        if(big.n/small.n>=1.6) cur={t:t,a:res[i],b:res[j],ans:big.k};
+      }
+  }
+  if(!cur){ return renderMore(); }
+  hideAll();
+  $("qLbl").textContent=streetName(cur.t.street)+" \u00b7 which is bigger";
+  $("qSpot").classList.remove("hide"); $("qSpot").textContent=cur.t.sp.l;
+  showCards($("qBoard"),cur.t.board);
+  $("qRange").classList.remove("hide");
+  $("qRange").innerHTML="HIS RANGE &nbsp;"+cur.t.vstr;
+  $("qAsk").innerHTML="Which does he have <em>more</em> of?";
+
+  var area=$("answerArea"); area.innerHTML="";
+  var row=el("div","pair");
+  [cur.a,cur.b].forEach(function(x){
+    var b=el("button",null,TARGETS[x.k].plural);
+    b.onclick=function(){if(!answered) submitMore(x.k)};
+    row.appendChild(b);
+  });
+  area.appendChild(row);
+}
+function submitMore(k){
+  answered=true;
+  var right=k===cur.ans;
+  var A=cur.a,B=cur.b;
+  bump(right);
+  var fb=el("div","fb "+(right?"ok":"no"));
+  fb.appendChild(el("div","verd "+(right?"ok":"no"),right?"Correct":"Other one"));
+  fb.appendChild(el("div","big",
+    TARGETS[A.k].plural+" &nbsp;<b>"+A.n+"</b><br>"+TARGETS[B.k].plural+" &nbsp;<b>"+B.n+"</b>"));
+  var big=A.n>B.n?A:B, sm=A.n>B.n?B:A;
+  fb.appendChild(el("div","expl","He has <b>"+(big.n/sm.n).toFixed(1)+"x</b> as many "+
+    TARGETS[big.k].plural+" as "+TARGETS[sm.k].plural+"."));
+  finish(fb);
+}
+
+/* ============ TAB 4 : which buckets beat you ============ */
+function renderBeats(){
+  cur=null;
+  for(var a=0;a<500&&!cur;a++){
+    var street=pick([3,4,5,5]);
+    var sp=pick(SPOTS);
+    var deck=shuffle(fullDeck());
+    var hole=pick(rangeOf(R[sp.h]));
+    if(deck.indexOf(hole[0])<0) continue;
+    var rest=deck.filter(function(c){return hole.indexOf(c)<0});
+    var board=rest.slice(0,street);
+    var hs=bestOf(hole.concat(board));
+    if(hs.cat<1||hs.cat>2) continue;
+    var hr=hole.map(rv);
+    if(!hs.tie.slice(0,hs.cat).some(function(r){return hr.indexOf(r)>=0})) continue;
+
+    var dead={}; hole.concat(board).forEach(function(c){dead[c]=1});
+    var heroCat=classify(hole,board);
+    var buckets={}, live=0;
+    rangeOf(R[sp.v]).forEach(function(cb){
+      if(dead[cb[0]]||dead[cb[1]]) return;
+      live++;
+      var c=classify(cb,board), key, beats;
+      if(c===heroCat){
+        var s=bestOf(cb.concat(board));
+        if(s.v>hs.v){key=c+":up";beats=true}
+        else if(s.v===hs.v){key=c+":eq";beats=false}
+        else {key=c+":dn";beats=false}
+      } else {key=c+":x"; beats=c>heroCat}
+      if(!buckets[key]) buckets[key]={key:key,cat:c,sub:key.split(":")[1],n:0,beats:beats};
+      buckets[key].n++;
+    });
+    var list=Object.keys(buckets).map(function(k){return buckets[k]})
+      .filter(function(b){return b.n>0})
+      .sort(function(x,y){
+        if(x.cat!==y.cat) return y.cat-x.cat;
+        var ord={up:0,eq:1,dn:2,x:1};
+        return ord[x.sub]-ord[y.sub];
+      });
+    var beatN=list.filter(function(b){return b.beats}).reduce(function(s,b){return s+b.n},0);
+    if(list.length<4||list.length>8) continue;
+    if(beatN<3||beatN/live>0.72) continue;
+    cur={sp:sp,hole:hole,board:board,hs:hs,heroCat:heroCat,list:list,live:live,beatN:beatN,street:street};
+  }
+  if(!cur){ return renderBeats(); }
+  hideAll();
+  $("qLbl").textContent=streetName(cur.street)+" \u00b7 tap everything that beats you";
+  $("qSpot").classList.remove("hide"); $("qSpot").textContent=cur.sp.l;
+  showCards($("qBoard"),cur.board);
+  $("qHeroLbl").classList.remove("hide");
+  $("qHeroLbl").innerHTML="You hold";
+  showCards($("qHero"),cur.hole);
+  $("qAsk").innerHTML="You have <em>"+describe(cur.hs)+"</em>. Which of his holdings beat it?";
+
+  var area=$("answerArea"); area.innerHTML="";
+  var chips=el("div","chips");
+  cur.list.forEach(function(b){
+    var btn=el("button","chip");
+    btn.setAttribute("aria-pressed","false");
+    btn.dataset.k=b.key;
+    btn.innerHTML='<span>'+bucketLabel(b)+'</span><span class="box"></span>';
+    btn.onclick=function(){
+      if(answered) return;
+      var on=btn.getAttribute("aria-pressed")==="true";
+      btn.setAttribute("aria-pressed",on?"false":"true");
+    };
+    chips.appendChild(btn);
+  });
+  area.appendChild(chips);
+  var go=el("button","btn go","Check");
+  go.onclick=submitBeats;
+  area.appendChild(go);
+}
+function bucketLabel(b){
+  var n=CATNAME[b.cat];
+  if(b.sub==="up") return n+", better than yours";
+  if(b.sub==="eq") return n+", exactly the same as yours";
+  if(b.sub==="dn") return n+", worse than yours";
+  return n;
+}
+function submitBeats(){
+  if(answered) return;
+  answered=true;
+  var picked={};
+  Array.prototype.forEach.call(document.querySelectorAll(".chip"),function(c){
+    if(c.getAttribute("aria-pressed")==="true") picked[c.dataset.k]=1;
+  });
+  var right=cur.list.every(function(b){return !!picked[b.key]===b.beats});
+  bump(right);
+  var goBtn=document.querySelector("#answerArea .btn.go");
+  if(goBtn) goBtn.style.display="none";
+  Array.prototype.forEach.call(document.querySelectorAll(".chip"),function(c){
+    var b=cur.list.filter(function(x){return x.key===c.dataset.k})[0];
+    c.classList.add(b.beats?"mark-ok":"mark-bad");
+    if(b.beats) c.setAttribute("aria-pressed","true");
+    else c.setAttribute("aria-pressed","false");
+    c.querySelector("span").innerHTML=bucketLabel(b)+' <span class="n">'+b.n+"</span>";
+  });
+  var lose=cur.live-cur.beatN;
+  var fb=el("div","fb "+(right?"ok":"no"));
+  fb.appendChild(el("div","verd "+(right?"ok":"no"),right?"Correct":"Not quite"));
+  fb.appendChild(el("div","big",
+    "Beat you &nbsp;<b>"+cur.beatN+"</b> combos<br>Do not &nbsp;<b>"+lose+"</b> combos"));
+  fb.appendChild(el("div","expl","For every hand of his that beats you there are <b>"+
+    (lose/Math.max(cur.beatN,1)).toFixed(1)+"</b> that do not. "+
+    "The gold rows above are the ones that beat you, with their combo counts."));
+  finish(fb);
+}
+
+/* ============ number answer plumbing ============ */
+function numberInput(){
+  var area=$("answerArea"); area.innerHTML="";
+  var inp=el("input"); inp.type="number"; inp.id="ansIn";
+  inp.setAttribute("inputmode","numeric"); inp.placeholder="0";
+  area.appendChild(inp);
+  var go=el("button","btn go","Check");
+  go.onclick=submitNumber;
+  area.appendChild(go);
+  inp.addEventListener("keydown",function(e){
+    if(e.key==="Enter"){e.preventDefault();e.stopPropagation();submitNumber()}
+  });
+  setTimeout(function(){inp.focus()},30);
+}
+function submitNumber(){
+  if(answered) return;
+  var inp=$("ansIn"); if(!inp) return;
+  var g=parseInt(inp.value,10);
+  if(isNaN(g)){inp.focus();return}
+  answered=true; inp.blur();
+  var right=g===cur.ans;
+  bump(right);
+  var fb=el("div","fb "+(right?"ok":"no"));
+  fb.appendChild(el("div","verd "+(right?"ok":"no"),
+    right?"Correct":"Answer "+cur.ans+" \u00b7 you said "+g));
+  if(mode==="basic") fb.appendChild(basicExpl());
+  else{
+    fb.appendChild(el("div","big","<b>"+cur.ans+"</b> combos of "+TARGETS[cur.key].name));
+    fb.appendChild(el("div","brkdn",byString(cur.by)));
+    fb.appendChild(el("div","expl",whyLine(cur.key,cur.t.board)));
+  }
+  finish(fb);
+}
+function cardTxt(c){return c[0]+GLYPH[sv(c)]}
+function basicExpl(){
+  var d=el("div");
+  var base=cur.base, k=cur.kind;
+  var why=k==="pair"?"A pocket pair has <b>6</b> combos. Four suits, choose two."
+    :k==="suited"?"A suited hand has <b>4</b> combos, one per suit."
+    :k==="offsuit"?"An offsuit hand has <b>12</b> combos. 16 total minus the 4 suited ones."
+    :"An unpaired hand has <b>16</b> combos. Four suits for the first card times four for the second.";
+  d.appendChild(el("div","expl",why));
+  if(cur.dead.length){
+    var live=parseRange(cur.label), cuts=[], idle=[], math=String(base);
+    cur.dead.forEach(function(c){
+      var before=live.length;
+      live=live.filter(function(cb){return cb[0]!==c&&cb[1]!==c});
+      var gone=before-live.length;
+      if(gone>0){cuts.push(cardTxt(c)+" cuts <b>"+gone+"</b>"); math+=" \u2212 "+gone}
+      else idle.push(cardTxt(c));
+    });
+    d.appendChild(el("div","brkdn",cuts.join("  \u00b7  ")+"<br>"+math+" = <b>"+cur.ans+"</b>"));
+    if(idle.length) d.appendChild(el("div","expl", idle.length>1
+      ? "Neither "+idle.join(" nor ")+" is in "+cur.label+", so they change nothing."
+      : "The "+idle[0]+" is not in "+cur.label+", so it changes nothing."));
+  }
+  return d;
+}
+
+function whyLine(key,board){
+  var br=boardRanks(board), top=RS[br[0]];
+  var sc=suitCounts(board), fs=null, k;
+  for(k in sc) if(sc[k]>=2 && (!fs||sc[k]>sc[fs])) fs=k;
+  var suitWord={s:"spade",h:"heart",d:"diamond",c:"club"}[fs]||"";
+  if(key==="set") return "Only a pocket pair matching a board card makes a set, and each one is <b>3</b> combos instead of 6 because one of its cards is already out.";
+  if(key==="twopair") return "Two pair needs both of his cards to pair the board, so the count stays small.";
+  if(key==="toppair") return "Every hand holding a "+top+" pairs the top card. Each unpaired one starts at 12 combos, which is why top pair dwarfs the strong holdings.";
+  if(key==="overpair") return "A pocket pair above the "+top+". Six combos each before removal.";
+  if(key==="fd") return "There are two "+suitWord+"s on the board, so any two "+suitWord+"s in his hand make four to the flush.";
+  if(key==="flush") return "Three "+suitWord+"s on the board, so any two more complete it.";
+  if(key==="straight") return "The combos that actually fill the straight, not the ones drawing at it.";
+  return "Everything that missed the board completely. This bucket is almost always the biggest one.";
+}
+
+/* ============ shell ============ */
+function bump(right){
+  stats[mode][1]++; if(right) stats[mode][0]++;
+  $("mHand").textContent=stats[mode][1]+1;
+  $("mAcc").textContent=stats[mode][0]+"/"+stats[mode][1];
+}
+function finish(fb){
+  var next=el("button","btn","Next \u2192");
+  next.onclick=nextHand;
+  fb.appendChild(next);
+  $("fbArea").innerHTML=""; $("fbArea").appendChild(fb);
+  lastAt=Date.now();
+  setTimeout(function(){next.focus()},30);
+}
+function nextHand(){
+  answered=false; cur=null;
+  if(mode==="basic") renderBasic();
+  else if(mode==="board") renderBoard();
+  else if(mode==="more") renderMore();
+  else renderBeats();
+  refFor(mode);
+}
+function setMode(m){
+  mode=m; answered=false; cur=null;
+  Array.prototype.forEach.call(document.querySelectorAll(".tab"),function(t){
+    t.classList.toggle("on",t.dataset.m===m)});
+  $("mHand").textContent=stats[m][1]+1;
+  $("mAcc").textContent=stats[m][0]+"/"+stats[m][1];
+  nextHand();
+}
+document.addEventListener("keydown",function(e){
+  if(e.key!=="Enter") return;
+  if(document.activeElement&&document.activeElement.id==="ansIn") return;
+  if(Date.now()-lastAt<350) return;
+  e.preventDefault();
+  if(answered) nextHand();
+});
+Array.prototype.forEach.call(document.querySelectorAll(".tab"),function(t){
+  t.onclick=function(){setMode(t.dataset.m)};
+});
+
+/* ============ reference ============ */
+var REF={
+  basic:'<h4>The only four numbers</h4><table>'+
+    '<tr><td>Pocket pair (AA)</td><td>6</td></tr>'+
+    '<tr><td>Suited (AKs)</td><td>4</td></tr>'+
+    '<tr><td>Offsuit (AKo)</td><td>12</td></tr>'+
+    '<tr><td>Both (AK)</td><td>16</td></tr></table>'+
+    '<p>A pair has 6 because there are four suits and you pick two of them. An unpaired hand has 16 because either card can be any of four suits. Four of those 16 land on the same suit, so suited is 4 and offsuit is the other 12.</p>'+
+    '<h4>When a card is already out</h4><table>'+
+    '<tr><td>Pair, one of its cards gone</td><td>6 \u2192 3</td></tr>'+
+    '<tr><td>Pair, two gone</td><td>6 \u2192 1</td></tr>'+
+    '<tr><td>Unpaired, one card gone</td><td>16 \u2192 12</td></tr>'+
+    '<tr><td>Unpaired, two gone</td><td>16 \u2192 9</td></tr>'+
+    '<tr><td>Suited, one card gone</td><td>4 \u2192 3</td></tr></table>'+
+    '<p>Every card you can see, on the board or in your own hand, removes combos from his range. That is why an ace on the flop cuts his AA from 6 to 3.</p>',
+  board:'<h4>How to count on a board</h4>'+
+    '<p>Take the holding one rank at a time and add them up. Sets on a Q 8 3 board means QQ, 88 and 33. Each of those has 3 combos left because one of its cards is on the board, so 9 total.</p>'+
+    '<p>Top pair is wider than it feels. On Q 8 3 every Qx in his range counts, and each unpaired Qx is 12 combos before removal.</p>'+
+    '<h4>The point</h4>'+
+    '<p>Sets and two pair live in single digits. Top pair and no-pair hands live in the dozens. That gap is the whole reason a scary board is usually not as scary as it looks.</p>',
+  more:'<h4>Rough sizes</h4><table>'+
+    '<tr><td>Sets on an unpaired board</td><td>6-9</td></tr>'+
+    '<tr><td>Two pair</td><td>4-12</td></tr>'+
+    '<tr><td>Made straights</td><td>4-16</td></tr>'+
+    '<tr><td>Flush draws</td><td>8-30</td></tr>'+
+    '<tr><td>Top pair</td><td>15-45</td></tr>'+
+    '<tr><td>No pair</td><td>50-200</td></tr></table>'+
+    '<p>You do not need the exact number at the table. You need to know which side of the comparison is bigger, and it is almost always the weaker holding.</p>',
+  beats:'<h4>Reading the rows</h4>'+
+    '<p>Every hand in his range falls into one of these buckets on this board. Tap the buckets that beat what you are holding. When your own bucket appears it gets split by kicker, since top pair with an ace kicker beats top pair with a seven.</p>'+
+    '<h4>What to notice</h4>'+
+    '<p>The buckets above yours are almost always the small ones. When you fold because he could have two pair, you are folding to a handful of combos while ignoring the hundred that you beat.</p>'
+};
+function refFor(m){$("refBody").innerHTML=REF[m]}
+
+setMode("basic");
+</script>
+</body>
+</html>
