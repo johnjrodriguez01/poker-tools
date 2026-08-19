@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Range Drills — 6-Bucket Hand Reading</title>
+<style>
+:root{
+  --bg:#08090a;
+  --panel:#101214;
+  --panel2:#16191c;
+  --line:#24282d;
+  --gold:#c9a227;
+  --gold-hi:#e9cc63;
+  --txt:#e8e6e1;
+  --dim:#8b9096;
+  --good:#4caf7d;
+  --bad:#d1544f;
+  --warn:#d9a441;
+  --s:#f2f2f2;
+  --h:#e2564d;
+  --d:#5b9bd5;
+  --c:#5aa86f;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);
+  color:var(--txt);
+  font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:15px;line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:940px;margin:0 auto;padding:18px 16px 60px}
+h1{font-size:19px;margin:0;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--gold)}
+.sub{color:var(--dim);font-size:12.5px;margin-top:3px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;
+  border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px}
+.tabs{display:flex;gap:6px}
+.tab{background:none;border:1px solid var(--line);color:var(--dim);padding:6px 12px;border-radius:5px;
+  font-size:12.5px;cursor:pointer;font-family:inherit}
+.tab:hover{color:var(--txt);border-color:#3a4046}
+.tab.on{background:var(--gold);border-color:var(--gold);color:#0a0a0a;font-weight:600}
+.controls{display:flex;gap:8px 18px;flex-wrap:wrap;align-items:center;margin-bottom:16px;
+  background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.cgroup{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.clabel{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-right:3px}
+.chip{background:var(--panel2);border:1px solid var(--line);color:var(--dim);padding:4px 9px;border-radius:4px;
+  font-size:12px;cursor:pointer;font-family:inherit}
+.chip:hover{color:var(--txt)}
+.chip.on{background:rgba(201,162,39,.16);border-color:var(--gold);color:var(--gold-hi)}
+.scen{background:var(--panel);border:1px solid var(--line);border-left:2px solid var(--gold);
+  border-radius:6px;padding:10px 14px;font-size:13.5px;color:#c3c8ce;margin-bottom:14px}
+.scen b{color:var(--gold-hi);font-weight:600}
+
+.tablewrap{width:100%;overflow:hidden;margin-bottom:10px}
+.table{position:relative;transform-origin:top left}
+.rail{position:absolute;border-radius:50%;
+  background:linear-gradient(180deg,#2a2015,#150f09);box-shadow:0 14px 40px rgba(0,0,0,.6)}
+.feltoval{position:absolute;border-radius:50%;
+  background:radial-gradient(ellipse at 50% 38%,#1c4536 0%,#123024 55%,#0c2019 100%);
+  border:2px solid rgba(201,162,39,.35);box-shadow:inset 0 0 70px rgba(0,0,0,.6)}
+.tlogo{position:absolute;left:0;right:0;text-align:center;font-size:11px;letter-spacing:.42em;
+  text-transform:uppercase;color:rgba(201,162,39,.22);font-weight:700;pointer-events:none}
+.potbox{position:absolute;left:0;right:0;text-align:center}
+.potbox .pl{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:rgba(232,230,225,.4)}
+.potbox .pv{font-size:19px;font-weight:700;color:var(--gold-hi);font-family:ui-monospace,Menlo,monospace}
+.boardrow{position:absolute;left:0;right:0;display:flex;gap:8px;justify-content:center}
+
+.card{width:56px;height:78px;border-radius:6px;background:#f7f7f5;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;font-weight:700;box-shadow:0 3px 10px rgba(0,0,0,.6)}
+.card .r{font-size:27px;line-height:1;font-family:ui-monospace,Menlo,Consolas,monospace}
+.card .p{font-size:18px;line-height:1.1;margin-top:1px}
+.card.sp{color:#141414}.card.he{color:#c0322b}.card.di{color:#2b6cad}.card.cl{color:#2f7a45}
+.card.hero{background:#fffdf4;outline:2px solid var(--gold);box-shadow:0 3px 12px rgba(0,0,0,.7)}
+.card.slot{background:rgba(255,255,255,.035);border:1px dashed rgba(255,255,255,.13);box-shadow:none}
+
+.seat{position:absolute;transform:translate(-50%,-50%);width:132px;text-align:center}
+.table.portrait .seat{width:104px}
+.table.portrait .card{width:46px;height:64px}
+.table.portrait .card .r{font-size:22px}
+.table.portrait .card .p{font-size:15px}
+.table.portrait .back{width:23px;height:32px}
+.table.portrait .potbox .pv{font-size:18px}
+
+.seat .mini{display:flex;gap:2px;justify-content:center;margin-bottom:-9px;position:relative;z-index:1}
+.back{width:26px;height:36px;border-radius:3px;border:1px solid rgba(0,0,0,.5);
+  background:repeating-linear-gradient(45deg,#7e1f24 0 3px,#5e1418 3px 6px);
+  box-shadow:0 2px 5px rgba(0,0,0,.5)}
+.plate{background:#14181c;border:1px solid #2d333a;border-radius:7px;padding:6px 8px;position:relative;z-index:2}
+.pn{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--txt)}
+.ps{font-size:11px;color:var(--gold-hi);font-family:ui-monospace,Menlo,monospace;margin-top:1px}
+.seat.hero .plate{border-color:var(--gold);background:#1c1a12}
+.seat.hero .pn{color:var(--gold-hi)}
+.seat.out{opacity:.32}
+.seat.out .plate{background:#0f1113}
+.seat.folded .plate{border-color:#4a3030}
+.tag{position:absolute;left:50%;transform:translateX(-50%);bottom:-19px;font-size:9.5px;letter-spacing:.12em;
+  text-transform:uppercase;padding:2px 7px;border-radius:9px;background:#222830;color:#a9b0b7;white-space:nowrap}
+.tag.bet{background:rgba(201,162,39,.2);color:var(--gold-hi)}
+.tag.raise{background:rgba(209,84,79,.22);color:#e58f8a}
+.tag.fold{background:#2a2020;color:#8a7070}
+.tag.act{background:#1c2a22;color:#79b394}
+.herocards{position:absolute;transform:translate(-50%,-50%);display:flex;gap:7px}
+.btn{position:absolute;transform:translate(-50%,-50%);width:26px;height:26px;border-radius:50%;
+  background:linear-gradient(180deg,#fff,#d8d5cc);color:#1a1a1a;font-size:12px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.6);z-index:3}
+.chipbet{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:5px;z-index:3}
+.pchip{width:19px;height:19px;border-radius:50%;background:conic-gradient(#c9a227 0 25%,#8b6f18 0 50%,#c9a227 0 75%,#8b6f18 0);
+  border:2px solid #f0dd9a;box-shadow:0 2px 5px rgba(0,0,0,.6)}
+.chipbet.big .pchip{background:conic-gradient(#d1544f 0 25%,#8e2f2b 0 50%,#d1544f 0 75%,#8e2f2b 0);border-color:#f0b3b0}
+.chipbet span{font-size:12px;font-weight:700;color:#fff;font-family:ui-monospace,Menlo,monospace;
+  text-shadow:0 1px 3px rgba(0,0,0,.9)}
+.badge{position:absolute;left:0;right:0;text-align:center;font-size:10px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--gold);font-weight:700}
+.badge span{color:rgba(232,230,225,.35);margin:0 6px}
+
+.qtxt{text-align:center;font-size:12.5px;color:var(--dim);margin:2px 0 10px;letter-spacing:.03em}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media(max-width:620px){.grid{grid-template-columns:repeat(2,1fr)}}
+.opt{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:11px 10px;
+  cursor:pointer;text-align:left;font-family:inherit;color:var(--txt);transition:.12s;position:relative}
+.opt:hover:not(:disabled){border-color:var(--gold);background:#1c2024}
+.opt:disabled{cursor:default}
+.opt .k{position:absolute;top:6px;right:8px;font-size:10px;color:#575c62;font-family:ui-monospace,monospace}
+.opt .n{font-size:13.5px;font-weight:600;display:block}
+.opt .d{font-size:11px;color:var(--dim);display:block;margin-top:2px;line-height:1.35}
+.opt.right{border-color:var(--good);background:rgba(76,175,125,.13)}
+.opt.right .n{color:var(--good)}
+.opt.wrong{border-color:var(--bad);background:rgba(209,84,79,.13)}
+.opt.wrong .n{color:var(--bad)}
+.opt.alt{border-color:var(--warn);background:rgba(217,164,65,.11)}
+.opt.alt .n{color:var(--warn)}
+
+.fb{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.fb.right{border-left:3px solid var(--good)}
+.fb.wrong{border-left:3px solid var(--bad)}
+.fb.alt{border-left:3px solid var(--warn)}
+.verdict{font-size:14px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px}
+.verdict.right{color:var(--good)}.verdict.wrong{color:var(--bad)}.verdict.alt{color:var(--warn)}
+.fbline{font-size:13.5px;margin:5px 0;color:#c9cdd2}
+.fbline b{color:var(--gold-hi);font-weight:600}
+.why{list-style:none;padding:0;margin:9px 0 0}
+.why li{font-size:12.5px;color:var(--dim);padding-left:14px;position:relative;margin:3px 0;line-height:1.5}
+.why li:before{content:"";position:absolute;left:2px;top:8px;width:4px;height:4px;background:var(--gold);border-radius:50%}
+.meta{margin-top:10px;padding-top:9px;border-top:1px solid var(--line);font-size:11.5px;color:#6d7278;
+  font-family:ui-monospace,Menlo,monospace}
+.next{margin-top:12px;width:100%;background:var(--gold);border:none;color:#0a0a0a;font-weight:700;
+  padding:11px;border-radius:6px;cursor:pointer;font-size:13.5px;font-family:inherit;letter-spacing:.05em}
+.next:hover{background:var(--gold-hi)}
+
+.stats{display:flex;gap:0;background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  margin-bottom:16px;overflow:hidden}
+.stat{flex:1;padding:9px 6px;text-align:center;border-right:1px solid var(--line)}
+.stat:last-child{border:none}
+.stat .v{font-size:19px;font-weight:700;color:var(--gold-hi);font-family:ui-monospace,Menlo,monospace}
+.stat .l{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:1px}
+
+.rlabel{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--dim);margin:10px 0 5px}
+.rlabel span{color:var(--gold-hi);letter-spacing:0;text-transform:none;font-size:11.5px}
+textarea{width:100%;min-height:78px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;
+  color:var(--txt);font-family:ui-monospace,Menlo,monospace;font-size:12px;padding:9px;resize:vertical;line-height:1.5}
+.brow{display:grid;grid-template-columns:74px 1fr 78px;gap:9px;align-items:center;margin:5px 0}
+.bname{font-size:12px;font-weight:600}
+.btrack{height:15px;background:#191d21;border-radius:3px;overflow:hidden}
+.btrack i{display:block;height:100%}
+.bnum{font-size:11.5px;color:var(--dim);font-family:ui-monospace,Menlo,monospace;text-align:right}
+.brow.hit .bnum{color:var(--gold-hi)}
+.brow.hit .bname{color:var(--gold-hi)}
+.derived{margin-top:11px;padding-top:10px;border-top:1px solid var(--line);display:grid;
+  grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media(max-width:560px){.derived{grid-template-columns:1fr}}
+.dcell .dv{font-size:17px;font-weight:700;font-family:ui-monospace,Menlo,monospace;color:var(--gold-hi)}
+.dcell .dl{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);margin-top:1px}
+.seat.vil .plate{border-color:var(--gold);box-shadow:0 0 0 2px rgba(201,162,39,.28)}
+.seat.vil .pn{color:var(--gold-hi)}
+table{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:20px}
+th,td{padding:8px 9px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-weight:600}
+td.bk{font-weight:600;white-space:nowrap}
+h2{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin:22px 0 9px;font-weight:600}
+h2:first-child{margin-top:0}
+.note{font-size:12.5px;color:var(--dim);margin-bottom:14px;line-height:1.55}
+.bar{height:5px;background:#1e2226;border-radius:3px;overflow:hidden;margin-top:4px;min-width:80px}
+.bar i{display:block;height:100%;background:var(--gold)}
+.hide{display:none}
+kbd{background:#1d2126;border:1px solid var(--line);border-radius:3px;padding:1px 5px;font-size:11px;
+  font-family:ui-monospace,monospace;color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div>
+    <h1>Range Drills</h1>
+    <div class="sub">6-bucket hand reading &middot; 6-max, heads-up and multiway &middot; all amounts in bb</div>
+  </div>
+  <div class="tabs">
+    <button class="tab on" data-tab="drill">Drill</button>
+    <button class="tab" data-tab="range">Ranging</button>
+    <button class="tab" data-tab="stats">Stats</button>
+    <button class="tab" data-tab="ref">Reference</button>
+  </div>
+</header>
+
+<!-- ============ DRILL ============ -->
+<section id="tab-drill">
+  <div class="controls">
+    <div class="cgroup"><span class="clabel">Street</span>
+      <button class="chip on" data-street="mix">Mixed</button>
+      <button class="chip" data-street="3">Flop</button>
+      <button class="chip" data-street="4">Turn</button>
+      <button class="chip" data-street="5">River</button>
+    </div>
+    <div class="cgroup"><span class="clabel">Players</span>
+      <button class="chip on" data-players="mix">Mixed</button>
+      <button class="chip" data-players="2">Heads-up</button>
+      <button class="chip" data-players="3">3-way</button>
+      <button class="chip" data-players="4">4-way</button>
+    </div>
+    <div class="cgroup"><span class="clabel">Stage</span>
+      <button class="chip on" data-stage="1">Bucket only</button>
+      <button class="chip" data-stage="2">Bucket + action</button>
+    </div>
+    <div class="cgroup"><span class="clabel">Focus</span>
+      <button class="chip on" data-focus="all">All</button>
+      <button class="chip" data-focus="STACKS">Stacks</button>
+      <button class="chip" data-focus="THICK">Thick</button>
+      <button class="chip" data-focus="THIN">Thin</button>
+      <button class="chip" data-focus="SDV">SDV</button>
+      <button class="chip" data-focus="DRAW">Draws</button>
+      <button class="chip" data-focus="AIR">Air</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="v" id="s-acc">—</div><div class="l">Accuracy</div></div>
+    <div class="stat"><div class="v" id="s-n">0</div><div class="l">Hands</div></div>
+    <div class="stat"><div class="v" id="s-streak">0</div><div class="l">Streak</div></div>
+    <div class="stat"><div class="v" id="s-time">—</div><div class="l">Avg sec</div></div>
+  </div>
+
+  <div class="tablewrap" id="tablewrap"><div class="table" id="table"></div></div>
+  <div class="scen" id="scen"></div>
+
+  <div id="stage1">
+    <div class="qtxt">Which bucket is your hand in <b>right now</b>?</div>
+    <div class="grid" id="bopts"></div>
+  </div>
+
+  <div id="stage2" class="hide">
+    <div class="qtxt" id="q2"></div>
+    <div class="grid" id="aopts"></div>
+  </div>
+
+  <div id="fb"></div>
+</section>
+
+<!-- ============ RANGING ============ -->
+<section id="tab-range" class="hide">
+  <div class="controls">
+    <div class="cgroup"><span class="clabel">Mode</span>
+      <button class="chip on" data-rmode="cover">Coverage</button>
+      <button class="chip" data-rmode="capped">Capped?</button>
+      <button class="chip" data-rmode="mix">Mixed</button>
+      <button class="chip" data-rmode="explore">Explore</button>
+    </div>
+    <div class="cgroup"><span class="clabel">Villain</span>
+      <button class="chip" data-prof="nit">Nit</button>
+      <button class="chip on" data-prof="tag">TAG</button>
+      <button class="chip" data-prof="lag">LAG</button>
+      <button class="chip" data-prof="sta">Station</button>
+      <button class="chip" data-prof="cus">Custom</button>
+    </div>
+    <div class="cgroup"><span class="clabel">Street</span>
+      <button class="chip on" data-rstreet="3">Flop</button>
+      <button class="chip" data-rstreet="4">Turn</button>
+      <button class="chip" data-rstreet="5">River</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="v" id="r-acc">—</div><div class="l">Accuracy</div></div>
+    <div class="stat"><div class="v" id="r-n">0</div><div class="l">Spots</div></div>
+    <div class="stat"><div class="v" id="r-streak">0</div><div class="l">Streak</div></div>
+    <div class="stat"><div class="v" id="r-off">—</div><div class="l">Avg miss</div></div>
+  </div>
+
+  <div class="tablewrap" id="rangewrap"><div class="table" id="rangetable"></div></div>
+  <div class="scen" id="rscen"></div>
+
+  <div id="rquestion"></div>
+  <div id="rreveal"></div>
+
+  <div id="rexplore" class="hide">
+    <div class="cgroup" style="margin-bottom:10px;flex-wrap:wrap">
+      <button class="chip" id="rdeal">New board</button>
+      <button class="chip" id="rhand">New hand</button>
+      <button class="chip" id="rnextspot">Next spot</button>
+    </div>
+    <div class="rlabel">His range <span id="rpct"></span></div>
+    <textarea id="rtext" spellcheck="false"></textarea>
+    <button class="chip" id="rapply" style="margin-top:6px">Apply as Custom</button>
+  </div>
+</section>
+
+<!-- ============ STATS ============ -->
+<section id="tab-stats" class="hide">
+  <h2>Accuracy by bucket</h2>
+  <div class="note">Where you misfire tells you which line you're getting wrong at the table. Thin-vs-Thick errors cost you on rivers. SDV-vs-Draw errors turn made hands into bluffs.</div>
+  <table><thead><tr><th>Bucket</th><th>Seen</th><th>Correct</th><th style="width:38%">Rate</th><th>Most confused with</th></tr></thead>
+  <tbody id="btable"></tbody></table>
+  <h2>Line accuracy</h2>
+  <table><thead><tr><th>Villain action</th><th>Seen</th><th>Correct</th><th style="width:38%">Rate</th></tr></thead>
+  <tbody id="ltable"></tbody></table>
+  <button class="tab" id="reset" style="margin-top:6px">Reset session</button>
+</section>
+
+<!-- ============ REFERENCE ============ -->
+<section id="tab-ref" class="hide">
+  <h2>The six buckets</h2>
+  <table><thead><tr><th style="width:110px">Bucket</th><th>What it is</th><th style="width:32%">Default line</th></tr></thead>
+  <tbody id="rtable"></tbody></table>
+
+  <h2>Decision grid</h2>
+  <div class="note">Bucket your hand, then read across. This is the whole framework in one table.</div>
+  <table><thead><tr><th>Bucket</th><th id="hh0"></th><th id="hh1"></th><th id="hh2"></th><th id="hh3"></th><th id="hh4"></th><th id="hh5"></th></tr></thead>
+  <tbody id="gtable"></tbody></table>
+
+  <h2>Multiway grid</h2>
+  <div class="note">Three or four ways, hands slide down a bucket. Everything below is the bucket <em>after</em> that slide, so read your adjusted bucket across this table, not your heads-up one.</div>
+  <table><thead><tr><th>Bucket</th><th id="mh0"></th><th id="mh1"></th><th id="mh2"></th><th id="mh3"></th><th id="mh4"></th></tr></thead>
+  <tbody id="mtable"></tbody></table>
+
+  <h2>Multiway demotion</h2>
+  <ul class="why" id="mwrules"></ul>
+
+  <h2>Context rules the tool applies</h2>
+  <ul class="why" id="rules"></ul>
+</section>
+
+</div>
+
+<script>
+"use strict";
+/* ---------- cards ---------- */
+const RS="23456789TJQKA", SN=["sp","he","di","cl"], SG=["\u2660","\u2665","\u2666","\u2663"];
+const rn=r=>RS[r-2];
+const cardStr=c=>rn(c.r)+"shdc"[c.s];
+function deck(){const d=[];for(let r=2;r<=14;r++)for(let s=0;s<4;s++)d.push({r,s});return d;}
+function shuf(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+/* ---------- evaluator ---------- */
+function straightHigh(ranks){
+  const u=[...new Set(ranks)].sort((a,b)=>b-a);
+  if(u[0]===14)u.push(1);
+  let run=1;
+  for(let i=1;i<u.length;i++){
+    if(u[i]===u[i-1]-1){run++;if(run>=5)return u[i]+4;}
+    else if(u[i]!==u[i-1])run=1;
+  }
+  return 0;
+}
+function mk(cat,rk){let sc=cat;for(let i=0;i<5;i++)sc=sc*15+(rk[i]||0);return{cat,rk,sc};}
+function evaluate(cards){
+  const cnt=new Array(15).fill(0), su=[[],[],[],[]];
+  for(const c of cards){cnt[c.r]++;su[c.s].push(c.r);}
+  let fs=-1; for(let s=0;s<4;s++) if(su[s].length>=5) fs=s;
+  if(fs>=0){const h=straightHigh(su[fs]); if(h) return mk(8,[h]);}
+  const q=[],t=[],p=[],g=[];
+  for(let r=14;r>=2;r--){
+    if(cnt[r]===4)q.push(r); else if(cnt[r]===3)t.push(r);
+    else if(cnt[r]===2)p.push(r); else if(cnt[r]===1)g.push(r);
+  }
+  if(q.length){const rest=[...t,...p,...g,...q.slice(1)];return mk(7,[q[0],rest.length?Math.max(...rest):0]);}
+  if(t.length>=2)return mk(6,[t[0],t[1]]);
+  if(t.length===1&&p.length)return mk(6,[t[0],p[0]]);
+  if(fs>=0)return mk(5,su[fs].slice().sort((a,b)=>b-a).slice(0,5));
+  const st=straightHigh(cards.map(c=>c.r)); if(st)return mk(4,[st]);
+  if(t.length===1){const k=[...p,...g].sort((a,b)=>b-a).slice(0,2);return mk(3,[t[0],...k]);}
+  if(p.length>=2){const k=[...p.slice(2),...g].sort((a,b)=>b-a);return mk(2,[p[0],p[1],k[0]||0]);}
+  if(p.length===1)return mk(1,[p[0],...g.slice(0,3)]);
+  return mk(0,g.slice(0,5));
+}
+const CATN=["high card","one pair","two pair","three of a kind","a straight","a flush","a full house","quads","a straight flush"];
+
+/* ---------- texture ---------- */
+function straightNeed(br){
+  if(straightHigh(br))return 0;
+  for(let r=2;r<=14;r++) if(straightHigh([...br,r])) return 1;
+  for(let a=2;a<=14;a++)for(let b=a;b<=14;b++) if(straightHigh([...br,a,b])) return 2;
+  return 3;
+}
+const _texC={};
+function texture(board){
+  const _k=board.map(cardStr).join("");
+  if(_texC[_k]) return _texC[_k];
+  const br=board.map(c=>c.r), cnt=new Array(15).fill(0), sc=[0,0,0,0];
+  br.forEach(r=>cnt[r]++); board.forEach(c=>sc[c.s]++);
+  const maxS=Math.max(...sc);
+  const pairs=[];for(let r=14;r>=2;r--)if(cnt[r]>=2)pairs.push(r);
+  const need=straightNeed(br);
+  const t={
+    maxSuit:maxS, flushPoss:maxS>=3, fourFlush:maxS>=4, monotone:maxS===board.length,
+    paired:pairs.length>0, trips:Math.max(...cnt)>=3, pairRanks:pairs,
+    need, fourStraight:need<=1, boardStraight:need===0,
+    high:Math.max(...br), uniq:[...new Set(br)].sort((a,b)=>b-a)
+  };
+  let conn=false;
+  for(let i=0;i<t.uniq.length;i++)for(let j=i+1;j<t.uniq.length;j++)
+    if(t.uniq[i]-t.uniq[j]<=3) conn=true;
+  t.connected=conn;
+  t.danger=(t.fourFlush?2:t.flushPoss?1:0)+(t.fourStraight?1:conn?0.5:0)+(t.paired?1:0);
+  t.words=[];
+  t.words.push(maxS>=4?maxS+"-flush on board":maxS===3?"3 to a flush":maxS===2?"two-tone":"rainbow");
+  if(t.paired)t.words.push(t.trips?"trips on board":"paired");
+  t.words.push(need===0?"straight on board":need===1?"4 to a straight":conn?"connected":"disconnected");
+  t.label=(t.danger<1?"Dry":t.danger<2?"Semi-wet":"Wet")+": "+t.words.join(", ");
+  return _texC[_k]=t;
+}
+
+/* ---------- draws ---------- */
+function drawInfo(hole,board){
+  const all=[...hole,...board], d={fd:0,fdNut:false,oesd:false,gut:false,outs:0,names:[],any:false,strong:false};
+  if(board.length>=5) return d;
+  const sc=[0,0,0,0], hs=[0,0,0,0];
+  all.forEach(c=>sc[c.s]++); hole.forEach(c=>hs[c.s]++);
+  for(let s=0;s<4;s++) if(sc[s]===4&&hs[s]>=1){
+    d.fd=hs[s];
+    const seen=new Set(all.filter(c=>c.s===s).map(c=>c.r));
+    let topUnseen=0; for(let r=14;r>=2;r--) if(!seen.has(r)){topUnseen=r;break;}
+    const myHi=Math.max(...hole.filter(c=>c.s===s).map(c=>c.r));
+    d.fdNut = myHi>topUnseen;
+    d.names.push((d.fdNut?"nut ":"")+"flush draw"+(hs[s]===1?" (one card)":""));
+  }
+  if(evaluate(all).cat<4){
+    const br=all.map(c=>c.r), hits=[];
+    for(let r=2;r<=14;r++){
+      if(br.filter(x=>x===r).length>=4) continue;
+      if(straightHigh([...br,r])){
+        // must use at least one hole card
+        const boardOnly=[...board.map(c=>c.r),r];
+        if(!straightHigh(boardOnly)) hits.push(r);
+      }
+    }
+    d.outs=hits.length;
+    if(hits.length>=2){d.oesd=true;d.names.push(hits.length>=3?"wrap / open-ender":"open-ended straight draw");}
+    else if(hits.length===1){d.gut=true;d.names.push("gutshot");}
+  }
+  d.any=d.fd>0||d.oesd||d.gut;
+  d.strong=d.fd>0||d.oesd;
+  return d;
+}
+
+/* ---------- made-hand shape ---------- */
+function shapeOf(hole,board,ev){
+  const t=texture(board), u=t.uniq, h=hole.slice().sort((a,b)=>b.r-a.r);
+  const s={name:"",pairKind:"",kickTier:"",set:false,overpair:false,boardPlays:false};
+  const bev=evaluate(board.concat(board.length<5?[]:[]));
+  s.boardPlays = board.length>=5 && evaluate([...hole,...board]).sc===evaluate(board).sc;
+  const pocket = h[0].r===h[1].r;
+  if(s.boardPlays){ s.name="the board ("+CATN[ev.cat]+", your cards play no part)"; return s; }
+  if(ev.cat===8)s.name="a straight flush";
+  else if(ev.cat===7)s.name="quads";
+  else if(ev.cat===6)s.name=rn(ev.rk[0])+"s full of "+rn(ev.rk[1])+"s";
+  else if(ev.cat===5)s.name=rn(ev.rk[0])+"-high flush";
+  else if(ev.cat===4)s.name=rn(ev.rk[0])+"-high straight";
+  else if(ev.cat===3){
+    s.set = pocket && h[0].r===ev.rk[0];
+    s.name = s.set ? "a set of "+rn(ev.rk[0])+"s" : "trips "+rn(ev.rk[0])+"s";
+  }
+  else if(ev.cat===2){
+    const top2 = ev.rk[0]===u[0] && ev.rk[1]===u[1];
+    s.name="two pair, "+rn(ev.rk[0])+"s and "+rn(ev.rk[1])+"s";
+    s.topTwo=top2 && hole.every(c=>u.slice(0,2).includes(c.r));
+    s.usesBoardPair=t.paired && t.pairRanks.includes(ev.rk[0]);
+  }
+  else if(ev.cat===1){
+    const pr=ev.rk[0], i=u.indexOf(pr);
+    if(pocket && pr===h[0].r){
+      if(pr>u[0]){s.overpair=true;s.pairKind="overpair";s.name="an overpair ("+rn(pr)+rn(pr)+")";}
+      else{
+        const below=u.filter(x=>x>pr).length;
+        s.pairKind = below===1?"underpair-2nd":"underpair";
+        s.name="pocket "+rn(pr)+"s ("+(below===1?"second-best pair":"under the board")+")";
+      }
+    } else {
+      const kick=h.find(c=>c.r!==pr);
+      const kr=kick?kick.r:0;
+      s.kick=kr;
+      s.kickTier = kr===14?"top":kr>=12?"good":kr>=10?"medium":"weak";
+      s.pairKind = i===0?"top":i===1?"second":i===2?"third":"bottom";
+      const nm={top:"top pair",second:"second pair",third:"third pair",bottom:"bottom pair"}[s.pairKind];
+      s.name = nm + (kick? ", "+rn(kr)+" kicker":"") + (s.pairKind==="top"&&s.kickTier==="top"?" (TPTK)":"");
+      if(t.paired && t.pairRanks.includes(pr)){s.name="the board pair, "+rn(kr)+" kicker";s.pairKind="boardpair";}
+    }
+  } else {
+    const hi=Math.max(h[0].r,h[1].r);
+    s.name = hi===14?"ace high":hi>=12?rn(hi)+" high":"no pair";
+    s.overs = hole.filter(c=>c.r>u[0]).length;
+  }
+  return s;
+}
+
+/* ---------- nuttiness ---------- */
+const _bestC={};
+function bestPossible(board){
+  const k=board.map(cardStr).join("");
+  if(_bestC[k]!=null) return _bestC[k];
+  const used=new Set(board.map(cardStr));
+  const rem=deck().filter(c=>!used.has(cardStr(c)));
+  let best=0;
+  for(let i=0;i<rem.length;i++)for(let j=i+1;j<rem.length;j++){
+    const v=evaluate([rem[i],rem[j],...board]).sc;
+    if(v>best)best=v;
+  }
+  return _bestC[k]=best;
+}
+function nutScan(hole,board){
+  const used=new Set([...hole,...board].map(cardStr));
+  const rem=deck().filter(c=>!used.has(cardStr(c)));
+  const me=evaluate([...hole,...board]).sc;
+  let beat=0,tie=0,tot=0;
+  for(let i=0;i<rem.length;i++)for(let j=i+1;j<rem.length;j++){
+    const v=evaluate([rem[i],rem[j],...board]).sc;
+    tot++; if(v>me)beat++; else if(v===me)tie++;
+  }
+  return {beat,tie,tot,isNuts:me>=bestPossible(board),pct:beat/tot};
+}
+
+/* ---------- buckets ---------- */
+const B={
+  STACKS:{k:"STACKS",n:"Can play for stacks",d:"Comfortable getting 100bb in",c:"#e9cc63"},
+  THICK :{k:"THICK", n:"Thick value",       d:"Bet 3 streets, uneasy vs a raise",c:"#c9a227"},
+  THIN  :{k:"THIN",  n:"Thin value",        d:"1–2 streets, control the pot",c:"#9c8a4e"},
+  SDV   :{k:"SDV",   n:"Showdown value",    d:"Too weak to bet, wins checked down",c:"#6f8fa8"},
+  DRAW  :{k:"DRAW",  n:"Draws",             d:"Live outs, no made value yet",c:"#5aa86f"},
+  AIR   :{k:"AIR",   n:"Air",               d:"No equity, no showdown",c:"#8b6a6a"}
+};
+const BORDER=["STACKS","THICK","THIN","SDV","DRAW","AIR"];
+const SHORT={STACKS:"Stacks",THICK:"Thick",THIN:"Thin",SDV:"Showdown",DRAW:"Draws",AIR:"Air"};
+
+const WAY=n=>n>=4?"Four-way":"Three-way";
+function demote(b,players,t,nut){
+  if(players<=2) return null;
+  if(b==="STACKS"){
+    if(nut.isNuts) return null;
+    if(t.danger >= (players>=4?1:2))
+      return {to:"THICK",why:WAY(players)+" on a board this textured, one of two ranges holds the hand you are afraid of often enough that this stops being a stack-off."};
+    return null;
+  }
+  if(b==="THICK"){
+    if(players>=4 || t.danger>=0.5)
+      return {to:"THIN",why:WAY(players)+", one pair is a two-street hand at best. Every extra range is another chance you are already drawing thin."};
+    return null;
+  }
+  if(b==="THIN")
+    return {to:"SDV",why:"Thin value dies multiway. Two ranges beat you too often for a third bet to be profitable, so take the cheap showdown."};
+  return null;
+}
+
+function classify(hole,board,players){
+  players = players||2;
+  const ev=evaluate([...hole,...board]);
+  const t=texture(board), s=shapeOf(hole,board,ev), d=drawInfo(hole,board);
+  let _nut=null;
+  const NUT=()=>_nut||(_nut=nutScan(hole,board));
+  const nut={get isNuts(){return evaluate([...hole,...board]).sc>=bestPossible(board);},get pct(){return NUT().pct;},
+             get beat(){return NUT().beat;},get tie(){return NUT().tie;},get tot(){return NUT().tot;}};
+  const why=[]; let b=null, alt=null;
+
+  const finish=()=>{
+    const hu=b;
+    const dm=demote(b,players,t,nut);
+    if(dm){ b=dm.to; alt=hu; why.push(dm.why); }
+    else if(players>=3){
+      if(b==="DRAW") why.push(WAY(players)+" the bucket holds, but the line changes: two players have to fold for a semi-bluff to work. Play it for the price.");
+      if(b==="AIR") why.push("Bluffing into "+(players-1)+" players at these stakes is close to lighting money on fire. Give up.");
+      if(b==="STACKS") why.push("Multiway only adds payers to a hand this strong. Bet bigger, not smaller.");
+    }
+    why.push("Board is "+t.label.toLowerCase()+".");
+    return {bucket:b,alt,huBucket:hu,demoted:!!dm,players,why,ev,tex:t,shape:s,draws:d,nut};
+  };
+
+  if(s.boardPlays){
+    b="SDV"; alt="AIR";
+    why.push("Your two cards add nothing. You are playing the board, so the best case is a chop.");
+    why.push("Never bet here. You cannot get called by worse, and you cannot fold out a chop.");
+    return finish();
+  }
+
+  if(ev.cat>=7){ b="STACKS"; why.push("Effectively unbeatable here. Get it in."); }
+  else if(ev.cat===6){
+    if(!nut.isNuts && nut.pct>0.02){ b="THICK"; why.push("A full house, but "+nut.beat+" combos still beat it on a board this paired."); }
+    else { b="STACKS"; why.push("Full house on a paired board. Stack-off hand."); }
+  }
+  else if(ev.cat===5){
+    if(nut.isNuts){ b="STACKS"; why.push("Nut flush. Nothing to fear."); }
+    else if(t.paired){ b="THICK"; alt="STACKS"; why.push("Flush, but the paired board means a full house is live."); }
+    else if(ev.rk[0]>=13){ b="STACKS"; why.push(rn(ev.rk[0])+"-high flush on an unpaired board. Only a higher flush beats you."); }
+    else { b="THICK"; alt="STACKS"; why.push("Middling flush. Strong, but a bigger flush is a real part of his raising range."); }
+  }
+  else if(ev.cat===4){
+    if(t.paired){ b="THICK"; why.push("Straight into a paired board. Boats are live."); }
+    else if(t.flushPoss){ b="THICK"; alt="STACKS"; why.push("Straight, but three to a flush is out there."); }
+    else if(nut.isNuts){ b="STACKS"; why.push("Nut straight, no flush possible. Stack-off."); }
+    else { b="THICK"; alt="STACKS"; why.push("Non-nut straight. You can be on the wrong end of it."); }
+  }
+  else if(ev.cat===3 && s.set){
+    if(t.fourFlush||t.boardStraight){ b="THIN"; why.push("A set drops to thin value when the board itself makes a flush or straight."); }
+    else if(t.danger>=2){ b="THICK"; why.push("Set on a wet board. Strong, but a raise means trouble."); }
+    else if(t.danger>=1){ b="THICK"; alt="STACKS"; why.push("Set on a semi-wet board. Usually still a stack-off, one flag of danger."); }
+    else { b="STACKS"; why.push("Set on a dry board. Nothing realistic beats you."); }
+  }
+  else if(ev.cat===3){
+    b = (t.danger>=2) ? "THIN" : "THICK";
+    why.push("Trips using the board pair. Kicker decides how much you can bet.");
+  }
+  else if(ev.cat===2){
+    const pk=hole[0].r===hole[1].r;
+    if(pk && ev.rk[0]===hole[0].r && t.paired && hole[0].r>t.uniq[0]){
+      b = t.danger>=2 ? "THIN" : "THICK";
+      why.push("Your pocket pair sitting above the board pair. It plays like an overpair: strong, but trips and full houses are live on a paired board.");
+    }
+    else if(s.usesBoardPair){ b="THIN"; why.push("Two pair using the board pair. Anyone with that card has the same thing."); }
+    else if(s.topTwo && t.danger<=1){ b="THICK"; alt="STACKS"; why.push("Top two on a manageable board. Three streets of value."); }
+    else { b="THIN"; alt="THICK"; why.push("Two pair, but "+(t.danger>=2?"the board is wet":"it is not the top two")+"."); }
+  }
+  else if(ev.cat===1){
+    if(s.overpair){
+      if(t.danger>=2){ b="THIN"; why.push("Overpair on a wet board. One pair, and the board hits his calling range hard."); }
+      else if(t.danger>=1){ b="THICK"; why.push("Overpair, some texture. Bet three streets but fold to real aggression."); }
+      else { b="THICK"; why.push("Overpair on a dry board. Classic thick value: bet, bet, bet."); }
+    }
+    else if(s.pairKind==="top"){
+      if((s.kickTier==="top"||s.kickTier==="good") && t.danger<=1){ b="THICK"; why.push("Top pair with a real kicker. Three streets, but a check-raise at 5NL is usually a monster."); }
+      else if(s.kickTier==="weak"){ b="THIN"; why.push("Top pair, weak kicker. Bet twice at most, you are dominated by every better top pair."); }
+      else { b="THIN"; alt="THICK"; why.push("Top pair on a "+(t.danger>=2?"wet":"marginal")+" board. Pot control."); }
+    }
+    else if(s.pairKind==="second"||s.pairKind==="underpair-2nd"){
+      if(t.danger<1 && (s.kickTier==="top"||s.kickTier==="good"||s.pairKind==="underpair-2nd")){ b="THIN"; alt="SDV"; why.push("Second pair on a dry board. Worth one or two small bets."); }
+      else { b="SDV"; alt="THIN"; why.push("Second pair, no kicker help. Get to showdown cheap."); }
+    }
+    else if(s.pairKind==="boardpair"){ b="SDV"; why.push("You paired the board card everyone shares. It is a kicker contest."); }
+    else { b="SDV"; why.push("Weak pair. Betting only folds out worse and gets called by better."); }
+  }
+  else {
+    if(d.strong){ b="DRAW"; why.push("No made hand, but "+d.names.join(" + ")+"."); }
+    else if(d.gut){
+      const hasSD = s.name==="ace high" || s.overs>=2;
+      b="DRAW"; alt=hasSD?"SDV":"AIR";
+      why.push("Gutshot only. Four outs and low fold equity"+(hasSD?", with overcards that still win checked down.":"."));
+    }
+    else if(board.length===5){
+      if(s.name==="ace high" && t.high<14){ b="SDV"; alt="AIR"; why.push("Ace high on the river still beats every busted draw he barreled with."); }
+      else { b="AIR"; why.push("No pair on the river, no draw left. Give up unless his range is capped."); }
+    }
+    else if(s.name==="ace high" || s.overs>=2){ b="SDV"; alt="AIR";
+      why.push((s.name==="ace high"?"Ace high":"Two overcards")+" with no draw. Checking down beats bluffing off."); }
+    else { b="AIR"; why.push("No pair, no draw, no showdown. Give up unless his range is capped."); }
+  }
+
+  // draw overlay on weak made hands
+  if(d.strong && (b==="SDV")){ alt=b; b="DRAW"; why.push("The draw outweighs the weak pair. Play it as a semi-bluff, not a showdown hand."); }
+  else if(d.strong && (b==="THIN"||b==="THICK")) alt="DRAW";
+
+  return finish();
+}
+
+/* ---------- ranges ---------- */
+const RI=r=>RS.indexOf(r);
+function parseRange(str){
+  const out=[];
+  str.split(",").map(x=>x.trim()).filter(Boolean).forEach(tok=>{
+    const plus=tok.endsWith("+"); const t=plus?tok.slice(0,-1):tok;
+    if(t.length===2&&t[0]===t[1]){
+      const lo=RI(t[0]);
+      for(let i=lo;i<=(plus?12:lo);i++) out.push(RS[i]+RS[i]);
+    } else if(t.length===3){
+      const a=RI(t[0]),b=RI(t[1]),sfx=t[2];
+      const hi=Math.max(a,b),lo=Math.min(a,b);
+      for(let i=lo;i<=(plus?hi-1:lo);i++) out.push(RS[hi]+RS[i]+sfx);
+    }
+  });
+  return out;
+}
+function combos(hand){
+  const out=[];
+  if(hand.length===2){const r=RI(hand[0])+2;for(let a=0;a<4;a++)for(let b=a+1;b<4;b++)out.push([{r,s:a},{r,s:b}]);}
+  else{
+    const r1=RI(hand[0])+2,r2=RI(hand[1])+2;
+    if(hand[2]==="s")for(let s=0;s<4;s++)out.push([{r:r1,s},{r:r2,s}]);
+    else for(let a=0;a<4;a++)for(let b=0;b<4;b++)if(a!==b)out.push([{r:r1,s:a},{r:r2,s:b}]);
+  }
+  return out;
+}
+const POS=["BTN","SB","BB","UTG","HJ","CO"];
+const SCEN=[
+  {p:2,hero:"BTN",in:["BTN","BB"],pot:5.5,stack:97,
+   t:"You open the BTN to 2.5bb, the BB calls.",
+   r:"22+, A2s+, K2s+, Q5s+, J7s+, T7s+, 96s+, 85s+, 75s+, 64s+, 53s+, A2o+, K8o+, Q9o+, J9o+, T8o+"},
+  {p:2,hero:"CO",in:["CO","BB"],pot:5.5,stack:97,
+   t:"You open the CO to 2.5bb, the BB calls.",
+   r:"22+, A2s+, K8s+, Q9s+, J9s+, T8s+, 97s+, 86s+, 76s, 65s, A9o+, KTo+, QTo+, JTo"},
+  {p:2,hero:"BB",in:["BTN","BB"],pot:5.5,stack:97,
+   t:"The BTN opens to 2.5bb, you defend the BB.",
+   r:"22+, A2s+, K2s+, Q4s+, J6s+, T6s+, 95s+, 85s+, 74s+, 63s+, 53s+, A2o+, K7o+, Q8o+, J8o+, T8o+, 97o+, 87o"},
+  {p:2,hero:"UTG",in:["UTG","BTN"],pot:6,stack:97,
+   t:"You open UTG to 2.5bb, the BTN calls.",
+   r:"55+, A8s+, K9s+, Q9s+, J9s+, T9s, 98s, ATo+, KJo+, QJo"},
+  {p:2,hero:"BB",in:["BTN","BB"],pot:22,stack:89,
+   t:"You 3-bet the BB to 11bb over a BTN open, he calls.",
+   r:"88+, A2s, A3s, A4s, A5s, ATs+, KTs+, QTs+, JTs, T9s, AJo+, KQo"},
+  {p:2,hero:"SB",in:["SB","BB"],pot:6,stack:97,
+   t:"You open the SB to 3bb, the BB calls.",
+   r:"22+, A2s+, K4s+, Q7s+, J8s+, T8s+, 97s+, 86s+, 75s+, 65s, A5o+, K9o+, Q9o+, JTo"},
+  {p:2,hero:"HJ",in:["HJ","BB"],pot:13,stack:90,
+   t:"Loose table. You open the HJ to 6bb, the BB calls.",
+   r:"22+, A2s+, K7s+, Q9s+, J9s+, T9s, 98s, 87s, 76s, ATo+, KJo+, QJo"},
+  {p:2,hero:"BTN",in:["CO","BTN"],pot:12,stack:93,
+   t:"A loose CO opens to 5bb, you call on the BTN, both blinds fold.",
+   r:"22+, A2s+, K9s+, Q9s+, J9s+, T8s+, 97s+, 86s+, 76s, 65s, AJo+, KQo"},
+
+  {p:3,hero:"CO",in:["CO","BTN","BB"],pot:8,stack:97,
+   t:"You open the CO to 2.5bb, the BTN and BB call.",
+   r:"22+, A2s+, K8s+, Q9s+, J9s+, T8s+, 97s+, 86s+, 76s, 65s, A9o+, KTo+, QTo+, JTo"},
+  {p:3,hero:"BTN",in:["BTN","SB","BB"],pot:7.5,stack:97,
+   t:"You open the BTN to 2.5bb, both blinds call.",
+   r:"22+, A2s+, K2s+, Q5s+, J7s+, T7s+, 96s+, 85s+, 75s+, 64s+, 53s+, A2o+, K8o+, Q9o+, J9o+, T8o+"},
+  {p:3,hero:"BB",in:["BTN","SB","BB"],pot:8,stack:97,
+   t:"The BTN opens, the SB calls, you defend the BB.",
+   r:"22+, A2s+, K2s+, Q4s+, J6s+, T6s+, 95s+, 85s+, 74s+, 63s+, 53s+, A2o+, K7o+, Q8o+, J8o+, T8o+, 97o+, 87o"},
+  {p:3,hero:"SB",in:["SB","BB","BTN"],pot:7.5,stack:97,
+   t:"The BTN opens to 2.5bb, you call in the SB, the BB comes along.",
+   r:"22+, A2s+, K5s+, Q7s+, J8s+, T8s+, 97s+, 86s+, 75s+, 65s, A7o+, K9o+, QTo+, JTo"},
+  {p:3,hero:"HJ",in:["UTG","HJ","CO"],pot:21,stack:93,
+   t:"Loose table. UTG limps, you raise the HJ to 7bb, UTG and the CO call.",
+   r:"22+, A2s+, K8s+, Q9s+, J9s+, T9s, 98s, 87s, ATo+, KJo+, QJo"},
+
+  {p:4,hero:"HJ",in:["HJ","CO","BTN","BB"],pot:10.5,stack:97,
+   t:"You open the HJ to 2.5bb, the CO and BTN call, the BB defends.",
+   r:"22+, A2s+, K9s+, Q9s+, J9s+, T8s+, 97s+, 87s, 76s, ATo+, KJo+, QJo"},
+  {p:4,hero:"UTG",in:["UTG","CO","BTN","BB"],pot:25,stack:90,
+   t:"Loose table. You open UTG to 6bb, three players call.",
+   r:"44+, A9s+, KTs+, QTs+, JTs, T9s, AJo+, KQo"},
+  {p:4,hero:"BTN",in:["UTG","HJ","BTN","BB"],pot:4.5,stack:100,
+   t:"Two limpers, you limp behind on the BTN, the BB checks.",
+   r:"22+, A2s+, K5s+, Q8s+, J8s+, T8s+, 97s+, 86s+, 75s+, 65s, A9o+, KTo+, QTo+, JTo, T9o, 98o"},
+  {p:4,hero:"BB",in:["BB","UTG","HJ","CO"],pot:4.5,stack:100,
+   t:"Three players limp, you check your option in the BB.",
+   r:"22+, A2s+, K2s+, Q4s+, J6s+, T6s+, 95s+, 85s+, 74s+, 64s+, 53s+, A2o+, K5o+, Q7o+, J7o+, T7o+, 96o+, 86o+, 75o+"}
+];
+function bb(v){ return (Math.round(v*10)/10)+"bb"; }
+function actOrder(sc){
+  const ord=POS.slice(1).concat(POS[0]);
+  return ord.filter(x=>sc.in.includes(x));
+}
+function actCtx(sc){
+  const ord=actOrder(sc), i=ord.indexOf(sc.hero);
+  return {ord,before:ord.slice(0,i),after:ord.slice(i+1),n:sc.p};
+}
+SCEN.forEach(s=>{ s.combos=[]; parseRange(s.r).forEach(h=>s.combos.push(...combos(h))); });
+
+/* ---------- action nodes ---------- */
+const ACT={
+  BETBIG:{n:"Bet big (70–80% pot)"}, BETSM:{n:"Bet small (30–40% pot)"},
+  CHECK:{n:"Check"}, RAISE:{n:"Raise"}, CALL:{n:"Call"}, FOLD:{n:"Fold"}
+};
+const BET_MAP={STACKS:"BETBIG",THICK:"BETBIG",THIN:"BETSM",SDV:"CHECK",DRAW:"BETSM",AIR:"CHECK"};
+const BET_WHY_HU={STACKS:"Build the pot. Every street you skip is money left behind.",
+ THICK:"Bet big. Worse top pairs and draws pay you off.",
+ THIN:"Small bet. You want the weak calls without bloating a pot you can't play for stacks.",
+ SDV:"Check. Worse hands fold, better hands call. Take the free card.",
+ DRAW:"Semi-bluff. Fold equity plus outs.",
+ AIR:"Check. Bluffing here at 5NL burns money against a range that calls too much."};
+const BET_WHY_MW={STACKS:"Bet big. More players means more payers, and you have to charge every draw at once.",
+ THICK:"Bet. Checking a strong hand multiway gives a free card to two ranges at once.",
+ THIN:"Small at most. You are betting into more ranges than a thin hand can handle.",
+ SDV:"Check. Someone calls, and it will not be a worse hand.",
+ DRAW:"Small semi-bluff. Fold equity is thin, so the bet has to be about the price.",
+ AIR:"Check. You need two folds. That does not happen against a pool that calls this wide."};
+
+const NODES=[
+ {k:"hu-first",mw:0,hdr:"You act first",when:c=>c.before.length===0,
+  q:"You are first to act. What do you do?",opts:["BETBIG","BETSM","CHECK"],map:BET_MAP,why:BET_WHY_HU,
+  roles:c=>{const R={};c.after.forEach(p=>R[p]={tag:"To act",cls:"act"});return R;}},
+ {k:"hu-checks",mw:0,hdr:"He checks",when:c=>c.before.length>=1,
+  q:"He checks to you. What do you do?",opts:["BETBIG","BETSM","CHECK"],map:BET_MAP,why:BET_WHY_HU,
+  roles:c=>{const R={};c.before.forEach(p=>R[p]={tag:"Check"});return R;}},
+ {k:"hu-b33",mw:0,hdr:"He bets 1/3",when:c=>c.before.length>=1,
+  q:"He leads for about 1/3 pot. What do you do?",opts:["RAISE","CALL","FOLD"],
+  map:{STACKS:"RAISE",THICK:"CALL",THIN:"CALL",SDV:"CALL",DRAW:"CALL",AIR:"FOLD"},
+  why:{STACKS:"Raise. A small lead is usually a weak range that will still continue.",
+   THICK:"Call. Raising folds out the worse hands you beat and isolates you against better.",
+   THIN:"Call. Cheap price, and your hand does not want a bigger pot.",
+   SDV:"Call. Correct price to see one more card or get to showdown.",
+   DRAW:"Call. A third-pot bet gives you the odds.",AIR:"Fold. No equity, no reason."},
+  roles:(c,pot)=>({[c.before[c.before.length-1]]:{tag:"Bet",cls:"bet",chips:pot*0.33}})},
+ {k:"hu-b75",mw:0,hdr:"He bets 3/4",when:c=>c.before.length>=1,
+  q:"He fires about 3/4 pot. What do you do?",opts:["RAISE","CALL","FOLD"],
+  map:{STACKS:"RAISE",THICK:"CALL",THIN:"CALL",SDV:"FOLD",DRAW:"CALL",AIR:"FOLD"},
+  riverOverride:{THIN:"FOLD",DRAW:"FOLD"},
+  why:{STACKS:"Raise. He has committed himself, get the money in.",
+   THICK:"Call. One pair is a bluff-catcher against a big bet, not a raising hand.",
+   THIN:"Call on the flop or turn, fold on the river. A big river bet is rarely a bluff at 5NL.",
+   SDV:"Fold. Showdown value does not survive a 3/4 bet.",
+   DRAW:"Call with the odds on flop and turn. On the river the draw is worthless.",AIR:"Fold."},
+  roles:(c,pot)=>({[c.before[c.before.length-1]]:{tag:"Bet",cls:"bet",big:1,chips:pot*0.75}})},
+ {k:"hu-xr",mw:0,hdr:"He check-raises",when:c=>c.before.length>=1,
+  q:"You bet 60% and he check-raises. What do you do?",opts:["RAISE","CALL","FOLD"],
+  map:{STACKS:"RAISE",THICK:"CALL",THIN:"FOLD",SDV:"FOLD",DRAW:"CALL",AIR:"FOLD"},
+  turnRiverOverride:{THICK:"FOLD",DRAW:"FOLD"},
+  why:{STACKS:"Raise or jam. This is the spot you were building toward.",
+   THICK:"Call on the flop. On the turn or river a check-raise at these stakes is a stack-off hand. Fold.",
+   THIN:"Fold. Thin value has no business against a check-raise.",SDV:"Fold.",
+   DRAW:"Call the flop with real equity. Turn and river check-raises are too expensive.",AIR:"Fold."},
+  roles:(c,pot,hero)=>({[hero]:{tag:"Bet",cls:"bet",chips:pot*0.6},
+    [c.before[0]]:{tag:"Raise",cls:"raise",big:1,chips:pot*1.9}})},
+ {k:"hu-raise",mw:0,hdr:"He raises",when:c=>c.before.length===0,
+  q:"You bet 60% and he raises. What do you do?",opts:["RAISE","CALL","FOLD"],
+  map:{STACKS:"RAISE",THICK:"CALL",THIN:"FOLD",SDV:"FOLD",DRAW:"CALL",AIR:"FOLD"},
+  turnRiverOverride:{THICK:"FOLD",DRAW:"FOLD"},
+  why:{STACKS:"Raise or jam.",
+   THICK:"Call the flop. A turn or river raise at these stakes means a stack-off hand. Fold.",
+   THIN:"Fold. Thin value cannot call a raise.",SDV:"Fold.",
+   DRAW:"Call the flop with equity, fold turn and river.",AIR:"Fold."},
+  roles:(c,pot,hero)=>({[hero]:{tag:"Bet",cls:"bet",chips:pot*0.6},
+    [c.after[0]]:{tag:"Raise",cls:"raise",big:1,chips:pot*1.9}})},
+
+ {k:"mw-first",mw:1,hdr:"You act first",when:c=>c.n>=3&&c.before.length===0,
+  q:"You are first to act. What do you do?",opts:["BETBIG","BETSM","CHECK"],map:BET_MAP,why:BET_WHY_MW,
+  roles:c=>{const R={};c.after.forEach(p=>R[p]={tag:"To act",cls:"act"});return R;}},
+ {k:"mw-check",mw:1,hdr:"All check",when:c=>c.n>=3&&c.before.length>=1,
+  q:"It checks to you. What do you do?",opts:["BETBIG","BETSM","CHECK"],map:BET_MAP,why:BET_WHY_MW,
+  roles:c=>{const R={};c.before.forEach(p=>R[p]={tag:"Check"});c.after.forEach(p=>R[p]={tag:"To act",cls:"act"});return R;}},
+ {k:"mw-behind",mw:1,hdr:"Lead, player behind",when:c=>c.n>=3&&c.before.length>=1&&c.after.length>=1,
+  q:"The player in front leads for half pot. Someone is still to act behind you.",opts:["RAISE","CALL","FOLD"],
+  map:{STACKS:"RAISE",THICK:"CALL",THIN:"FOLD",SDV:"FOLD",DRAW:"CALL",AIR:"FOLD"},
+  riverOverride:{DRAW:"FOLD"},
+  why:{STACKS:"Raise. Two ranges to get value from, and you do not want to give a cheap card to whoever is behind.",
+   THICK:"Call. Raising isolates you against the top of his range with a player still live behind you.",
+   THIN:"Fold. Cold-calling with a player behind is how marginal hands get squeezed and stacked.",
+   SDV:"Fold. There is no cheap showdown when someone can still raise behind you.",
+   DRAW:"Call with the price on flop and turn. On the river the draw is worthless.",AIR:"Fold."},
+  roles:(c,pot)=>{const R={};c.before.forEach((p,i)=>R[p]=i===c.before.length-1?{tag:"Bet",cls:"bet",chips:pot*0.5}:{tag:"Check"});
+    c.after.forEach(p=>R[p]={tag:"To act",cls:"act"});return R;}},
+ {k:"mw-betcall",mw:1,hdr:"Bet + call ahead",when:c=>c.n>=3&&c.before.length>=2,
+  q:"The first player bets 3/4 pot and the next player calls. Action on you.",opts:["RAISE","CALL","FOLD"],
+  map:{STACKS:"RAISE",THICK:"CALL",THIN:"FOLD",SDV:"FOLD",DRAW:"CALL",AIR:"FOLD"},
+  riverOverride:{THICK:"FOLD",DRAW:"FOLD"},
+  why:{STACKS:"Raise. A bet and a call in front means two hands willing to put money in.",
+   THICK:"Call the flop and turn. On the river, a bet plus a call in front beats one pair almost always. Fold.",
+   THIN:"Fold. A bet and a call means at least one of them beats a thin-value hand.",
+   SDV:"Fold. Two players have already shown interest.",
+   DRAW:"Call with the extra dead money on flop and turn. Fold the river.",AIR:"Fold."},
+  roles:(c,pot)=>{const R={};R[c.before[0]]={tag:"Bet",cls:"bet",big:1,chips:pot*0.75};
+    c.before.slice(1).forEach(p=>R[p]={tag:"Call",cls:"bet",big:1,chips:pot*0.75});
+    c.after.forEach(p=>R[p]={tag:"To act",cls:"act"});return R;}},
+ {k:"mw-xr",mw:1,hdr:"Check-raise",when:c=>c.n>=3&&c.before.length>=1,
+  q:"You bet 60%, the others fold, and the last player check-raises.",opts:["RAISE","CALL","FOLD"],
+  map:{STACKS:"RAISE",THICK:"CALL",THIN:"FOLD",SDV:"FOLD",DRAW:"CALL",AIR:"FOLD"},
+  turnRiverOverride:{THICK:"FOLD",DRAW:"FOLD"},
+  why:{STACKS:"Raise. Get it in.",
+   THICK:"Call the flop. A multiway check-raise is even more polarized than a heads-up one, so fold turn and river.",
+   THIN:"Fold. He check-raised into two players. That range is not bluffing.",SDV:"Fold.",
+   DRAW:"Call the flop with real equity. Fold turn and river.",AIR:"Fold."},
+  roles:(c,pot,hero)=>{const R={};R[hero]={tag:"Bet",cls:"bet",chips:pot*0.6};
+    const vs=c.before.concat(c.after), last=vs[vs.length-1];
+    vs.forEach(p=>{if(p!==last)R[p]={tag:"Fold",cls:"fold",folded:1};});
+    R[last]={tag:"Raise",cls:"raise",big:1,chips:pot*1.9};return R;}}
+];
+const ALLV=NODES;
+
+/* ---------- state ---------- */
+let cfg={street:"mix",stage:1,focus:"all",players:"mix"};
+let cur=null, t0=0, answered=false, phase=1, chosenBucket=null;
+let stats={n:0,ok:0,streak:0,best:0,time:0,
+  byB:{}, conf:{}, byV:{}};
+BORDER.forEach(b=>{stats.byB[b]={n:0,ok:0};stats.conf[b]={};});
+ALLV.forEach(v=>stats.byV[v.k]={n:0,ok:0});
+
+/* ---------- generation ---------- */
+function pool(){
+  const p = cfg.players==="mix" ? null : +cfg.players;
+  const out = p ? SCEN.filter(s=>s.p===p) : SCEN;
+  return out.length ? out : SCEN;
+}
+function deal(sc,streets){
+  const hole=sc.combos[Math.random()*sc.combos.length|0];
+  const used=new Set(hole.map(cardStr));
+  const d=shuf(deck().filter(c=>!used.has(cardStr(c))));
+  return {hole,board:d.slice(0,streets)};
+}
+function makeSpot(){
+  const rollStreet = ()=> cfg.street==="mix" ? [3,4,5][Math.random()*3|0] : +cfg.street;
+  const P=pool();
+  let best=null, bestScore=1e9;
+  const tries = cfg.focus==="all" ? 200 : 700;
+  for(let i=0;i<tries;i++){
+    const sc=P[Math.random()*P.length|0];
+    const {hole,board}=deal(sc,rollStreet());
+    const res=classify(hole,board,sc.p);
+    if(cfg.focus!=="all"){ if(res.bucket===cfg.focus){best={sc,hole,board,res};break;} continue; }
+    const seen=stats.byB[res.bucket].n + (i*0.001);
+    if(seen<bestScore){bestScore=seen;best={sc,hole,board,res};}
+    if(stats.byB[res.bucket].n===0) break;
+  }
+  if(!best){
+    const sc=P[Math.random()*P.length|0];
+    const {hole,board}=deal(sc,rollStreet());
+    best={sc,hole,board,res:classify(hole,board,sc.p)};
+  }
+  const ctx=actCtx(best.sc);
+  const elig=NODES.filter(nd=>(nd.mw?best.sc.p>=3:best.sc.p===2)&&nd.when(ctx));
+  best.ctx=ctx;
+  best.villain = elig.length?elig[Math.random()*elig.length|0]:NODES[0];
+  return best;
+}
+
+/* ---------- render ---------- */
+const $=id=>document.getElementById(id);
+function cardHTML(c,hero){
+  return '<div class="card '+SN[c.s]+(hero?' hero':'')+'"><span class="r">'+rn(c.r)+'</span><span class="p">'+SG[c.s]+'</span></div>';
+}
+let LAY=null, curRoles=null;
+function layout(wid){
+  const w=$(wid||"tablewrap").clientWidth;
+  return w<620
+    ? {W:380,H:600,cx:190,cy:290,fRx:145,fRy:225,rx:155,ry:248,potY:255,boardY:300,
+       heroOff:58,heroChip:[190,410],cw:46,cg:5,cls:"portrait",maxK:1.15,
+       chipOff:[[0,0],[70,-26],[70,26],[0,84],[-70,26],[-70,-26]]}
+    : {W:900,H:560,cx:450,cy:262,fRx:352,fRy:176,rx:356,ry:196,potY:170,boardY:222,
+       heroOff:68,heroChip:[320,390],cw:56,cg:8,cls:"",maxK:1,
+       chipOff:[[0,0],[86,-34],[86,26],[133,48],[-86,26],[-86,-34]]};
+}
+function seatXY(i,n){
+  const th=i*(2*Math.PI/n);
+  return {x:LAY.cx-LAY.rx*Math.sin(th), y:LAY.cy+LAY.ry*Math.cos(th)};
+}
+const TBL={};
+function renderTable(roles){ drawTable(cur,roles,"table","tablewrap"); curRoles=roles; }
+function drawTable(spot,roles,tid,wid){
+  TBL[tid]={spot,roles,wid};
+  LAY=layout(wid);
+  const L=LAY, sc=spot.sc, cur=spot, n=6, hi=POS.indexOf(sc.hero);
+  const T=$(tid);
+  T.style.width=L.W+"px"; T.style.height=L.H+"px";
+  T.className="table "+(L.cls||"");
+  const box=(x,y,w,hh)=>'left:'+x+'px;top:'+y+'px;width:'+w+'px;height:'+hh+'px';
+
+  let h='<div class="rail" style="'+box(L.cx-L.fRx-20,L.cy-L.fRy-18,(L.fRx+20)*2,(L.fRy+18)*2)+'"></div>';
+  h+='<div class="feltoval" style="'+box(L.cx-L.fRx,L.cy-L.fRy,L.fRx*2,L.fRy*2)+'"></div>';
+  h+='<div class="potbox" style="top:'+L.potY+'px"><div class="pl">Pot</div><div class="pv">'+bb(sc.pot)+'</div></div>';
+  h+='<div class="boardrow" style="top:'+L.boardY+'px;gap:'+L.cg+'px">'+cur.board.map(c=>cardHTML(c,false)).join("")+'</div>';
+
+  for(let i=0;i<n;i++){
+    const pos=POS[(hi+i)%6], xy=seatXY(i,n), me=i===0;
+    const live=sc.in.includes(pos), role=roles&&roles[pos], folded=role&&role.folded;
+    const cls="seat"+(me?" hero":"")+(!live?" out":"")+(folded?" out folded":"")+(sc.focus===pos?" vil":"");
+    let inner="";
+    if(live&&!me&&!folded) inner+='<div class="mini"><div class="back"></div><div class="back"></div></div>';
+    inner+='<div class="plate"><div class="pn">'+pos+'</div><div class="ps">'+
+      (live?bb(sc.stack):"&mdash;")+'</div>'+
+      (role&&role.tag?'<div class="tag '+(role.cls||"")+'">'+role.tag+'</div>':(sc.focus===pos&&sc.vtag?'<div class="tag bet">'+sc.vtag+'</div>':''))+'</div>';
+    h+='<div class="'+cls+'" style="left:'+xy.x+'px;top:'+xy.y+'px">'+inner+'</div>';
+
+    if(pos==="BTN"){
+      const off=L.cls?42:62;
+      const bx=xy.x+(xy.x<L.cx-4?off:xy.x>L.cx+4?-off:off*1.6);
+      const by=xy.y+(xy.y>L.cy+60?-2:28);
+      h+='<div class="btn" style="left:'+bx+'px;top:'+by+'px">D</div>';
+    }
+    if(role&&role.chips){
+      const D=L.chipOff[i];
+      const cx = me ? L.heroChip[0] : xy.x + D[0];
+      const cy = me ? L.heroChip[1] : xy.y + D[1];
+      h+='<div class="chipbet'+(role.big?" big":"")+'" style="left:'+cx+'px;top:'+cy+'px">'+
+         '<div class="pchip"></div><span>'+bb(role.chips)+'</span></div>';
+    }
+  }
+  h+='<div class="herocards" style="left:'+L.cx+'px;top:'+(seatXY(0,n).y-L.heroOff)+'px">'+
+     cur.hole.map(c=>cardHTML(c,true)).join("")+'</div>';
+  T.innerHTML=h;
+  fitOne(tid);
+}
+function fitOne(tid){
+  const rec=TBL[tid]; if(!rec)return;
+  const L=layout(rec.wid), w=$(rec.wid).clientWidth, k=Math.min(L.maxK||1, w/L.W);
+  const dx=Math.max(0,(w-L.W*k)/2);
+  $(tid).style.transform="translate("+dx+"px,0) scale("+k+")";
+  $(rec.wid).style.height=(L.H*k)+"px";
+}
+function fitTable(){ Object.keys(TBL).forEach(fitOne); }
+let rzT=null;
+window.addEventListener("resize",()=>{clearTimeout(rzT);rzT=setTimeout(()=>{
+  if(cur)renderTable(curRoles);
+  if(rcur&&!$("tab-range").classList.contains("hide"))drawTable({sc:rcur.sc,hole:rcur.hole,board:rcur.board},null,"rangetable","rangewrap");
+},120);});
+
+function draw(){
+  const st=["","","","Flop","Turn","River"][cur.board.length];
+  const pw=cur.sc.p===2?"Heads-up":cur.sc.p+"-way";
+  $("scen").innerHTML='<b>'+pw+' &middot; '+st+'</b> &nbsp;'+cur.sc.t;
+  renderTable(null);
+  $("bopts").innerHTML=BORDER.map((k,i)=>
+    '<button class="opt" data-b="'+k+'"><span class="k">'+(i+1)+'</span><span class="n">'+B[k].n+'</span><span class="d">'+B[k].d+'</span></button>').join("");
+  $("bopts").querySelectorAll(".opt").forEach(el=>el.onclick=()=>answerBucket(el.dataset.b));
+  $("stage2").classList.add("hide");
+  $("stage1").classList.remove("hide");
+  $("fb").innerHTML="";
+  answered=false;phase=1;chosenBucket=null;t0=Date.now();
+}
+function correctAction(v,bucket,street){
+  let a=v.map[bucket];
+  if(v.riverOverride && street===5 && v.riverOverride[bucket]) a=v.riverOverride[bucket];
+  if(v.turnRiverOverride && street>=4 && v.turnRiverOverride[bucket]) a=v.turnRiverOverride[bucket];
+  return a;
+}
+function answerBucket(pick){
+  if(answered)return;
+  const r=cur.res, right=pick===r.bucket, near=!right && pick===r.alt;
+  const secs=(Date.now()-t0)/1000;
+  stats.n++; stats.time+=secs;
+  stats.byB[r.bucket].n++;
+  if(right||near){stats.ok++;stats.streak++;stats.best=Math.max(stats.best,stats.streak);stats.byB[r.bucket].ok++;}
+  else{stats.streak=0;stats.conf[r.bucket][pick]=(stats.conf[r.bucket][pick]||0)+1;}
+  chosenBucket=r.bucket;
+  $("bopts").querySelectorAll(".opt").forEach(el=>{
+    el.disabled=true;
+    if(el.dataset.b===r.bucket)el.classList.add("right");
+    else if(el.dataset.b===r.alt)el.classList.add("alt");
+    else if(el.dataset.b===pick)el.classList.add("wrong");
+  });
+  showFeedback(right?"right":near?"alt":"wrong",pick);
+  answered=true;
+  updStats();
+  if(cfg.stage===2){ setTimeout(startStage2,60); }
+}
+function startStage2(){
+  const v=cur.villain;
+  renderTable(v.roles(cur.ctx,cur.sc.pot,cur.sc.hero));
+  $("q2").innerHTML=v.q;
+  $("aopts").innerHTML=v.opts.map((k,i)=>
+    '<button class="opt" data-a="'+k+'"><span class="k">'+(i+1)+'</span><span class="n">'+ACT[k].n+'</span></button>').join("");
+  $("aopts").querySelectorAll(".opt").forEach(el=>el.onclick=()=>answerAction(el.dataset.a));
+  $("stage2").classList.remove("hide");
+  phase=2;
+}
+function answerAction(pick){
+  if(phase!==2)return;
+  const v=cur.villain, right=correctAction(v,cur.res.bucket,cur.board.length);
+  stats.byV[v.k].n++; if(pick===right)stats.byV[v.k].ok++;
+  $("aopts").querySelectorAll(".opt").forEach(el=>{
+    el.disabled=true;
+    if(el.dataset.a===right)el.classList.add("right");
+    else if(el.dataset.a===pick)el.classList.add("wrong");
+  });
+  const box=document.createElement("div");
+  box.className="fbline";
+  box.style.marginTop="10px";
+  box.innerHTML="<b>Line:</b> "+v.why[cur.res.bucket];
+  $("fb").querySelector(".fb").appendChild(box);
+  phase=3;
+  updStats();
+}
+function showFeedback(kind,pick){
+  const r=cur.res, t=r.tex, n=r.nut;
+  const streetN=["","","","flop","turn","river"][cur.board.length];
+  const verdict = kind==="right"?"Correct":kind==="alt"?"Defensible":"Miss";
+  const head = kind==="right" ? B[r.bucket].n
+    : kind==="alt" ? "Also fine, but the primary read is "+B[r.bucket].n.toLowerCase()
+    : "It's "+B[r.bucket].n.toLowerCase()+", not "+B[pick].n.toLowerCase();
+  const drawTxt = r.draws.any? " Plus "+r.draws.names.join(" + ")+"." : "";
+  const pctBeat=(n.pct*100);
+  $("fb").innerHTML =
+   '<div class="fb '+kind+'">'+
+   '<div class="verdict '+kind+'">'+verdict+' &middot; '+head+'</div>'+
+   '<div class="fbline">You have <b>'+r.shape.name+'</b> on the '+streetN+'.'+drawTxt+'</div>'+
+   '<div class="fbline">'+t.label+'</div>'+
+   (r.demoted?'<div class="fbline">Heads-up this is <b>'+B[r.huBucket].n.toLowerCase()+'</b>. '+(r.players>=4?"Four":"Three")+'-way it drops to <b>'+B[r.bucket].n.toLowerCase()+'</b>.</div>':'')+
+   '<ul class="why">'+r.why.map(w=>"<li>"+w+"</li>").join("")+'</ul>'+
+   '<div class="meta">'+n.beat.toLocaleString()+' of '+n.tot.toLocaleString()+' random two-card holdings beat you ('+
+     pctBeat.toFixed(1)+'%)'+(n.tie?', '+n.tie+' tie':'')+(n.isNuts?' &middot; nuts':'')+
+     ' &middot; raw combos, not his actual range</div>'+
+   '<button class="next" id="nextb">Next hand &nbsp;<kbd>Enter</kbd></button>'+
+   '</div>';
+  $("nextb").onclick=next;
+}
+function next(){ cur=makeSpot(); draw(); }
+function updStats(){
+  $("s-acc").textContent = stats.n? Math.round(100*stats.ok/stats.n)+"%" : "—";
+  $("s-n").textContent = stats.n;
+  $("s-streak").textContent = stats.streak;
+  $("s-time").textContent = stats.n? (stats.time/stats.n).toFixed(1) : "—";
+  const bt=BORDER.map(b=>{
+    const s=stats.byB[b], rate=s.n?Math.round(100*s.ok/s.n):0;
+    const c=Object.entries(stats.conf[b]).sort((a,x)=>x[1]-a[1])[0];
+    return '<tr><td class="bk" style="color:'+B[b].c+'">'+B[b].n+'</td><td>'+s.n+'</td><td>'+s.ok+'</td>'+
+      '<td>'+(s.n?rate+'%':'—')+'<div class="bar"><i style="width:'+rate+'%"></i></div></td>'+
+      '<td style="color:var(--dim)">'+(c?B[c[0]].n+' ('+c[1]+')':'—')+'</td></tr>';
+  }).join("");
+  $("btable").innerHTML=bt;
+  $("ltable").innerHTML=ALLV.map(v=>{
+    const s=stats.byV[v.k], rate=s.n?Math.round(100*s.ok/s.n):0;
+    return '<tr><td class="bk">'+(v.mw?'MW · ':'HU · ')+v.hdr+'</td><td>'+s.n+'</td><td>'+s.ok+'</td>'+
+      '<td>'+(s.n?rate+'%':'—')+'<div class="bar"><i style="width:'+rate+'%"></i></div></td></tr>';
+  }).join("");
+}
+
+
+/* ================= RANGING ================= */
+const PROF={
+ nit:{n:"Nit",d:"15/12 — folds a lot, only bets when he has it",trap:1.4,
+  rfi:{UTG:"77+, ATs+, KQs, AJo+, KQo",
+       HJ:"66+, A9s+, KJs+, QJs, ATo+, KQo",
+       CO:"55+, A7s+, KTs+, QTs+, JTs, ATo+, KJo+",
+       BTN:"22+, A2s+, K9s+, Q9s+, J9s+, T9s, A9o+, KJo+, QJo",
+       SB:"22+, A5s+, K9s+, Q9s+, JTs, ATo+, KJo+"},
+  bb:"22+, A2s+, K7s+, Q9s+, J9s+, T9s, 98s, A8o+, KTo+, QJo",
+  threeb:"TT+, AQs+, AKo"},
+ tag:{n:"TAG",d:"22/18 — solid, bets his good hands, folds his bad ones",trap:1,
+  rfi:{UTG:"55+, A8s+, KTs+, QTs+, JTs, T9s, ATo+, KJo+",
+       HJ:"44+, A5s+, K9s+, Q9s+, J9s+, T9s, 98s, ATo+, KJo+, QJo",
+       CO:"22+, A2s+, K8s+, Q9s+, J9s+, T8s+, 97s+, 87s, 76s, A9o+, KTo+, QTo+, JTo",
+       BTN:"22+, A2s+, K2s+, Q5s+, J7s+, T7s+, 96s+, 85s+, 75s+, 64s+, 54s, A2o+, K9o+, Q9o+, J9o+, T9o",
+       SB:"22+, A2s+, K5s+, Q8s+, J8s+, T8s+, 97s+, 86s+, 76s, 65s, A7o+, K9o+, QTo+, JTo"},
+  bb:"22+, A2s+, K4s+, Q6s+, J7s+, T7s+, 96s+, 86s+, 75s+, 65s, 54s, A2o+, K8o+, Q9o+, J9o+, T9o, 98o",
+  threeb:"99+, AJs+, KQs, A4s, A5s, AQo+"},
+ lag:{n:"LAG",d:"30/24 — opens wide, barrels often, hard to put on a hand",trap:0.7,
+  rfi:{UTG:"22+, A2s+, K9s+, Q9s+, J9s+, T9s, 98s, 87s, A9o+, KJo+, QJo",
+       HJ:"22+, A2s+, K7s+, Q8s+, J8s+, T8s+, 97s+, 87s, 76s, A8o+, KTo+, QTo+, JTo",
+       CO:"22+, A2s+, K4s+, Q7s+, J8s+, T7s+, 96s+, 86s+, 75s+, 65s, A5o+, K9o+, Q9o+, J9o+, T9o",
+       BTN:"22+, A2s+, K2s+, Q2s+, J5s+, T6s+, 95s+, 84s+, 74s+, 63s+, 53s+, 43s, A2o+, K6o+, Q8o+, J8o+, T8o+, 97o+, 87o",
+       SB:"22+, A2s+, K2s+, Q5s+, J7s+, T7s+, 96s+, 85s+, 75s+, 64s+, 54s, A2o+, K7o+, Q8o+, J8o+, T8o+, 98o"},
+  bb:"22+, A2s+, K2s+, Q2s+, J4s+, T5s+, 94s+, 84s+, 73s+, 63s+, 52s+, 42s+, 32s, A2o+, K4o+, Q6o+, J7o+, T7o+, 96o+, 86o+, 76o",
+  threeb:"77+, A9s+, KTs+, QTs+, JTs, A2s, A3s, A4s, A5s, ATo+, KQo"},
+ sta:{n:"Station",d:"35/9 — calls everything, raises almost nothing",trap:2.1,
+  rfi:{UTG:"88+, AJs+, KQs, AQo+", HJ:"77+, ATs+, KJs+, AJo+",
+       CO:"66+, A9s+, KTs+, QJs, ATo+, KQo", BTN:"22+, A7s+, K9s+, Q9s+, J9s+, T9s, ATo+, KJo+",
+       SB:"22+, A8s+, K9s+, QTs+, JTs, ATo+, KJo+"},
+  bb:"22+, A2s+, K5s+, Q7s+, J7s+, T7s+, 96s+, 86s+, 75s+, 65s, 54s, A2o+, K7o+, Q8o+, J8o+, T8o+, 97o+, 87o, 76o",
+  threeb:"JJ+, AKs, AKo"},
+ cus:{n:"Custom",d:"your own range",trap:1,rfi:{},bb:"",threeb:""}
+};
+const HEROR={
+ cold:"22+, A2s+, K9s+, Q9s+, J9s+, T8s+, 97s+, 86s+, 76s, 65s, AJo+, KQo",
+ bbdef:"22+, A2s+, K2s+, Q4s+, J6s+, T6s+, 95s+, 85s+, 74s+, 63s+, 53s+, A2o+, K7o+, Q8o+, J8o+, T8o+, 97o+, 87o",
+ heroCO:"22+, A2s+, K8s+, Q9s+, J9s+, T8s+, 97s+, 86s+, 76s, 65s, A9o+, KTo+, QTo+, JTo",
+ heroBTN:"22+, A2s+, K2s+, Q5s+, J7s+, T7s+, 96s+, 85s+, 75s+, 64s+, 53s+, A2o+, K8o+, Q9o+, J9o+, T8o+"
+};
+const RNODES=[
+ {t:"He opens the CO to 2.5bb, you call on the BTN.",vil:"CO",hero:"BTN",pot:6.5,stack:96,vr:["rfi","CO"],hr:"cold"},
+ {t:"He opens the BTN to 2.5bb, you defend the BB.",vil:"BTN",hero:"BB",pot:5.5,stack:97,vr:["rfi","BTN"],hr:"bbdef"},
+ {t:"He opens UTG to 2.5bb, you defend the BB.",vil:"UTG",hero:"BB",pot:5.5,stack:97,vr:["rfi","UTG"],hr:"bbdef"},
+ {t:"He opens the HJ to 2.5bb, you defend the BB.",vil:"HJ",hero:"BB",pot:5.5,stack:97,vr:["rfi","HJ"],hr:"bbdef"},
+ {t:"You open the CO to 2.5bb, he defends the BB.",vil:"BB",hero:"CO",pot:5.5,stack:97,vr:["bb"],hr:"heroCO"},
+ {t:"You open the BTN to 2.5bb, he defends the BB.",vil:"BB",hero:"BTN",pot:5.5,stack:97,vr:["bb"],hr:"heroBTN"},
+ {t:"You open the BTN, he 3-bets the BB to 11bb, you call.",vil:"BB",hero:"BTN",pot:23,stack:89,vr:["threeb"],hr:"heroBTN"}
+];
+const LINES=[
+ {t:"He checks back the flop.",cap:1,w:{STACKS:.10,THICK:.16,THIN:.55,SDV:1,DRAW:.45,AIR:.9}},
+ {t:"He c-bets a third of the pot.",cap:0,w:{STACKS:.9,THICK:.85,THIN:.7,SDV:.35,DRAW:.6,AIR:.5}},
+ {t:"He c-bets three-quarters of the pot.",cap:0,w:{STACKS:1,THICK:.9,THIN:.35,SDV:.1,DRAW:.7,AIR:.32}},
+ {t:"He check-raises your flop bet.",cap:0,w:{STACKS:1,THICK:.7,THIN:.1,SDV:.02,DRAW:.35,AIR:.07}},
+ {t:"He calls your bet, then checks and calls again.",cap:1,w:{STACKS:.06,THICK:.3,THIN:.85,SDV:.7,DRAW:.9,AIR:.12}},
+ {t:"He checks and calls twice, then leads big.",cap:0,w:{STACKS:.8,THICK:.55,THIN:.2,SDV:.06,DRAW:.5,AIR:.35}},
+ {t:"He leads small into you.",cap:1,w:{STACKS:.25,THICK:.5,THIN:.85,SDV:.4,DRAW:.5,AIR:.3}}
+];
+const BANDS=[{t:"Almost none",lo:0,hi:.05},{t:"A few",lo:.05,hi:.13},
+  {t:"A decent chunk",lo:.13,hi:.26},{t:"A lot",lo:.26,hi:.45},{t:"Most of his range",lo:.45,hi:1.01}];
+const bandOf=x=>BANDS.findIndex(b=>x>=b.lo&&x<b.hi);
+const CAPA=["Capped — no stack-off hands left","Mostly capped — a token few","Uncapped — he can still have the nuts"];
+
+let rcfg={mode:"cover",prof:"tag",street:3};
+let rcur=null, rans=false, rstats={n:0,ok:0,streak:0,off:0};
+let CUSTOM=null;
+
+function vRangeStr(node,prof){
+  if(prof==="cus"&&CUSTOM) return CUSTOM;
+  const P=PROF[prof==="cus"?"tag":prof];
+  return node.vr.length===2 ? P.rfi[node.vr[1]] : P[node.vr[0]];
+}
+function toCombos(str){ const out=[]; parseRange(str).forEach(h=>out.push(...combos(h))); return out; }
+function bucketRange(str,board,hole,players){
+  const dead=new Set([...board,...hole].map(cardStr));
+  const all=toCombos(str);
+  const live=all.filter(c=>!c.some(x=>dead.has(cardStr(x))));
+  const cnt={},beats={},heroSc=evaluate([...hole,...board]).sc;
+  BORDER.forEach(b=>{cnt[b]=0;beats[b]=0;});
+  let beat=0;
+  live.forEach(c=>{
+    const b=classify(c,board,players).bucket; cnt[b]++;
+    if(evaluate([...c,...board]).sc>heroSc){beat++;beats[b]++;}
+  });
+  return {cnt,beats,beat,total:live.length,pre:all.length};
+}
+function weighted(res,line,trap){
+  const out={},pass={};
+  BORDER.forEach(b=>{
+    let w=line.w[b];
+    if(line.cap&&(b==="STACKS"||b==="THICK")) w=Math.min(1,w*trap);
+    out[b]=res.cnt[b]*w; pass[b]=w;
+  });
+  const tot=BORDER.reduce((a,b)=>a+out[b],0);
+  const bt=BORDER.reduce((a,b)=>a+res.beats[b]*(line.cap&&(b==="STACKS"||b==="THICK")?Math.min(1,line.w[b]*trap):line.w[b]),0);
+  return {cnt:out,total:tot,pass,beat:bt};
+}
+function rDeal(keep){
+  const node=(keep&&rcur)?rcur.node:RNODES[Math.random()*RNODES.length|0];
+  const prof=rcfg.prof;
+  const vstr=vRangeStr(node,prof);
+  const hcs=toCombos(HEROR[node.hr]);
+  const hole=(keep==="board"&&rcur)?rcur.hole:hcs[Math.random()*hcs.length|0];
+  const used=new Set(hole.map(cardStr));
+  const d=shuf(deck().filter(c=>!used.has(cardStr(c))));
+  const board=d.slice(0,rcfg.street);
+  const sc={p:2,hero:node.hero,in:[node.hero,node.vil],pot:node.pot,stack:node.stack,
+            t:node.t,focus:node.vil,vtag:Math.round(100*toCombos(vstr).length/1326)+'% range'};
+  const res=bucketRange(vstr,board,hole,2);
+  const mode = rcfg.mode==="mix" ? (Math.random()<0.5?"cover":"capped") : rcfg.mode;
+  let q=null;
+  if(mode==="capped"){
+    const line=LINES[Math.random()*LINES.length|0];
+    const wt=weighted(res,line,PROF[prof==="cus"?"tag":prof].trap);
+    const share=wt.total?wt.cnt.STACKS/wt.total:0;
+    q={type:"capped",line,wt,share,answer:share<0.02?0:share<0.06?1:2};
+  } else {
+    const roll=Math.random();
+    if(roll<0.5){
+      const b=BORDER[Math.random()*6|0];
+      q={type:"bucket",bucket:b,share:res.total?res.cnt[b]/res.total:0};
+    } else if(roll<0.78){
+      const v=res.cnt.STACKS+res.cnt.THICK;
+      q={type:"value",share:res.total?v/res.total:0};
+    } else {
+      const f=res.cnt.AIR+res.cnt.SDV;
+      q={type:"fold",share:res.total?f/res.total:0};
+    }
+    q.answer=bandOf(q.share);
+  }
+  return {node,prof,vstr,hole,board,sc,res,q,mode};
+}
+function rQtext(q){
+  if(q.type==="capped") return q.line.t+" Is his range capped?";
+  if(q.type==="value") return "What share of his range is <b>thick value or better</b>?";
+  if(q.type==="fold") return "What share of his range <b>folds to a bet</b> (air plus showdown value)?";
+  return "What share of his range is <b>"+B[q.bucket].n.toLowerCase()+"</b>?";
+}
+function rRender(){
+  const sp={sc:rcur.sc,hole:rcur.hole,board:rcur.board};
+  drawTable(sp,null,"rangetable","rangewrap");
+  const st=["","","","Flop","Turn","River"][rcur.board.length];
+  $("rscen").innerHTML='<b>'+PROF[rcur.prof].n+' &middot; '+st+'</b> &nbsp;'+rcur.node.t;
+  $("rreveal").innerHTML="";
+  if(rcfg.mode==="explore"){
+    $("rquestion").innerHTML="";
+    $("rexplore").classList.remove("hide");
+    $("rtext").value=rcur.vstr;
+    $("rpct").textContent="— "+rcur.res.pre+" combos preflop, "+rcur.res.total+" live on this board";
+    $("rreveal").innerHTML=rBreak(rcur.res,null,null);
+    return;
+  }
+  $("rexplore").classList.add("hide");
+  const opts = rcur.q.type==="capped" ? CAPA : BANDS.map(b=>b.t);
+  $("rquestion").innerHTML='<div class="qtxt">'+rQtext(rcur.q)+'</div><div class="grid">'+
+    opts.map((o,i)=>'<button class="opt" data-r="'+i+'"><span class="k">'+(i+1)+'</span><span class="n">'+o+'</span></button>').join("")+'</div>';
+  $("rquestion").querySelectorAll(".opt").forEach(el=>el.onclick=()=>rAnswer(+el.dataset.r));
+  rans=false;
+}
+function rBreak(res,hl,wt){
+  const src = wt||res, tot = wt?wt.total:res.total;
+  let h='<div class="fb"><div class="fbline"><b>'+Math.round(tot)+'</b> combos'+
+    (wt?' left after that line, from '+res.total:' live on this board, from '+res.pre+' preflop')+'</div>';
+  BORDER.forEach(b=>{
+    const c=wt?wt.cnt[b]:res.cnt[b], pc=tot?100*c/tot:0;
+    h+='<div class="brow'+(hl===b?" hit":"")+'"><div class="bname" style="color:'+B[b].c+'">'+SHORT[b]+'</div>'+
+       '<div class="btrack"><i style="width:'+pc.toFixed(1)+'%;background:'+B[b].c+'"></i></div>'+
+       '<div class="bnum">'+Math.round(c)+' &middot; '+pc.toFixed(0)+'%</div></div>';
+  });
+  const val=(src.cnt.STACKS+src.cnt.THICK), fold=(src.cnt.AIR+src.cnt.SDV);
+  const pct=x=>tot?Math.round(100*x/tot)+"%":"—";
+  h+='<div class="derived">'+
+    '<div class="dcell"><div class="dv">'+pct(val)+'</div><div class="dl">Thick value or better</div></div>'+
+    '<div class="dcell"><div class="dv">'+pct(fold)+'</div><div class="dl">Folds to a bet</div></div>'+
+    '<div class="dcell"><div class="dv">'+pct(wt?wt.beat:res.beat)+'</div><div class="dl">Beats your hand</div></div>'+
+    '</div></div>';
+  return h;
+}
+function rAnswer(pick){
+  if(rans)return; rans=true;
+  const q=rcur.q, ok=pick===q.answer, off=Math.abs(pick-q.answer);
+  rstats.n++; rstats.off+=off;
+  if(ok){rstats.ok++;rstats.streak++;} else rstats.streak=0;
+  $("rquestion").querySelectorAll(".opt").forEach(el=>{
+    el.disabled=true;
+    if(+el.dataset.r===q.answer)el.classList.add("right");
+    else if(+el.dataset.r===pick)el.classList.add("wrong");
+    else if(Math.abs(+el.dataset.r-q.answer)===1&&+el.dataset.r===pick)el.classList.add("alt");
+  });
+  const hl = q.type==="bucket"?q.bucket:null;
+  const head = ok?"Correct":off===1?"One band off":"Miss";
+  let note="";
+  if(q.type==="capped"){
+    note='<div class="fbline">His stack-off share after that line: <b>'+(100*q.share).toFixed(1)+'%</b>. '+
+      (q.answer===0?"Nothing strong survives, so your thin value bets and bluffs both work here.":
+       q.answer===1?"A token few. You can bet thin, but fold to real aggression.":
+       "He can still have it. Bluffing into this range burns money.")+'</div>';
+  } else {
+    note='<div class="fbline">Actual: <b>'+(100*q.share).toFixed(1)+'%</b> of his range.</div>';
+  }
+  $("rreveal").innerHTML='<div class="fb '+(ok?"right":off===1?"alt":"wrong")+'">'+
+    '<div class="verdict '+(ok?"right":off===1?"alt":"wrong")+'">'+head+'</div>'+note+'</div>'+
+    rBreak(rcur.res,hl,q.type==="capped"?q.wt:null)+
+    '<button class="next" id="rnext">Next spot &nbsp;<kbd>Enter</kbd></button>';
+  $("rnext").onclick=rNext;
+  rUpd();
+}
+function rNext(){ rcur=rDeal(); rRender(); }
+function rUpd(){
+  $("r-acc").textContent=rstats.n?Math.round(100*rstats.ok/rstats.n)+"%":"—";
+  $("r-n").textContent=rstats.n;
+  $("r-streak").textContent=rstats.streak;
+  $("r-off").textContent=rstats.n?(rstats.off/rstats.n).toFixed(2):"—";
+}
+
+/* ---------- reference ---------- */
+const REFROWS=[
+ ["STACKS","The top of your range, or anything you'd happily put 100bb in with. On a dry board that can be a set. On a four-flush board it's high flushes and boats only.","Bet / bet / bet or raise and get it in"],
+ ["THICK","TPTK, overpairs, top two. Happy when three streets get called, uncomfortable facing a check-raise.","Bet / bet / bet, fold to extreme aggression"],
+ ["THIN","Top pair weak kicker, middle pair good kicker, second pair on a dry board. Dominates weak calls but not three barrels.","Bet / check / bet, or bet / bet / check"],
+ ["SDV","Ace high, low pocket pairs, weak bottom pair. Too weak to bet, wins often enough if checked down.","Check / check / check, call small"],
+ ["DRAW","Flush draws, open-enders, gutshots. Outs to become stacks or thick value.","Semi-bluff, or check-call with the price"],
+ ["AIR","No pair, no draw, no showdown.","Give up, bluff only into a capped range"]
+];
+$("rtable").innerHTML=REFROWS.map(r=>'<tr><td class="bk" style="color:'+B[r[0]].c+'">'+B[r[0]].n+'</td><td>'+r[1]+'</td><td style="color:var(--dim)">'+r[2]+'</td></tr>').join("");
+$("gtable").innerHTML=BORDER.map(b=>{
+  const cells=NODES.filter(v=>!v.mw).map(v=>{
+    let a=ACT[v.map[b]].n;
+    const ov=(v.riverOverride&&v.riverOverride[b])||(v.turnRiverOverride&&v.turnRiverOverride[b]);
+    if(ov) a+=' <span style="color:var(--dim)">('+(v.riverOverride?"river":"turn+")+": "+ACT[ov].n.split(" ")[0].toLowerCase()+")</span>";
+    return "<td>"+a+"</td>";
+  }).join("");
+  return '<tr><td class="bk" style="color:'+B[b].c+'">'+B[b].n+'</td>'+cells+'</tr>';
+}).join("");
+NODES.filter(v=>!v.mw).forEach((v,i)=>{const e=$("hh"+i);if(e)e.textContent=v.hdr;});
+NODES.filter(v=>v.mw).forEach((v,i)=>{const e=$("mh"+i);if(e)e.textContent=v.hdr;});
+$("mtable").innerHTML=BORDER.map(b=>{
+  const cells=NODES.filter(v=>v.mw).map(v=>{
+    let a=ACT[v.map[b]].n;
+    const ov=(v.riverOverride&&v.riverOverride[b])||(v.turnRiverOverride&&v.turnRiverOverride[b]);
+    if(ov) a+=' <span style="color:var(--dim)">('+(v.riverOverride?"river":"turn+")+": "+ACT[ov].n.split(" ")[0].toLowerCase()+")</span>";
+    return "<td>"+a+"</td>";
+  }).join("");
+  return '<tr><td class="bk" style="color:'+B[b].c+'">'+B[b].n+'</td>'+cells+'</tr>';
+}).join("");
+$("mwrules").innerHTML=[
+ "Three-way: thin value becomes showdown value. Thick value becomes thin on any board with a danger flag. Stacks becomes thick on a board with two flags, unless you hold the nuts.",
+ "Four-way: thick value becomes thin on every board, and stacks becomes thick on any board with one flag.",
+ "The nuts never demote. More players means more payers, so bet bigger, not smaller.",
+ "Draws keep their bucket but lose their line. Semi-bluffing needs two or three folds, which does not happen against a pool that calls this wide. Play the draw for the price instead.",
+ "Air is a pure give-up multiway. There is no capped range worth attacking when two more people have to fold.",
+ "Cold-calling a bet with a player still behind you is the single most expensive multiway leak. Thin value and showdown value fold there."
+].map(x=>"<li>"+x+"</li>").join("");
+$("rules").innerHTML=[
+ "Danger flags on a board: three or more to a flush, four to a straight, a pair. Zero flags is dry, one is semi-wet, two or more is wet.",
+ "A set on a dry board plays for stacks. One danger flag keeps it there most of the time. Two flags drop it to thick value. If the board itself makes a straight or a four-flush, a set is thin value.",
+ "A flush is a stack-off if it's the nuts, or K-high or better on an unpaired board. On a paired board it's thick value because boats are live.",
+ "One pair is never a stack-off at 100bb, no matter how pretty the kicker is.",
+ "A strong draw sitting next to a weak pair is a draw, not a showdown hand. Play it as a semi-bluff.",
+ "Ace high with no draw is showdown value, not air. Betting it turns a winner into a bluff.",
+ "The combo count under each answer is every random two-card holding, not his range. Use it as a sanity check on how safe you actually are."
+].map(x=>"<li>"+x+"</li>").join("");
+
+/* ---------- wiring ---------- */
+document.querySelectorAll(".tab[data-tab]").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".tab[data-tab]").forEach(x=>x.classList.toggle("on",x===t));
+  ["drill","range","stats","ref"].forEach(k=>$("tab-"+k).classList.toggle("hide",k!==t.dataset.tab));
+  if(t.dataset.tab==="range"){ if(!rcur){rcur=rDeal();} rRender(); rUpd(); }
+});
+function chipGroup(attr,fn){
+  document.querySelectorAll("[data-"+attr+"]").forEach(c=>c.onclick=()=>{
+    document.querySelectorAll("[data-"+attr+"]").forEach(x=>x.classList.toggle("on",x===c));
+    fn(c.dataset[attr]); next();
+  });
+}
+chipGroup("street",v=>cfg.street=v);
+chipGroup("stage",v=>cfg.stage=+v);
+chipGroup("focus",v=>cfg.focus=v);
+chipGroup("players",v=>cfg.players=v);
+function chipGroupR(attr,fn){
+  document.querySelectorAll("[data-"+attr+"]").forEach(c=>c.onclick=()=>{
+    document.querySelectorAll("[data-"+attr+"]").forEach(x=>x.classList.toggle("on",x===c));
+    fn(c.dataset[attr]); rNext();
+  });
+}
+chipGroupR("rmode",v=>rcfg.mode=v);
+chipGroupR("prof",v=>rcfg.prof=v);
+chipGroupR("rstreet",v=>rcfg.street=+v);
+$("rdeal").onclick=()=>{rcur=rDeal("board");rRender();};
+$("rhand").onclick=()=>{rcur=rDeal("hand");rRender();};
+$("rnextspot").onclick=rNext;
+$("rapply").onclick=()=>{
+  const v=$("rtext").value.trim();
+  if(!toCombos(v).length){ $("rpct").textContent="— that range string didn't parse"; return; }
+  CUSTOM=v; rcfg.prof="cus";
+  document.querySelectorAll("[data-prof]").forEach(x=>x.classList.toggle("on",x.dataset.prof==="cus"));
+  rNext();
+};
+$("reset").onclick=()=>{
+  stats={n:0,ok:0,streak:0,best:0,time:0,byB:{},conf:{},byV:{}};
+  BORDER.forEach(b=>{stats.byB[b]={n:0,ok:0};stats.conf[b]={};});
+  ALLV.forEach(v=>stats.byV[v.k]={n:0,ok:0});
+  updStats(); next();
+};
+document.addEventListener("keydown",e=>{
+  const onRange=!$("tab-range").classList.contains("hide");
+  if(onRange){
+    if(e.key==="Enter"||e.key===" "){ if(rans||rcfg.mode==="explore"){e.preventDefault();rNext();} return; }
+    const k=parseInt(e.key,10);
+    if(k&&!rans&&rcfg.mode!=="explore"){
+      const n=rcur&&rcur.q.type==="capped"?3:5;
+      if(k>=1&&k<=n) rAnswer(k-1);
+    }
+    return;
+  }
+  if(e.key==="Enter"||e.key===" "){ if(answered&&(cfg.stage===1||phase===3)){e.preventDefault();next();} return; }
+  const n=parseInt(e.key,10);
+  if(!n)return;
+  if(phase===1&&n>=1&&n<=6) answerBucket(BORDER[n-1]);
+  else if(phase===2&&n>=1&&n<=cur.villain.opts.length) answerAction(cur.villain.opts[n-1]);
+});
+
+next(); updStats();
+</script>
+</body>
+</html>
