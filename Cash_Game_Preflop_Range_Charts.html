@@ -426,7 +426,8 @@ Object.keys(TABLES).forEach(k=>{const t=TABLES[k];
 });
 let T=TABLES.six;
 const combos=h=>h.length===2?6:(h[2]==="s"?4:12);
-const GRADE_AT=0.05;      /* any action played >= 5% counts as correct */
+const TIE_BAND=0.02;      /* only the most-played action is correct; ties inside 2 points both count */
+const topFreq=norm=>Math.max(...KEYS.map(k=>norm[k]||0));
 
 function suffix(cat,f){
   if(f==="hero"||f==="size") return "";
@@ -976,7 +977,7 @@ function answer(k){
   const sp=Q.sp, reach=reachOf(Q.mix)||1;
   const norm={}; KEYS.forEach(x=>norm[x]=(Q.mix[x]||0)/reach);
   const best=majority(Q.mix);
-  const ok = norm[k] >= GRADE_AT;
+  const ok = (norm[k]||0) >= topFreq(norm) - TIE_BAND;
   SESSION.seen++; if(ok){SESSION.ok++;SESSION.streak++;SESSION.best=Math.max(SESSION.best,SESSION.streak);} else SESSION.streak=0;
   recordHit(sp,Q.hand,ok);
   if(!ok){ SESSION.misses.unshift({t:sp.title,h:Q.hand,you:actLabel(k,sp),right:actLabel(best,sp)}); drawHist(); }
@@ -988,10 +989,10 @@ function answer(k){
   const v=document.getElementById("verdict");
   v.className="verdict "+(ok?"ok":"no");
   v.textContent = ok
-    ? (k===best?`Correct — that is the main line (${Math.round(norm[k]*100)}%)`
-               :`Correct — part of the mix (${Math.round(norm[k]*100)}%)`)
+    ? (k===best?`Correct — the most-played action (${Math.round(norm[k]*100)}%)`
+               :`Correct — level with ${actLabel(best,sp)} (${Math.round(norm[k]*100)}% vs ${Math.round(norm[best]*100)}%)`)
     : (norm[k]<0.001 ? `No — the solver never plays ${actLabel(k,sp)} with ${Q.hand} here`
-                     : `No — only ${(norm[k]*100).toFixed(1)}% ${actLabel(k,sp)}, below the 5% cut-off`);
+                     : `No — ${actLabel(k,sp)} is only ${(norm[k]*100).toFixed(0)}%; ${actLabel(best,sp)} is the majority at ${Math.round(norm[best]*100)}%`);
   document.getElementById("truth").innerHTML =
     Q.opts.filter(x=>norm[x]>0.0005).map(x=>`${actLabel(x,sp)} ${Math.round(norm[x]*100)}%`).join("  ·  ")
     + `<br><button class="next" id="next">Next hand  (space)</button>`;
@@ -1102,9 +1103,10 @@ function scoreRange(){
     const m=decode(cs[i]), reach=reachOf(m);
     if(reach<=0.02) return;
     const pick=RB.paint[i]||fallback;
-    const f=(m[pick]||0)/reach;
+    const nrm={}; KEYS.forEach(k=>nrm[k]=(m[k]||0)/reach);
+    const f=nrm[pick]||0;
     const w=combos(hand)*reach; wTot+=w;
-    if(f>=GRADE_AT) wHit+=w; else cells[i].classList.add("bad");
+    if(f>=topFreq(nrm)-TIE_BAND) wHit+=w; else cells[i].classList.add("bad");
     /* reveal solver mix underneath */
     const fill=document.createElement("div"); fill.className="fill";
     STACK.forEach(k=>{ if(!m[k])return; const e=document.createElement("i");
@@ -1119,7 +1121,7 @@ function scoreRange(){
   v.className="verdict "+(ok?"ok":"no");
   v.textContent=`${(acc*100).toFixed(1)}% of combos right`;
   document.getElementById("truth").innerHTML=
-    `Solver mix now shown in each cell. Red outline = the action you picked is played under 5% there.
+    `Solver mix now shown in each cell. Red outline = the action you picked is not the majority action there.
      <br><button class="next" id="next">Next spot  (space)</button>`;
   document.getElementById("next").onclick=nextQ;
   drawSession();
@@ -1290,7 +1292,7 @@ function drawFoot(){
       limper charts are marked <i>heuristic</i>: open-limping does not appear in a 100bb GTO tree, so they are exploitative
       guidance rather than solver output. Both are listed under Coverage and flagged on the chart itself.`) +
   `<br><br>
-   <b>Grading.</b> Drills count any action the solver plays at least 5% of the time as correct, and outline the majority
+   <b>Grading.</b> Drills count only the action the solver plays most often as correct, and outline the majority
    action in yellow so you can still see the main line. Hands sitting next to a range boundary come up more often,
    since that is where being wrong costs money.<br><br>
    <b>Rep mix.</b> Many of these charts are near-copies of each other: measured on the continuing range alone, the
