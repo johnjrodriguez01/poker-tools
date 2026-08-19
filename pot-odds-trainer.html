@@ -91,11 +91,13 @@ body{
   background:rgba(139,0,0,.38);color:#f0a8a8}
 
 /* pot, chips, card backs, folded seats */
-.ptpot{position:absolute;transform:translate(-50%,-50%);text-align:center;white-space:nowrap;z-index:2;
-  background:rgba(6,16,12,.55);border:1px solid rgba(240,201,138,.22);border-radius:9px;padding:6px 14px}
-.ptpot .l{font-family:var(--mono);font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:rgba(234,239,241,.42)}
-.ptpot .v{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--gold);line-height:1.2}
-.ptpot .c{font-family:var(--mono);font-size:10px;color:#8d8d97;margin-top:1px}
+.ptpot{position:absolute;transform:translate(-50%,-50%);z-index:2;
+  display:flex;flex-direction:column;align-items:center;gap:4px;white-space:nowrap}
+.ptpot .tp,.ptpot .mp{font-family:var(--mono);border-radius:11px;
+  background:rgba(4,12,9,.62);border:1px solid rgba(255,255,255,.09)}
+.ptpot .tp{font-size:12px;color:#e6ebed;padding:3px 12px}
+.ptpot .tp b{color:var(--gold);font-weight:700}
+.ptpot .mp{font-size:10px;color:#93a09b;padding:2px 10px}
 .ptchip{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:5px;z-index:6;
   background:rgba(5,11,9,.62);padding:2px 9px 2px 3px;border-radius:13px;white-space:nowrap}
 .ptdisc{width:15px;height:15px;border-radius:50%;flex:none;
@@ -103,14 +105,14 @@ body{
   border:2px solid #f6d3c5;box-shadow:0 2px 4px rgba(0,0,0,.6)}
 .ptchip.big .ptdisc{background:conic-gradient(#D93025 0 25%,#8e2018 0 50%,#D93025 0 75%,#8e2018 0);border-color:#f5b3ad}
 .ptchip span{font-family:var(--mono);font-size:10.5px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.9)}
-.ptmini{display:flex;gap:2px;justify-content:center;margin-bottom:-7px;position:relative;z-index:1}
+.ptmini{display:flex;gap:3px;justify-content:center;margin-bottom:4px;position:relative;z-index:1}
 .ptback{border-radius:3px;border:1px solid rgba(0,0,0,.5);width:var(--bw);height:var(--bh);
   background:repeating-linear-gradient(45deg,#7e1f24 0 3px,#5e1418 3px 6px);box-shadow:0 2px 4px rgba(0,0,0,.5)}
 .ptt.sm .ptname{font-size:10px}
 .ptt.sm .ptplate{padding:3px 7px}
-.ptt.sm .ptpot{padding:5px 11px}
-.ptt.sm .ptpot .v{font-size:16px}
-.ptt.sm .ptpot .c{font-size:9px}
+.ptt.sm .ptpot{gap:3px}
+.ptt.sm .ptpot .tp{font-size:11px;padding:3px 10px}
+.ptt.sm .ptpot .mp{font-size:9px;padding:2px 9px}
 .ptt.sm .ptchip{padding:2px 7px 2px 3px}
 .ptt.sm .ptchip span{font-size:9.5px}
 .ptt.sm .pttag{font-size:8px;padding:1px 5px}
@@ -118,6 +120,15 @@ body{
   background:linear-gradient(180deg,#fff,#d8d5cc);color:#161616;font-size:10px;font-weight:800;
   font-family:var(--mono);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 5px rgba(0,0,0,.6)}
 .ptt.sm .ptbtn{width:18px;height:18px;font-size:9px}
+.ptact{display:flex;justify-content:center;margin:10px 0 2px}
+.ptcall{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+  background:#12181b;color:#9aa6a2;border:1px solid #2b3a3f;border-radius:4px;padding:9px 26px;
+  cursor:pointer;line-height:1.35;transition:all .15s}
+.ptcall:hover{border-color:#40575e;color:#c8d2cf}
+.ptcall b{color:var(--gold);font-weight:700}
+.ptcall.on{background:#16211d;border-color:rgba(240,201,138,.4);color:#e6ebed}
+.ptcall i{display:block;font-style:normal;font-size:9px;letter-spacing:.04em;
+  text-transform:none;color:#7d8a86;margin-top:3px}
 .ptseat.dim{opacity:.62}
 .ptseat.out{opacity:.26}
 .ptseat.out .ptplate{background:#0f1416}
@@ -488,17 +499,17 @@ function pokerTable(){
 
 /* 6-max betting table for the price and decision drills. seat 0 is hero at the bottom,
    the rest run clockwise: LJ, HJ, CO, BTN, SB. the bettor sits at CO so he faces hero. */
-var BT_LAND = {W:520,H:360,cx:260,cy:180,fRx:206,fRy:104,sRx:224,sRy:150,
+var BT_LAND = {W:520,H:400,cx:260,cy:200,fRx:206,fRy:104,sRx:224,sRy:158,
                plateW:74,chipD:62,btnD:46,bw:17,bh:24,cls:''};
-var BT_PORT = {W:350,H:400,cx:175,cy:200,fRx:142,fRy:74,sRx:152,sRy:118,
+var BT_PORT = {W:350,H:410,cx:175,cy:205,fRx:142,fRy:74,sRx:152,sRy:124,
                plateW:60,chipD:48,btnD:38,bw:14,bh:20,cls:'sm'};
 /* with a board on the felt everything needs more room, so the pot moves up and shrinks to one line */
-var BD_LAND = {W:520,H:380,cx:260,cy:190,fRx:210,fRy:104,sRx:224,sRy:158,
-               plateW:74,chipD:62,btnD:46,bw:17,bh:24,cls:'',
-               potY:142,boardY:200,holeY:264,cw:38,ch:52,cg:7};
-var BD_PORT = {W:350,H:430,cx:175,cy:215,fRx:152,fRy:82,sRx:152,sRy:125,
-               plateW:60,chipD:48,btnD:38,bw:14,bh:20,cls:'sm',
-               potY:172,boardY:222,holeY:272,cw:28,ch:38,cg:5};
+var BD_LAND = {W:520,H:420,cx:260,cy:210,fRx:210,fRy:106,sRx:224,sRy:168,
+               plateW:74,chipD:64,btnD:46,bw:17,bh:24,cls:'',
+               potY:160,boardY:220,holeY:284,cw:38,ch:52,cg:7};
+var BD_PORT = {W:350,H:446,cx:175,cy:220,fRx:152,fRy:80,sRx:152,sRy:132,
+               plateW:60,chipD:50,btnD:38,bw:14,bh:20,cls:'sm',
+               potY:174,boardY:228,holeY:280,cw:28,ch:38,cg:5};
 /* clockwise seating from the big blind, which is also postflop action order */
 var SEATS = ['BB','LJ','HJ','CO','BTN','SB'];
 
@@ -523,9 +534,9 @@ function betTable(){
     (hasBoard ? ';--cw:'+L.cw+'px;--ch:'+L.ch+'px;--cg:'+L.cg+'px' : '')+'">'+
     '<div class="ptrail" style="left:'+(L.cx-L.fRx-14)+'px;top:'+(L.cy-L.fRy-12)+'px;width:'+((L.fRx+14)*2)+'px;height:'+((L.fRy+12)*2)+'px"></div>'+
     '<div class="ptfelt" style="left:'+(L.cx-L.fRx)+'px;top:'+(L.cy-L.fRy)+'px;width:'+(L.fRx*2)+'px;height:'+(L.fRy*2)+'px"></div>'+
-    '<div class="ptpot" style="left:'+L.cx+'px;top:'+(hasBoard?L.potY:L.cy)+'px"><div class="l">Pot</div>'+
-      '<div class="v">'+bb(D.pot)+'bb</div>'+
-      (!hasBoard && D.potnow !== D.pot ? '<div class="c">'+bb(D.potnow)+'bb if you call</div>' : '')+'</div>';
+    '<div class="ptpot" style="left:'+L.cx+'px;top:'+(hasBoard?L.potY:L.cy)+'px">'+
+      '<div class="tp">Total pot: <b>'+bb(D.total)+'bb</b></div>'+
+      '<div class="mp">Main pot: '+bb(D.main)+'bb</div></div>';
   if(hasBoard){
     var toI = function(t){ return t.split(',').map(Number); };
     h += '<div class="ptg" style="left:'+L.cx+'px;top:'+L.boardY+'px">'+cardsHTML(toI(D.board))+'</div>'+
@@ -553,10 +564,14 @@ function betTable(){
     /* the button sits beside the BTN seat whether or not he is still in the hand.
        nudged sideways along the rail so it clears both the name plate and the chip. */
     if(pos === 'BTN'){
-      var ux = (L.cx-p.x)/(Math.hypot(L.cx-p.x, L.cy-p.y) || 1), uy = (L.cy-p.y)/(Math.hypot(L.cx-p.x, L.cy-p.y) || 1);
-      var side = L.plateW/2 + 14;
-      var bx = p.x + ux*L.btnD*0.35 - uy*side;
-      var byy = p.y + uy*L.btnD*0.35 + ux*side;
+      var bl = Math.hypot(L.cx-p.x, L.cy-p.y) || 1;
+      var ux = (L.cx-p.x)/bl, uy = (L.cy-p.y)/bl;
+      /* step sideways past the seat block. the block is much taller than it is wide, so the
+         clearance has to follow whichever way the sidestep actually points. */
+      var px = -uy, py = ux, blockH = L.bh + 4 + 49;
+      var side = L.plateW/2*Math.abs(px) + blockH/2*Math.abs(py) + 13;
+      var bx = p.x + ux*L.btnD*0.35 + px*side;
+      var byy = p.y + uy*L.btnD*0.35 + py*side;
       h += '<div class="ptbtn" style="left:'+Math.max(14,Math.min(L.W-14,bx))+'px;top:'+
            Math.max(14,Math.min(L.H-14,byy))+'px">D</div>';
     }
@@ -792,9 +807,12 @@ function buildPre(){
     kind:'num', isPre:true,
     street:'PREFLOP \u00b7 big blind \u00b7 ' + (s.pl===2 ? 'heads up' : s.pl+' players'),
     lines:[s.line],
-    tbl: betWrap(s.pot, d1(s.pot + s.call), 'BB',
-          [{p:'BB',r:'hero',a:inv},{p:s.vill,r:'bettor',a:d1(s.call+inv)}].concat(
-            s.live.map(function(x){ return {p:x[0], r:'live', a:x[1]}; })), false),
+    tbl: (function(){
+      var st = [{p:'BB',r:'hero',a:inv},{p:s.vill,r:'bettor',a:d1(s.call+inv)}].concat(
+        s.live.map(function(x){ return {p:x[0], r:'live', a:x[1]}; }));
+      var front = 0; st.forEach(function(x){ front += x.a; });
+      return betWrap(s.pot - front, s.pot, s.call, 'BB', st, false);
+    })(),
     figs:[],
     ask:'How often do you need to win to break even on the call?',
     unit:'%', correct: s.call/(s.pot + s.call)*100,
@@ -803,11 +821,27 @@ function buildPre(){
 }
 
 /* seats: [{p:position, r:'hero'|'bettor'|'live', a:amount in front}] */
-function betWrap(pot, potNow, heroPos, seats, shove, board, hole){
-  return '<div class="ptwrap" id="ptwrap" data-pot="'+pot+'" data-potnow="'+potNow+
+/* main pot is what has been collected into the middle. total pot adds every chip still
+   sitting in front of a player, the way Ignition splits them. */
+function betWrap(main, total, toCall, heroPos, seats, shove, board, hole){
+  var posted = 0;
+  seats.forEach(function(x){ if(x.r==='hero') posted = x.a; });
+  return '<div class="ptwrap" id="ptwrap" data-main="'+d1(main)+'" data-total="'+d1(total)+
+         '" data-tocall="'+d1(toCall)+'" data-posted="'+d1(posted)+
          '" data-hero="'+heroPos+'" data-seats="'+encodeURIComponent(JSON.stringify(seats))+
          '" data-shove="'+(shove?1:0)+'"'+
-         (board ? ' data-board="'+board.join(',')+'" data-hole="'+hole.join(',')+'"' : '')+'></div>';
+         (board ? ' data-board="'+board.join(',')+'" data-hole="'+hole.join(',')+'"' : '')+
+         '></div>'+
+         '<div class="ptact"><button class="ptcall" id="ptcall">Call <b>?</b></button></div>';
+}
+
+function revealCall(){
+  var b = document.getElementById('ptcall'), w = document.getElementById('ptwrap');
+  if(!b || !w) return;
+  var posted = +w.dataset.posted, call = +w.dataset.tocall;
+  b.classList.add('on');
+  b.innerHTML = 'Call <b>'+bb(call)+'bb</b>' +
+    (posted > 0 ? '<i>'+bb(call+posted)+' to match, '+bb(posted)+' already posted</i>' : '');
 }
 
 function buildOdds(){
@@ -817,7 +851,7 @@ function buildOdds(){
   var need = f.bet/(f.pot + f.bet)*100;
   return {
     kind:'num', street: street.toUpperCase() + seatLabel(f), lines:f.lines,
-    tbl: betWrap(f.potBefore, f.pot, f.hero, f.seats, f.shove),
+    tbl: betWrap(f.potBefore, f.pot, f.bet, f.hero, f.seats, f.shove),
     figs:[],
     ask:'How often do you need to win to break even on the call?',
     unit:'%', correct:need,
@@ -1040,7 +1074,7 @@ function decisionCandidate(){
   return {
     kind:'choice',
     street: street.toUpperCase() + (f.shove ? ' · all-in' : '') + seatLabel(f), lines:f.lines,
-    tbl: betWrap(f.potBefore, f.pot, f.hero, f.seats, f.shove, d.board, d.hero),
+    tbl: betWrap(f.potBefore, f.pot, f.bet, f.hero, f.seats, f.shove, d.board, d.hero),
     figs:[['Outs',String(d.outs)]],
     ask:'You have <b>'+article(d.name)+d.name+'</b>. On price alone, call or fold?',
     correct: eq >= need ? 'call' : 'fold',
@@ -1140,6 +1174,8 @@ function newHand(){
   }).join('');
   document.getElementById('cards').innerHTML = q.cardsHTML || q.tbl || '';
   if(q.isOuts) pokerTable(); else if(q.tbl) betTable();
+  var cb = document.getElementById('ptcall');
+  if(cb) cb.addEventListener('click', revealCall);
   document.getElementById('ref-odds').style.display   = (mode==='odds')   ? 'block' : 'none';
   document.getElementById('ref-equity').style.display = (mode==='equity' || mode==='toeq') ? 'block' : 'none';
   document.getElementById('figs').innerHTML = (q.figs||[]).map(function(f){
