@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bet Sizing Trainer</title>
+<style>
+:root{
+  --bg:#08090a;
+  --panel:#101214;
+  --panel2:#16191c;
+  --line:#24282d;
+  --gold:#c9a227;
+  --gold-hi:#e9cc63;
+  --txt:#e8e6e1;
+  --dim:#8b9096;
+  --good:#4caf7d;
+  --bad:#d1544f;
+  --warn:#d9a441;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);
+  font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+.wrap{max-width:940px;margin:0 auto;padding:18px 16px 60px}
+h1{font-size:19px;margin:0;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--gold)}
+.sub{color:var(--dim);font-size:12.5px;margin-top:3px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;
+  border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{background:none;border:1px solid var(--line);color:var(--dim);padding:6px 12px;border-radius:5px;
+  font-size:12.5px;cursor:pointer;font-family:inherit}
+.tab:hover{color:var(--txt);border-color:#3a4046}
+.tab.on{background:var(--gold);border-color:var(--gold);color:#0a0a0a;font-weight:600}
+
+.controls{display:flex;gap:8px 18px;flex-wrap:wrap;align-items:center;margin-bottom:16px;
+  background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.cgroup{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.clabel{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-right:3px}
+.chip{background:var(--panel2);border:1px solid var(--line);color:var(--dim);padding:4px 9px;border-radius:4px;
+  font-size:12px;cursor:pointer;font-family:inherit}
+.chip:hover{color:var(--txt)}
+.chip.on{background:rgba(201,162,39,.16);border-color:var(--gold);color:var(--gold-hi)}
+.vread{font-size:12px;color:var(--dim);flex-basis:100%;line-height:1.5;margin-top:2px}
+.vread b{color:var(--gold-hi);font-weight:600}
+
+.scen{background:var(--panel);border:1px solid var(--line);border-left:2px solid var(--gold);
+  border-radius:6px;padding:10px 14px;font-size:13.5px;color:#c3c8ce;margin-bottom:14px}
+.scen b{color:var(--gold-hi);font-weight:600}
+
+/* felt table, ported from Range Drills */
+.tablewrap{width:100%;overflow:hidden;margin-bottom:10px}
+.table{position:relative;transform-origin:top left}
+.rail{position:absolute;border-radius:50%;
+  background:linear-gradient(180deg,#2a2015,#150f09);box-shadow:0 14px 40px rgba(0,0,0,.6)}
+.feltoval{position:absolute;border-radius:50%;
+  background:radial-gradient(ellipse at 50% 38%,#1c4536 0%,#123024 55%,#0c2019 100%);
+  border:2px solid rgba(201,162,39,.35);box-shadow:inset 0 0 70px rgba(0,0,0,.6)}
+.tlogo{position:absolute;left:0;right:0;text-align:center;font-size:11px;letter-spacing:.42em;
+  text-transform:uppercase;color:rgba(201,162,39,.22);font-weight:700;pointer-events:none}
+.potbox{position:absolute;left:0;right:0;text-align:center}
+.potbox .pl{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:rgba(232,230,225,.4)}
+.potbox .pv{font-size:19px;font-weight:700;color:var(--gold-hi);font-family:ui-monospace,Menlo,monospace}
+.boardrow{position:absolute;left:0;right:0;display:flex;gap:8px;justify-content:center}
+
+.card{width:56px;height:78px;border-radius:6px;background:#f7f7f5;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;font-weight:700;box-shadow:0 3px 10px rgba(0,0,0,.6)}
+.card .r{font-size:27px;line-height:1;font-family:ui-monospace,Menlo,Consolas,monospace}
+.card .p{font-size:18px;line-height:1.1;margin-top:1px}
+.card.sp{color:#141414}.card.he{color:#c0322b}.card.di{color:#2b6cad}.card.cl{color:#2f7a45}
+.card.hero{background:#fffdf4;outline:2px solid var(--gold);box-shadow:0 3px 12px rgba(0,0,0,.7)}
+.card.fresh{outline:2px solid var(--gold-hi);outline-offset:1px}
+
+.seat{position:absolute;transform:translate(-50%,-50%);width:132px;text-align:center}
+.table.portrait .seat{width:104px}
+.table.portrait .card{width:46px;height:64px}
+.table.portrait .card .r{font-size:22px}
+.table.portrait .card .p{font-size:15px}
+.table.portrait .back{width:23px;height:32px}
+.table.portrait .potbox .pv{font-size:18px}
+.seat .mini{display:flex;gap:2px;justify-content:center;margin-bottom:-9px;position:relative;z-index:1}
+.back{width:26px;height:36px;border-radius:3px;border:1px solid rgba(0,0,0,.5);
+  background:repeating-linear-gradient(45deg,#7e1f24 0 3px,#5e1418 3px 6px);
+  box-shadow:0 2px 5px rgba(0,0,0,.5)}
+.plate{background:#14181c;border:1px solid #2d333a;border-radius:7px;padding:6px 8px;position:relative;z-index:2}
+.pn{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--txt)}
+.ps{font-size:11px;color:var(--gold-hi);font-family:ui-monospace,Menlo,monospace;margin-top:1px}
+.seat.hero .plate{border-color:var(--gold);background:#1c1a12}
+.seat.hero .pn{color:var(--gold-hi)}
+.seat.vil .plate{border-color:var(--gold);box-shadow:0 0 0 2px rgba(201,162,39,.28)}
+.seat.vil .pn{color:var(--gold-hi)}
+.seat.out{opacity:.32}
+.seat.out .plate{background:#0f1113}
+.tag{position:absolute;left:50%;transform:translateX(-50%);bottom:-19px;font-size:9.5px;letter-spacing:.12em;
+  text-transform:uppercase;padding:2px 7px;border-radius:9px;background:#222830;color:#a9b0b7;white-space:nowrap}
+.tag.bet{background:rgba(201,162,39,.2);color:var(--gold-hi)}
+.tag.raise{background:rgba(209,84,79,.22);color:#e58f8a}
+.tag.act{background:#1c2a22;color:#79b394}
+.herocards{position:absolute;transform:translate(-50%,-50%);display:flex;gap:7px}
+.btn{position:absolute;transform:translate(-50%,-50%);width:26px;height:26px;border-radius:50%;
+  background:linear-gradient(180deg,#fff,#d8d5cc);color:#1a1a1a;font-size:12px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.6);z-index:3}
+.chipbet{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:5px;z-index:3}
+.pchip{width:19px;height:19px;border-radius:50%;background:conic-gradient(#c9a227 0 25%,#8b6f18 0 50%,#c9a227 0 75%,#8b6f18 0);
+  border:2px solid #f0dd9a;box-shadow:0 2px 5px rgba(0,0,0,.6)}
+.chipbet span{font-size:12px;font-weight:700;color:#fff;font-family:ui-monospace,Menlo,monospace;
+  text-shadow:0 1px 3px rgba(0,0,0,.9)}
+
+.derived{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+@media(max-width:560px){.derived{grid-template-columns:repeat(2,1fr)}}
+.dcell{background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:10px 12px;text-align:center}
+.dcell .dv{font-size:17px;font-weight:700;font-family:ui-monospace,Menlo,monospace;color:var(--gold-hi)}
+.dcell .dl{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);margin-top:1px}
+
+.qtxt{text-align:center;font-size:12.5px;color:var(--dim);margin:2px 0 10px;letter-spacing:.03em}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.grid.c2{grid-template-columns:repeat(2,1fr)}
+.grid.c5{grid-template-columns:repeat(3,1fr)}
+@media(max-width:620px){.grid{grid-template-columns:repeat(2,1fr)}}
+.opt{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:11px 10px;
+  cursor:pointer;text-align:left;font-family:inherit;color:var(--txt);transition:.12s;position:relative}
+.opt:hover:not(:disabled){border-color:var(--gold);background:#1c2024}
+.opt:disabled{cursor:default}
+.opt .k{position:absolute;top:6px;right:8px;font-size:10px;color:#575c62;font-family:ui-monospace,monospace}
+.opt .n{font-size:13.5px;font-weight:600;display:block}
+.opt .d{font-size:11px;color:var(--dim);display:block;margin-top:2px;line-height:1.35}
+.opt.right{border-color:var(--good);background:rgba(76,175,125,.13)}
+.opt.right .n{color:var(--good)}
+.opt.wrong{border-color:var(--bad);background:rgba(209,84,79,.13)}
+.opt.wrong .n{color:var(--bad)}
+
+.fb{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.fb.right{border-left:3px solid var(--good)}
+.fb.wrong{border-left:3px solid var(--bad)}
+.verdict{font-size:14px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px}
+.verdict.right{color:var(--good)}.verdict.wrong{color:var(--bad)}
+.fbline{font-size:13.5px;margin:5px 0;color:#c9cdd2}
+.fbline b{color:var(--gold-hi);font-weight:600}
+.why{list-style:none;padding:0;margin:9px 0 0}
+.why li{font-size:12.5px;color:var(--dim);padding-left:14px;position:relative;margin:3px 0;line-height:1.5}
+.why li:before{content:"";position:absolute;left:2px;top:8px;width:4px;height:4px;background:var(--gold);border-radius:50%}
+.meta{margin-top:10px;padding-top:9px;border-top:1px solid var(--line);font-size:11.5px;color:#6d7278;
+  font-family:ui-monospace,Menlo,monospace}
+.cmp{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:11px}
+.cmp div{background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:7px 4px;text-align:center}
+.cmp div.hl{border-color:var(--gold)}
+.cmp .who{font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--dim)}
+.cmp .act{font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-top:2px}
+.cmp .act.check{color:#79a7c4}.cmp .act.small{color:var(--gold-hi)}.cmp .act.large{color:#e08b52}
+.next{margin-top:12px;width:100%;background:var(--gold);border:none;color:#0a0a0a;font-weight:700;
+  padding:11px;border-radius:6px;cursor:pointer;font-size:13.5px;font-family:inherit;letter-spacing:.05em}
+.next:hover{background:var(--gold-hi)}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:20px}
+th,td{padding:8px 9px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-weight:600}
+td.bk{font-weight:600;white-space:nowrap}
+td.n{text-align:right;font-family:ui-monospace,Menlo,monospace}
+h2{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin:22px 0 9px;font-weight:600}
+h2:first-child{margin-top:0}
+.note{font-size:12.5px;color:var(--dim);margin-bottom:14px;line-height:1.55}
+.bar{height:5px;background:#1e2226;border-radius:3px;overflow:hidden;margin-top:4px;min-width:80px}
+.bar i{display:block;height:100%;background:var(--gold)}
+.hide{display:none}
+kbd{background:#1d2126;border:1px solid var(--line);border-radius:3px;padding:1px 5px;font-size:11px;
+  font-family:ui-monospace,monospace;color:var(--dim)}
+details{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:8px}
+summary{cursor:pointer;list-style:none;padding:12px 15px;font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim)}
+summary::-webkit-details-marker{display:none}
+summary:hover{color:var(--gold)}
+.sheet{padding:0 15px 15px}
+.reset{background:none;border:1px solid var(--line);color:var(--dim);padding:6px 12px;border-radius:5px;
+  cursor:pointer;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-family:inherit}
+.reset:hover{border-color:var(--bad);color:var(--bad)}
+.keys{font-size:11.5px;color:var(--dim);margin-top:14px;line-height:1.7}
+.warnbar{font-size:11.5px;color:var(--warn);margin-top:8px}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div>
+    <h1>Bet Sizing</h1>
+    <div class="sub">Flop size &middot; turn barrel &middot; pot geometry</div>
+  </div>
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-mode="flop">Flop size</button>
+    <button class="tab" data-mode="turn">Turn barrel</button>
+    <button class="tab" data-mode="geo">Geometry</button>
+    <button class="tab" data-mode="mixed">Mixed</button>
+  </div>
+</header>
+
+<div class="controls" id="controls"></div>
+<div class="scen" id="scen"></div>
+<div class="tablewrap" id="tablewrap"><div class="table" id="table"></div></div>
+<div class="derived hide" id="derived"></div>
+<div class="qtxt" id="qtxt"></div>
+<div id="qwrap"></div>
+<div id="fbwrap"></div>
+
+<details id="statsBox">
+  <summary>&#9656; Accuracy by texture</summary>
+  <div class="sheet" id="statsBody"></div>
+</details>
+
+<div class="keys">
+  <kbd>1</kbd>&ndash;<kbd>6</kbd> answer &middot; <kbd>&crarr;</kbd> next hand &middot; <kbd>M</kbd> next mode
+  <div class="warnbar" id="warnbar"></div>
+</div>
+
+</div>
+<script>
+/* ---------- storage ---------- */
+const Store=(()=>{let ok=true,mem={};
+  try{localStorage.setItem('__t','1');localStorage.removeItem('__t');}catch(e){ok=false;}
+  return{ok,
+    get(k,d){try{const v=ok?localStorage.getItem(k):mem[k];return v?JSON.parse(v):d;}catch(e){return d;}},
+    set(k,v){try{const s=JSON.stringify(v);if(ok)localStorage.setItem(k,s);else mem[k]=s;}catch(e){}}};})();
+const $=id=>document.getElementById(id);
+if(!Store.ok)$('warnbar').textContent='Storage blocked here \u2014 progress resets on reload. Works normally on your site.';
+
+/* ---------- cards ---------- */
+const RN={2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'T',11:'J',12:'Q',13:'K',14:'A'};
+const RV={'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'T':10,'J':11,'Q':12,'K':13,'A':14};
+const SUITS=['s','h','d','c'];
+const SG={s:'\u2660',h:'\u2665',d:'\u2666',c:'\u2663'};
+const SN={s:'sp',h:'he',d:'di',c:'cl'};
+const rnd=n=>Math.floor(Math.random()*n), pick=a=>a[rnd(a.length)];
+const bb=v=>(Math.round(v*10)/10)+'bb';
+function cardHTML(c,hero,fresh){
+  return '<div class="card '+SN[c.s]+(hero?' hero':'')+(fresh?' fresh':'')+'">'+
+    '<span class="r">'+RN[c.r]+'</span><span class="p">'+SG[c.s]+'</span></div>';
+}
+
+/* ---------- preflop ranges ---------- */
+function expand(tok){const out=[];
+  for(const t of tok){
+    if(/^(\w)\1\+$/.test(t)){const lo=RV[t[0]];for(let r=lo;r<=14;r++)out.push(RN[r]+RN[r]);}
+    else if(/^(\w)\1$/.test(t))out.push(t);
+    else if(/^(\w)(\w)([so])\+$/.test(t)){const m=t.match(/^(\w)(\w)([so])\+$/);
+      const hi=RV[m[1]],lo=RV[m[2]];for(let r=lo;r<hi;r++)out.push(m[1]+RN[r]+m[3]);}
+    else out.push(t);}
+  return out;}
+const RANGES={
+  UTG:expand(['66+','A9s+','KTs+','QTs+','JTs','T9s','AJo+','KQo']),
+  HJ:expand(['55+','A7s+','K9s+','Q9s+','J9s+','T8s+','98s','ATo+','KJo+','QJo']),
+  CO:expand(['33+','A2s+','K7s+','Q8s+','J8s+','T8s+','97s+','86s+','75s+','A9o+','KTo+','QTo+','JTo']),
+  BTN:expand(['22+','A2s+','K3s+','Q6s+','J7s+','T7s+','96s+','85s+','75s+','64s+','54s','A5o+','K8o+','Q9o+','J9o+','T9o','98o']),
+  SB:expand(['22+','A2s+','K5s+','Q7s+','J8s+','T8s+','97s+','86s+','75s+','65s','A7o+','K9o+','QTo+','JTo'])
+};
+const THREEBET=expand(['99+','AJs+','KQs','A5s','A4s','AQo+']);
+function dealHand(str,dead){
+  const r1=RV[str[0]],r2=RV[str[1]],suited=str[2]==='s',pair=str.length===2;
+  for(let t=0;t<200;t++){let a,b;
+    if(pair){const ss=SUITS.slice().sort(()=>Math.random()-.5);a={r:r1,s:ss[0]};b={r:r1,s:ss[1]};}
+    else if(suited){const s=pick(SUITS);a={r:r1,s};b={r:r2,s};}
+    else{const ss=SUITS.slice().sort(()=>Math.random()-.5);a={r:r1,s:ss[0]};b={r:r2,s:ss[1]};}
+    const k=c=>c.r+c.s;
+    if(!dead.some(d=>k(d)===k(a)||k(d)===k(b)))return[a,b];}
+  return null;}
+function dealBoard(n,dead){const out=[];
+  while(out.length<n){const c={r:2+rnd(13),s:pick(SUITS)};const k=x=>x.r+x.s;
+    if(![...dead,...out].some(d=>k(d)===k(c)))out.push(c);}
+  return out;}
+
+/* ---------- board texture ---------- */
+function classifyBoard(b){
+  const rk=b.map(c=>c.r).sort((x,y)=>y-x);const[hi,mid,lo]=rk;
+  const sc={};b.forEach(c=>sc[c.s]=(sc[c.s]||0)+1);
+  const maxS=Math.max(...Object.values(sc));
+  const suitTex=maxS===3?'monotone':maxS===2?'two-tone':'rainbow';
+  const paired=hi===mid||mid===lo, trips=hi===mid&&mid===lo;
+  const span=hi-lo, lowerSpan=mid-lo;
+  let arch;
+  if(trips)arch='trips';
+  else if(paired)arch=hi>=11?'paired-high':'paired-low';
+  else if(suitTex==='monotone')arch='monotone';
+  else if(hi>=13){if(lowerSpan<=2&&mid<=11)arch='high-dynamic';else if(span<=4)arch='broadway-connected';else arch='high-dry';}
+  else if(hi>=11){if(span<=4)arch='broadway-connected';else if(lowerSpan<=2)arch='high-dynamic';else arch='high-dry';}
+  else if(hi>=8)arch=span<=4?'mid-connected':'mid-dry';
+  else arch=span<=4?'low-connected':'low-dry';
+  return{hi,mid,lo,span,suitTex,arch};}
+const ARCH_NAME={'high-dry':'A/K-high dry','high-dynamic':'High card + connected low',
+  'broadway-connected':'Broadway connected','mid-dry':'Middling disconnected','mid-connected':'Middling connected',
+  'low-dry':'Low disconnected','low-connected':'Low connected','paired-high':'Paired high','paired-low':'Paired low',
+  'monotone':'Monotone','trips':'Trips board'};
+
+/* ---------- hand strength ---------- */
+function classifyHand(hole,board){
+  const all=[...hole,...board];
+  const rc={};all.forEach(c=>rc[c.r]=(rc[c.r]||0)+1);
+  const sc={};all.forEach(c=>sc[c.s]=(sc[c.s]||0)+1);
+  const counts=Object.values(rc).sort((a,b)=>b-a);
+  const maxSuit=Math.max(...Object.values(sc));
+  const br=board.map(c=>c.r).sort((a,b)=>b-a);
+  const set=new Set(all.map(c=>c.r));if(set.has(14))set.add(1);
+  let madeStraight=false,oesd=false,gut=false;
+  for(let s=1;s<=10;s++){let n=0;for(let i=0;i<5;i++)if(set.has(s+i))n++;
+    if(n===5)madeStraight=true; if(n===4)gut=true;}
+  for(let s=2;s<=10;s++)if(set.has(s)&&set.has(s+1)&&set.has(s+2)&&set.has(s+3))oesd=true;
+  const flush=maxSuit>=5, fd=maxSuit===4;
+  const draw=fd||(oesd&&!madeStraight);
+  const weakDraw=!draw&&gut&&!madeStraight;
+  let made;
+  if(flush||madeStraight||counts[0]>=3||(counts[0]===2&&counts[1]===2))made='monster';
+  else if(counts[0]===2){
+    const pr=+Object.keys(rc).find(k=>rc[k]===2), pocket=hole[0].r===hole[1].r;
+    if(pocket&&pr>br[0])made='strong';
+    else if(pr===br[0]){const kick=hole.find(c=>c.r!==br[0]);made=(pocket||!kick||kick.r>=12)?'strong':'medium';}
+    else if(pr===br[1]||(pocket&&pr>br[1]))made='medium';
+    else made='weak';}
+  else made='none';
+  let cls;
+  if(made==='monster'||made==='strong')cls='value';
+  else if(draw)cls='draw';
+  else if(made==='medium'||made==='weak')cls='marginal';
+  else cls='air';
+  const L={monster:'two pair or better',strong:'top pair good kicker or an overpair',
+    medium:'a middling pair',weak:'a weak pair',none:'no pair'};
+  let desc=L[made];
+  if(fd&&oesd)desc+=' with a flush draw and an open-ender';
+  else if(fd)desc+=' with a flush draw';
+  else if(oesd&&!madeStraight)desc+=' with an open-ender';
+  else if(weakDraw)desc+=' with a gutshot';
+  return{cls,made,desc};}
+
+/* ---------- GTO table ---------- */
+const TABLE={
+ 'high-dry':{srp:['small','high'],tb:['small','high'],why:'Your range has far more strong aces and kings than a caller does, and almost nothing improves on the turn. Small and wide protects the whole range cheaply.'},
+ 'high-dynamic':{srp:['large','med'],tb:['small','high'],why:'You hold the nut advantage but the caller has real equity in draws and pairs. Bet large to charge it. In a 3bet pot the SPR is too low to need the big size.'},
+ 'broadway-connected':{srp:['small','med'],tb:['small','high'],why:'The caller has plenty of these cards too, so your edge is thinner. Small size, moderate frequency, give up the pure air.'},
+ 'mid-dry':{srp:['small','high'],tb:['small','high'],why:'Nobody connects hard. Whoever bets first usually takes it, and a small size costs almost nothing when it fails.'},
+ 'mid-connected':{srp:['large','low'],tb:['large','med'],why:'This board favors the caller. Bet only what wants to build a pot or deny equity, and check the rest.'},
+ 'low-dry':{srp:['small','high'],tb:['small','high'],why:'You have all the overpairs, they have all the small pairs. Small bets take it down often enough.'},
+ 'low-connected':{srp:['large','low'],tb:['large','med'],why:'The caller\u2019s range is built out of exactly these cards. Betting air here burns money.'},
+ 'paired-high':{srp:['small','high'],tb:['small','high'],why:'Card removal means neither of you has trips often and the board cannot be drawn to. Cheap, high-frequency stab.'},
+ 'paired-low':{srp:['small','high'],tb:['small','high'],why:'Your overpairs and broadway cards dominate a caller who mostly missed. Bet small, bet often.'},
+ 'monotone':{srp:['small','med'],tb:['small','med'],why:'Flushes are already possible, so big bets only get called by hands beating you. Keep it small, check the air.'},
+ 'trips':{srp:['small','high'],tb:['small','high'],why:'Almost nobody has a real hand. Small bets win a big share of these pots uncontested.'}};
+const SIZE_TXT={check:'Check',small:'Small, 25\u201333%',large:'Large, 60\u201375%'};
+
+function gtoAction(arch,potType,hc){
+  const row=TABLE[arch];const[size,freq]=potType==='3bet'?row.tb:row.srp;
+  if(freq==='high')return{a:size,freq,size};
+  if(freq==='med')return{a:hc==='air'?'check':size,freq,size};
+  return{a:(hc==='value'||hc==='draw')?size:'check',freq,size};}
+function regAction(g,hc){
+  if(hc==='air'&&g.freq==='med')return{a:g.size,why:'Regs in this pool under-defend. Take the fold equity the baseline leaves on the table and bet the air it would check.'};
+  if(hc==='marginal'&&g.size==='large'&&g.a==='large')return{a:'check',why:'A capable opponent raises or floats you off a middling pair. Check, keep the pot small, get to showdown.'};
+  return{a:g.a,why:'Regs fold close enough to correctly here that the baseline holds. Your edge on them is on the turn, not the flop.'};}
+function stationAction(g,hc){
+  if(hc==='value')return{a:'large',why:'They call any size with worse. Small bets leave money behind, so charge the most they will pay.'};
+  if(hc==='draw')return{a:g.a==='check'?'small':g.a,why:'You have equity and they pay you off when it comes in. Bet for the equity, not the fold.'};
+  if(hc==='marginal')return{a:g.a==='check'?'check':'small',why:'Thin value works against a station because they call with worse. Keep it small so you can fold if they wake up.'};
+  return{a:'check',why:'They do not fold. A bluff into a 50\u201370 VPIP player is money set on fire, no matter how good the board looks.'};}
+
+/* ---------- turn cards ---------- */
+function classifyTurn(board,turn){
+  const br=board.map(c=>c.r).sort((a,b)=>b-a);
+  const sc={};board.forEach(c=>sc[c.s]=(sc[c.s]||0)+1);
+  if(br.includes(turn.r))return'board pair';
+  if((sc[turn.s]||0)===2)return'draw filler';
+  const set=new Set(board.map(c=>c.r));if(set.has(14))set.add(1);
+  const ts=new Set(set);ts.add(turn.r);if(turn.r===14)ts.add(1);
+  for(let s=1;s<=10;s++){let pre=0,post=0;
+    for(let i=0;i<5;i++){if(set.has(s+i))pre++;if(ts.has(s+i))post++;}
+    if(pre===3&&post===4)return'draw filler';}
+  if(turn.r>br[0])return'overcard';
+  if(turn.r>br[2])return'through card';
+  return'brick';}
+const TURN_WHY={
+ 'overcard':'A card above the flop makes a new top pair available. It plausibly hit your preflop raising range and it turns their top pair into second pair.',
+ 'brick':'A card below the whole flop changes nothing. You cannot credibly represent hitting it, so a second barrel is just more money into the same range.',
+ 'board pair':'Pairing the board removes combinations from their strong hands and makes trips unlikely for both of you. Good pressure card.',
+ 'draw filler':'This completes a draw that was live on the flop. It is scary for anyone holding a made hand, which is what makes it barrel-able.',
+ 'through card':'A card between the flop\u2019s high and low changes almost nothing. It rarely improves your range and rarely scares theirs.'};
+function barrelAnswer(cat,hc,vt){
+  if(vt==='station')return(hc==='value'||hc==='draw')
+    ?{a:'barrel',why:'Bet for value or for the equity. Never for the fold.'}
+    :{a:'check',why:'A station calls the flop and calls the turn. Second barrels as bluffs do not exist against this player.'};
+  if(hc==='value')return{a:'barrel',why:'You are ahead of the range that called the flop. Keep building.'};
+  if(hc==='marginal')return{a:'check',why:'Showdown value. Barrelling folds out worse, gets called by better, and prices you out of a pot you were winning.'};
+  if(hc==='draw')return{a:'barrel',why:'Two ways to win: fold equity now, and the draw if you get called.'};
+  return(cat==='overcard'||cat==='board pair'||cat==='draw filler')
+    ?{a:'barrel',why:'Good representation card and nothing to protect. This is the bluff you planned on the flop.'}
+    :{a:'check',why:'Bad card to represent with a hand that cannot win at showdown. Give up and save the bet.'};}
+
+/* ---------- geometry ---------- */
+const GEO_OPTS=[25,33,50,66,75,100];
+const geoFraction=(spr,st)=>(Math.pow(1+2*spr,1/st)-1)/2;
+
+/* ---------- villains ---------- */
+const VILLAINS={
+ gto:{name:'GTO baseline',vpip:'\u2014',pfr:'\u2014',note:'No read available. Play the board, not the player. This is the fallback when the HUD is empty.'},
+ reg:{name:'Reg',vpip:'24',pfr:'19',note:'Real range, folds roughly correctly, can punish an obvious line. Close to the baseline with a couple of exploits open.'},
+ station:{name:'Station',vpip:'61',pfr:'8',note:'Calls far too wide and almost never raises. Value goes up, bluffs go to zero.'}};
+
+/* ---------- felt table ---------- */
+const POS=['BTN','SB','BB','UTG','HJ','CO'];
+let LAY=null, TBL=null;
+function layout(){
+  const w=$('tablewrap').clientWidth;
+  return w<620
+    ?{W:380,H:600,cx:190,cy:290,rx:155,ry:248,fRx:145,fRy:225,potY:255,boardY:300,
+      heroOff:58,heroChip:[190,410],cg:5,cls:'portrait',maxK:1.15,
+      chipOff:[[0,0],[70,-26],[70,26],[0,84],[-70,26],[-70,-26]]}
+    :{W:900,H:560,cx:450,cy:262,rx:356,ry:196,fRx:352,fRy:176,potY:170,boardY:222,
+      heroOff:68,heroChip:[320,390],cg:8,cls:'',maxK:1,
+      chipOff:[[0,0],[86,-34],[86,26],[133,48],[-86,26],[-86,-34]]};}
+function seatXY(i,n){const th=i*(2*Math.PI/n);
+  return{x:LAY.cx-LAY.rx*Math.sin(th),y:LAY.cy+LAY.ry*Math.cos(th)};}
+function fitTable(){
+  if(!TBL)return;
+  const L=layout(),w=$('tablewrap').clientWidth,k=Math.min(L.maxK||1,w/L.W);
+  const dx=Math.max(0,(w-L.W*k)/2);
+  $('table').style.transform='translate('+dx+'px,0) scale('+k+')';
+  $('tablewrap').style.height=(L.H*k)+'px';}
+function drawTable(s){
+  TBL=s; LAY=layout();
+  const L=LAY,T=$('table'),n=6,hi=POS.indexOf(s.pos.hero);
+  T.style.width=L.W+'px';T.style.height=L.H+'px';T.className='table '+(L.cls||'');
+  const box=(x,y,w,h)=>'left:'+x+'px;top:'+y+'px;width:'+w+'px;height:'+h+'px';
+  let h='<div class="rail" style="'+box(L.cx-L.fRx-20,L.cy-L.fRy-18,(L.fRx+20)*2,(L.fRy+18)*2)+'"></div>';
+  h+='<div class="feltoval" style="'+box(L.cx-L.fRx,L.cy-L.fRy,L.fRx*2,L.fRy*2)+'"></div>';
+  h+='<div class="tlogo" style="top:'+(L.potY-30)+'px">Bet Sizing</div>';
+  h+='<div class="potbox" style="top:'+L.potY+'px"><div class="pl">Pot</div><div class="pv">'+bb(s.pot)+'</div></div>';
+  const cards=s.kind==='turn'?[...s.board.map(c=>cardHTML(c,false,false)),cardHTML(s.turn,false,true)]
+                             :s.board.map(c=>cardHTML(c,false,false));
+  h+='<div class="boardrow" style="top:'+L.boardY+'px;gap:'+L.cg+'px">'+cards.join('')+'</div>';
+  for(let i=0;i<n;i++){
+    const pos=POS[(hi+i)%6],xy=seatXY(i,n),me=i===0;
+    const isVil=pos===s.pos.vill, live=me||isVil;
+    const cls='seat'+(me?' hero':'')+(isVil?' vil':'')+(!live?' out':'');
+    let inner='';
+    if(isVil)inner+='<div class="mini"><div class="back"></div><div class="back"></div></div>';
+    let tag='';
+    if(me)tag='<div class="tag bet">'+(s.kind==='turn'?'You c-bet':'Your action')+'</div>';
+    else if(isVil)tag='<div class="tag '+(s.potType==='3bet'?'raise':'act')+'">'+s.villTag+'</div>';
+    inner+='<div class="plate"><div class="pn">'+pos+'</div><div class="ps">'+
+      (live?bb(s.stack):'&mdash;')+'</div>'+tag+'</div>';
+    h+='<div class="'+cls+'" style="left:'+xy.x+'px;top:'+xy.y+'px">'+inner+'</div>';
+    if(pos==='BTN'){
+      const off=L.cls?42:62;
+      const bx=xy.x+(xy.x<L.cx-4?off:xy.x>L.cx+4?-off:off*1.6);
+      const by=xy.y+(xy.y>L.cy+60?-2:28);
+      h+='<div class="btn" style="left:'+bx+'px;top:'+by+'px">D</div>';}
+  }
+  h+='<div class="herocards" style="left:'+L.cx+'px;top:'+(seatXY(0,n).y-L.heroOff)+'px">'+
+     s.hole.map(c=>cardHTML(c,true,false)).join('')+'</div>';
+  T.innerHTML=h; fitTable();}
+window.addEventListener('resize',()=>{if(TBL&&spot&&spot.kind!=='geo')drawTable(spot);});
+
+/* ---------- state ---------- */
+let mode=Store.get('bst_mode','flop');
+let toggle=Store.get('bst_toggle','gto');
+let spot=null,answered=false,stage=0;
+let stats=Store.get('bst_stats',{});
+function bump(k,ok){if(!stats[k])stats[k]={n:0,c:0};stats[k].n++;if(ok)stats[k].c++;Store.set('bst_stats',stats);}
+function totals(){let n=0,c=0;for(const k in stats){n+=stats[k].n;c+=stats[k].c;}return{n,c};}
+
+/* ---------- spot builders ---------- */
+const SEATS=[{hero:'BTN',vill:'BB'},{hero:'CO',vill:'BB'},{hero:'HJ',vill:'BTN'},
+  {hero:'CO',vill:'BTN'},{hero:'UTG',vill:'BB'},{hero:'SB',vill:'BB'},{hero:'BTN',vill:'SB'}];
+/* postflop action order: SB acts first, BTN last. Later index = in position. */
+const ORDER=['SB','BB','UTG','HJ','CO','BTN'];
+const inPosition=(hero,vill)=>ORDER.indexOf(hero)>ORDER.indexOf(vill);
+/* 3bet pots: hero is the 3bettor, so hero holds the range advantage the table assumes. */
+const SEATS3B=[{hero:'BTN',vill:'CO'},{hero:'BTN',vill:'HJ'},{hero:'CO',vill:'HJ'},
+  {hero:'CO',vill:'UTG'},{hero:'SB',vill:'BTN'},{hero:'BB',vill:'BTN'},{hero:'BB',vill:'CO'}];
+function srpPot(vill){
+  // 3bb open called; whichever blind is not the caller is dead money
+  if(vill==='BB')return 6.5;      // SB's 0.5 dead
+  if(vill==='SB')return 7;        // BB's 1 dead
+  return 7.5;                     // both blinds dead
+}
+function buildFlop(vt){
+  const potType=Math.random()<.25?'3bet':'srp';
+  const pos=pick(potType==='3bet'?SEATS3B:SEATS);
+  const ip=inPosition(pos.hero,pos.vill);
+  const range=potType==='3bet'?THREEBET:RANGES[pos.hero];
+  let hole=null;while(!hole)hole=dealHand(pick(range),[]);
+  const board=dealBoard(3,hole);
+  const bc=classifyBoard(board),hc=classifyHand(hole,board);
+  const g=gtoAction(bc.arch,potType,hc.cls),r=regAction(g,hc.cls),st=stationAction(g,hc.cls);
+  const answers={gto:g.a,reg:r.a,station:st.a};
+  const raise=potType==='3bet'?(ip?9:12):(pos.hero==='SB'?3.5:3);
+  const pot=potType==='3bet'?(ip?19.5:25):srpPot(pos.vill);
+  const stack=+(100-raise).toFixed(1);
+  return{kind:'flop',pos,ip,potType,hole,board,bc,hc,gto:g,answers,pot,stack,vtype:vt,
+    villTag:potType==='3bet'?'Called your 3bet':'Called',
+    correct:answers[vt],why:vt==='gto'?TABLE[bc.arch].why:(vt==='reg'?r.why:st.why)};}
+function buildTurn(vt){
+  const b=buildFlop(vt);
+  const turn=dealBoard(1,[...b.hole,...b.board])[0];
+  const cat=classifyTurn(b.board,turn);
+  const hc=classifyHand(b.hole,[...b.board,turn]);
+  const cb=Math.round(b.pot*0.33*10)/10;
+  return{...b,kind:'turn',turn,cat,hc,pot:+(b.pot+2*cb).toFixed(1),
+    barrel:barrelAnswer(cat,hc.cls,vt),villTag:'Called flop',stage:0};}
+function buildGeo(){
+  const streets=Math.random()<.65?3:2;
+  const spr=+(streets===3?(1+Math.random()*11):(0.8+Math.random()*3.2)).toFixed(1);
+  const pot=+(5+rnd(16)).toFixed(1), stack=+(pot*spr).toFixed(1);
+  const f=geoFraction(spr,streets);
+  let best=GEO_OPTS[0];GEO_OPTS.forEach(o=>{if(Math.abs(o/100-f)<Math.abs(best/100-f))best=o;});
+  return{kind:'geo',streets,spr,pot,stack,exact:f,correct:best};}
+function newSpot(){
+  answered=false;stage=0;
+  const vt=mode==='mixed'?pick(['gto','reg','station']):toggle;
+  spot=mode==='geo'?buildGeo():(mode==='turn'?buildTurn(vt):buildFlop(vt));
+  render();}
+
+/* ---------- render ---------- */
+function renderControls(){
+  const c=$('controls');
+  if(mode==='geo'){c.innerHTML='<div class="cgroup"><span class="clabel">Pot geometry</span></div>'+
+    '<div class="vread">Opponent type does not matter here. This is arithmetic: pick the fraction that turns the current pot into a stacks-in pot by the river.</div>';return;}
+  if(mode==='mixed'){const p=VILLAINS[spot.vtype];
+    c.innerHTML='<div class="cgroup"><span class="clabel">Villain</span>'+
+      '<span class="chip on">'+p.name+'</span>'+
+      '<span class="chip">VPIP '+p.vpip+'</span><span class="chip">PFR '+p.pfr+'</span></div>'+
+      '<div class="vread">'+p.note+'</div>';return;}
+  const p=VILLAINS[toggle];
+  c.innerHTML='<div class="cgroup"><span class="clabel">Grade vs</span>'+
+    ['gto','reg','station'].map(k=>'<button class="chip'+(k===toggle?' on':'')+'" data-v="'+k+'">'+VILLAINS[k].name+'</button>').join('')+
+    '</div><div class="cgroup"><span class="chip">VPIP '+p.vpip+'</span><span class="chip">PFR '+p.pfr+'</span></div>'+
+    '<div class="vread">'+p.note+'</div>';
+  c.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{toggle=b.dataset.v;Store.set('bst_toggle',toggle);newSpot();});}
+
+function renderSpot(){
+  if(spot.kind==='geo'){
+    $('tablewrap').classList.add('hide');$('derived').classList.remove('hide');
+    $('scen').innerHTML='You are on the flop and want <b>all '+bb(spot.stack)+'</b> in by the river, betting the same fraction of the pot on each of the '+spot.streets+' remaining street'+(spot.streets>2?'s':'')+'.';
+    $('derived').innerHTML=[['Pot',bb(spot.pot)],['Effective stack',bb(spot.stack)],
+      ['SPR',spot.spr],['Streets left',spot.streets]]
+      .map(([l,v])=>'<div class="dcell"><div class="dv">'+v+'</div><div class="dl">'+l+'</div></div>').join('');
+    return;}
+  $('tablewrap').classList.remove('hide');$('derived').classList.add('hide');
+  const pre=spot.potType==='3bet'
+    ?'<b>'+spot.pos.vill+'</b> opens, you 3bet from <b>'+spot.pos.hero+'</b>, they call.'
+    :'You open <b>'+spot.pos.hero+'</b>, <b>'+spot.pos.vill+'</b> calls.';
+  const tail=spot.kind==='turn'
+    ?' You c-bet a third of the pot on the flop and they call.'
+    :' You are '+(spot.ip?'in position':'out of position')+'.';
+  $('scen').innerHTML=pre+tail+' You have <b>'+spot.hc.desc+'</b> on a <b>'+
+    ARCH_NAME[spot.bc.arch].toLowerCase()+'</b> '+spot.bc.suitTex+' board.';
+  drawTable(spot);}
+
+function renderQuestion(){
+  const q=$('qwrap');
+  const opt=(a,n,d,k)=>'<button class="opt" data-a="'+a+'"><span class="k">'+k+'</span><span class="n">'+n+'</span><span class="d">'+d+'</span></button>';
+  if(spot.kind==='geo'){
+    $('qtxt').textContent='What fraction of the pot on each street?';
+    q.innerHTML='<div class="grid c5">'+GEO_OPTS.map((o,i)=>opt(o,o+'% pot','',i+1)).join('')+'</div>';}
+  else if(spot.kind==='turn'&&stage===0){
+    $('qtxt').textContent='Step 1 \u2014 what kind of turn card is this?';
+    const cats=['overcard','brick','board pair','draw filler','through card'];
+    q.innerHTML='<div class="grid c5">'+cats.map((c,i)=>
+      opt(c,c.charAt(0).toUpperCase()+c.slice(1),'',i+1)).join('')+'</div>';}
+  else if(spot.kind==='turn'){
+    $('qtxt').textContent='Step 2 \u2014 second barrel or check?';
+    q.innerHTML='<div class="grid c2">'+opt('barrel','Barrel','Bet the turn again',1)+
+      opt('check','Check','Give up or control the pot',2)+'</div>';}
+  else{
+    $('qtxt').textContent='Your action on the flop';
+    q.innerHTML='<div class="grid">'+opt('check','Check','No bet',1)+
+      opt('small','Small','25\u201333% of pot',2)+opt('large','Large','60\u201375% of pot',3)+'</div>';}
+  q.querySelectorAll('.opt').forEach(b=>b.onclick=()=>answer(b.dataset.a));}
+
+function render(){renderControls();renderSpot();renderQuestion();$('fbwrap').innerHTML='';}
+
+function mark(chosen,correct){
+  document.querySelectorAll('.opt').forEach(b=>{b.disabled=true;
+    if(b.dataset.a===String(correct))b.classList.add('right');
+    else if(b.dataset.a===String(chosen))b.classList.add('wrong');});}
+function showFB(ok,title,lines,why,metaTxt,cmp){
+  const t=totals();
+  $('fbwrap').innerHTML='<div class="fb '+(ok?'right':'wrong')+'">'+
+    '<div class="verdict '+(ok?'right':'wrong')+'">'+title+
+    '<span style="float:right;color:var(--dim);font-weight:400;letter-spacing:.04em">'+
+    (t.n?Math.round(t.c/t.n*100)+'% \u00b7 '+t.c+'/'+t.n:'')+'</span></div>'+
+    lines.map(l=>'<div class="fbline">'+l+'</div>').join('')+
+    (why.length?'<ul class="why">'+why.map(w=>'<li>'+w+'</li>').join('')+'</ul>':'')+
+    (cmp||'')+
+    (metaTxt?'<div class="meta">'+metaTxt+'</div>':'')+
+    '<button class="next" id="nextBtn">Next hand</button></div>';
+  $('nextBtn').onclick=newSpot;}
+
+function answer(a){
+  if(answered)return;
+  if(spot.kind==='turn'&&stage===0){
+    const ok=a===spot.cat;mark(a,spot.cat);bump('turn:'+spot.cat,ok);
+    $('fbwrap').innerHTML='<div class="fb '+(ok?'right':'wrong')+'"><div class="verdict '+(ok?'right':'wrong')+'">'+
+      (ok?'Right card type':'That is a '+spot.cat)+'</div><div class="fbline">'+TURN_WHY[spot.cat]+'</div></div>';
+    setTimeout(()=>{stage=1;renderQuestion();$('fbwrap').innerHTML='';},1100);return;}
+  answered=true;
+  if(spot.kind==='geo'){
+    const ok=+a===spot.correct;mark(a,spot.correct);bump('geo:'+spot.streets+'st',ok);
+    let pot=spot.pot,steps=[];
+    for(let i=0;i<spot.streets;i++){const bet=pot*spot.exact;
+      steps.push('bet '+bb(bet)+' into '+bb(pot));pot+=2*bet;}
+    showFB(ok,ok?'Correct':'Correct answer: '+spot.correct+'%',
+      ['The exact geometric fraction is <b>'+(spot.exact*100).toFixed(0)+'%</b> of pot.'],
+      [steps.join(', then ')+'. Final pot '+bb(pot)+', which is your '+bb(spot.stack)+' plus theirs.',
+       'Solve for f where (1+2f)<sup>'+spot.streets+'</sup> = 1 + 2 \u00d7 SPR. Higher SPR means bigger bets on every street, not one big bet at the end.'],
+      'SPR '+spot.spr+' \u00b7 '+spot.streets+' streets \u00b7 exact '+(spot.exact*100).toFixed(1)+'%');return;}
+  if(spot.kind==='turn'){
+    const ok=a===spot.barrel.a;mark(a,spot.barrel.a);bump('turn:'+spot.cat,ok);
+    showFB(ok,ok?'Correct':'Correct answer: '+(spot.barrel.a==='barrel'?'Barrel':'Check'),
+      [spot.barrel.why],[TURN_WHY[spot.cat]],
+      spot.cat+' \u00b7 you hold '+spot.hc.desc+' \u00b7 vs '+VILLAINS[spot.vtype].name);return;}
+  const ok=a===spot.correct;mark(a,spot.correct);bump('flop:'+spot.bc.arch,ok);
+  const freqTxt={high:'bets close to its whole range here',med:'bets a bit over half its range here',
+    low:'checks most of its range here'}[spot.gto.freq];
+  const cmp='<div class="cmp">'+['gto','reg','station'].map(k=>{
+    const act=spot.answers[k];
+    return '<div class="'+(k===spot.vtype?'hl':'')+'"><div class="who">'+VILLAINS[k].name+
+      '</div><div class="act '+act+'">'+act+'</div></div>';}).join('')+'</div>';
+  showFB(ok,ok?'Correct':'Correct answer: '+SIZE_TXT[spot.correct],[spot.why],
+    ['The baseline strategy '+freqTxt+', and you hold '+spot.hc.desc+', which puts you '+
+     (spot.gto.a==='check'?'in the checking portion':'in the betting portion')+'.'],
+    ARCH_NAME[spot.bc.arch]+' \u00b7 '+spot.bc.suitTex+' \u00b7 '+
+    (spot.potType==='3bet'?'3bet pot':'single raised pot')+' \u00b7 '+(spot.ip?'in position':'out of position'),
+    cmp);}
+
+/* ---------- stats ---------- */
+function renderStats(){
+  const keys=Object.keys(stats);
+  if(!keys.length){$('statsBody').innerHTML='<p class="note">Play some hands and your weak textures show up here.</p>';return;}
+  const label=k=>{const[m,rest]=k.split(':');
+    if(m==='flop')return ARCH_NAME[rest]||rest;
+    if(m==='turn')return rest.charAt(0).toUpperCase()+rest.slice(1);
+    return rest==='3st'?'Flop to river, 3 streets':'Turn to river, 2 streets';};
+  const group=(m,head)=>{
+    const rows=keys.filter(k=>k.startsWith(m+':')).sort((a,b)=>(stats[a].c/stats[a].n)-(stats[b].c/stats[b].n));
+    if(!rows.length)return'';
+    return '<h2>'+head+'</h2><table><thead><tr><th>'+head+'</th><th style="text-align:right">Hands</th>'+
+      '<th style="text-align:right;width:78px">Correct</th></tr></thead><tbody>'+
+      rows.map(k=>{const s=stats[k],p=Math.round(s.c/s.n*100);
+        const col=p<60?'var(--bad)':p<80?'var(--gold)':'var(--good)';
+        return '<tr><td class="bk">'+label(k)+'<div class="bar"><i style="width:'+p+'%;background:'+col+'"></i></div></td>'+
+          '<td class="n">'+s.n+'</td><td class="n">'+p+'%</td></tr>';}).join('')+'</tbody></table>';};
+  $('statsBody').innerHTML=group('flop','Flop textures')+group('turn','Turn cards')+group('geo','Geometry')+
+    '<button class="reset" id="reset">Clear all progress</button>';
+  $('reset').onclick=()=>{stats={};Store.set('bst_stats',stats);renderStats();};}
+$('statsBox').addEventListener('toggle',()=>{if($('statsBox').open)renderStats();});
+
+/* ---------- controls ---------- */
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on');mode=t.dataset.mode;Store.set('bst_mode',mode);newSpot();});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){const b=$('nextBtn');if(b)newSpot();return;}
+  if(e.key.toLowerCase()==='m'){const tabs=[...document.querySelectorAll('.tab')];
+    const i=tabs.findIndex(t=>t.classList.contains('on'));tabs[(i+1)%tabs.length].click();return;}
+  const n=parseInt(e.key,10);
+  if(n>=1&&n<=6){const b=document.querySelectorAll('.opt');if(b[n-1]&&!b[n-1].disabled)b[n-1].click();}});
+
+document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.mode===mode));
+newSpot();
+</script>
+</body>
+</html>
