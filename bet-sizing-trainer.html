@@ -186,11 +186,11 @@ summary:hover{color:var(--gold)}
 <header>
   <div>
     <h1>Bet Sizing</h1>
-    <div class="sub">Flop size &middot; turn barrel &middot; pot geometry</div>
+    <div class="sub">Flop size &middot; turn and river &middot; pot geometry</div>
   </div>
   <div class="tabs" id="tabs">
     <button class="tab on" data-mode="flop">Flop size</button>
-    <button class="tab" data-mode="turn">Turn barrel</button>
+    <button class="tab" data-mode="turn">Turn &amp; river</button>
     <button class="tab" data-mode="geo">Geometry</button>
     <button class="tab" data-mode="mixed">Mixed</button>
   </div>
@@ -278,15 +278,17 @@ function classifyBoard(b){
   const paired=hi===mid||mid===lo, trips=hi===mid&&mid===lo;
   const span=hi-lo, lowerSpan=mid-lo;
   let arch;
+  const rc={};b.forEach(c=>rc[c.r]=(rc[c.r]||0)+1);
+  const pairRank=Math.max(0,...Object.keys(rc).map(Number).filter(r=>rc[r]>=2));
   if(trips)arch='trips';
-  else if(paired)arch=hi>=11?'paired-high':'paired-low';
+  else if(paired)arch=pairRank>=11?'paired-high':'paired-low';   // named for the pair, not the high card
   else if(suitTex==='monotone')arch='monotone';
-  else if(hi>=13){if(lowerSpan<=2&&mid<=11)arch='high-dynamic';else if(span<=4)arch='broadway-connected';else arch='high-dry';}
-  else if(hi>=11){if(span<=4)arch='broadway-connected';else if(lowerSpan<=2)arch='high-dynamic';else arch='high-dry';}
+  else if(hi>=13){if(lowerSpan<=2&&mid<=11&&mid>=6)arch='high-dynamic';else if(span<=4)arch='broadway-connected';else arch='ak-high-dry';}
+  else if(hi>=11){if(span<=4)arch='broadway-connected';else if(lowerSpan<=2&&mid>=6)arch='high-dynamic';else arch='qj-high-dry';}
   else if(hi>=8)arch=span<=4?'mid-connected':'mid-dry';
   else arch=span<=4?'low-connected':'low-dry';
-  return{hi,mid,lo,span,suitTex,arch};}
-const ARCH_NAME={'high-dry':'A/K-high dry','high-dynamic':'High card + connected low',
+  return{hi,mid,lo,span,suitTex,arch,pairRank};}
+const ARCH_NAME={'ak-high-dry':'A/K-high dry','qj-high-dry':'Q/J-high dry','high-dynamic':'High card + connected low',
   'broadway-connected':'Broadway connected','mid-dry':'Middling disconnected','mid-connected':'Middling connected',
   'low-dry':'Low disconnected','low-connected':'Low connected','paired-high':'Paired high','paired-low':'Paired low',
   'monotone':'Monotone','trips':'Trips board'};
@@ -294,55 +296,101 @@ const ARCH_NAME={'high-dry':'A/K-high dry','high-dynamic':'High card + connected
 /* ---------- hand strength ---------- */
 function classifyHand(hole,board){
   const all=[...hole,...board];
-  const rc={};all.forEach(c=>rc[c.r]=(rc[c.r]||0)+1);
+  const bU=[...new Set(board.map(c=>c.r))].sort((a,b)=>b-a);   // unique board ranks, high to low
+  const brc={};board.forEach(c=>brc[c.r]=(brc[c.r]||0)+1);
+  const boardPairs=Object.keys(brc).map(Number).filter(r=>brc[r]>=2).sort((a,b)=>b-a);
+  const pocket=hole[0].r===hole[1].r;
+  const hits=hole.filter(c=>board.some(b=>b.r===c.r)).map(c=>c.r).sort((a,b)=>b-a);
+  const heroR=new Set(hole.map(c=>c.r));
+
+  /* draws only count when hero's own cards are part of them.
+     Four to a flush on the board is not hero's flush draw. */
   const sc={};all.forEach(c=>sc[c.s]=(sc[c.s]||0)+1);
-  const counts=Object.values(rc).sort((a,b)=>b-a);
-  const maxSuit=Math.max(...Object.values(sc));
-  const br=board.map(c=>c.r).sort((a,b)=>b-a);
-  const set=new Set(all.map(c=>c.r));if(set.has(14))set.add(1);
+  const hsc={};hole.forEach(c=>hsc[c.s]=(hsc[c.s]||0)+1);
+  let flush=false,fd=false;
+  for(const su in sc){
+    if(sc[su]>=5&&hsc[su])flush=true;
+    if(sc[su]===4&&hsc[su])fd=true;}
+  const setA=new Set(all.map(c=>c.r));if(setA.has(14))setA.add(1);
+  const bSet=new Set(board.map(c=>c.r));if(bSet.has(14))bSet.add(1);
+  const heroIn=w=>w.some(r=>(heroR.has(r)||(r===1&&heroR.has(14)))&&!bSet.has(r));
   let madeStraight=false,oesd=false,gut=false;
-  for(let s=1;s<=10;s++){let n=0;for(let i=0;i<5;i++)if(set.has(s+i))n++;
-    if(n===5)madeStraight=true; if(n===4)gut=true;}
-  for(let s=2;s<=10;s++)if(set.has(s)&&set.has(s+1)&&set.has(s+2)&&set.has(s+3))oesd=true;
-  const flush=maxSuit>=5, fd=maxSuit===4;
+  for(let st=1;st<=10;st++){
+    const w=[st,st+1,st+2,st+3,st+4];
+    const n=w.filter(r=>setA.has(r)).length;
+    if(n===5&&heroIn(w))madeStraight=true;
+    if(n===4&&heroIn(w))gut=true;}
+  for(let st=2;st<=10;st++){
+    const run=[st,st+1,st+2,st+3];
+    if(run.every(r=>setA.has(r))&&heroIn(run))oesd=true;}
   const draw=fd||(oesd&&!madeStraight);
   const weakDraw=!draw&&gut&&!madeStraight;
-  let made;
-  if(flush||madeStraight||counts[0]>=3||(counts[0]===2&&counts[1]===2))made='monster';
-  else if(counts[0]===2){
-    const pr=+Object.keys(rc).find(k=>rc[k]===2), pocket=hole[0].r===hole[1].r;
-    if(pocket&&pr>br[0])made='strong';
-    else if(pr===br[0]){const kick=hole.find(c=>c.r!==br[0]);made=(pocket||!kick||kick.r>=12)?'strong':'medium';}
-    else if(pr===br[1]||(pocket&&pr>br[1]))made='medium';
-    else made='weak';}
-  else made='none';
+
+  /* made hands, scored on what hero's two cards actually add to the board */
+  let made,name;
+  if(flush){made='monster';name='a flush';}
+  else if(madeStraight){made='monster';name='a straight';}
+  else if(pocket&&bSet.has(hole[0].r)){made='monster';name='a set';}
+  else if(boardPairs.length&&hits.includes(boardPairs[0])){made='monster';name='trips';}
+  else if(boardPairs.length>=2){made='weak';name='just a kicker on a double-paired board';}
+  else if(hits.length===2&&hits[0]!==hits[1]){made='monster';name='two pair';}
+  else if(pocket&&boardPairs.length){
+    if(hole[0].r>bU[0]){made='strong';name='an overpair alongside the board pair';}
+    else if(hole[0].r>bU[1]){made='medium';name='a pocket pair under top card';}
+    else{made='weak';name='an underpair';}}
+  else if(hits.length>=1){
+    const pr=hits[0],k=hole.find(c=>c.r!==pr);
+    if(pr===bU[0]){
+      if(k&&k.r>=12){made='strong';name='top pair with a strong kicker';}
+      else{made='medium';name='top pair with a weak kicker';}}
+    else if(pr===bU[1]){made='medium';name='second pair';}
+    else{made='weak';name='bottom pair';}}
+  else if(pocket){
+    if(hole[0].r>bU[0]){made='strong';name='an overpair';}
+    else if(hole[0].r>bU[1]){made='medium';name='a pocket pair under top card';}
+    else{made='weak';name='an underpair';}}
+  else{made='none';
+    name=Math.max(hole[0].r,hole[1].r)===14?'ace high':'no pair';}
+
   let cls;
   if(made==='monster'||made==='strong')cls='value';
   else if(draw)cls='draw';
   else if(made==='medium'||made==='weak')cls='marginal';
   else cls='air';
-  const L={monster:'two pair or better',strong:'top pair good kicker or an overpair',
-    medium:'a middling pair',weak:'a weak pair',none:'no pair'};
-  let desc=L[made];
+  let desc=name;
   if(fd&&oesd)desc+=' with a flush draw and an open-ender';
   else if(fd)desc+=' with a flush draw';
   else if(oesd&&!madeStraight)desc+=' with an open-ender';
   else if(weakDraw)desc+=' with a gutshot';
-  return{cls,made,desc};}
+  return{cls,made,name,desc};}
 
 /* ---------- GTO table ---------- */
 const TABLE={
- 'high-dry':{srp:['small','high'],tb:['small','high'],why:'Your range has far more strong aces and kings than a caller does, and almost nothing improves on the turn. Small and wide protects the whole range cheaply.'},
- 'high-dynamic':{srp:['large','med'],tb:['small','high'],why:'You hold the nut advantage but the caller has real equity in draws and pairs. Bet large to charge it. In a 3bet pot the SPR is too low to need the big size.'},
- 'broadway-connected':{srp:['small','med'],tb:['small','high'],why:'The caller has plenty of these cards too, so your edge is thinner. Small size, moderate frequency, give up the pure air.'},
- 'mid-dry':{srp:['small','high'],tb:['small','high'],why:'Nobody connects hard. Whoever bets first usually takes it, and a small size costs almost nothing when it fails.'},
- 'mid-connected':{srp:['large','low'],tb:['large','med'],why:'This board favors the caller. Bet only what wants to build a pot or deny equity, and check the rest.'},
- 'low-dry':{srp:['small','high'],tb:['small','high'],why:'You have all the overpairs, they have all the small pairs. Small bets take it down often enough.'},
- 'low-connected':{srp:['large','low'],tb:['large','med'],why:'The caller\u2019s range is built out of exactly these cards. Betting air here burns money.'},
- 'paired-high':{srp:['small','high'],tb:['small','high'],why:'Card removal means neither of you has trips often and the board cannot be drawn to. Cheap, high-frequency stab.'},
- 'paired-low':{srp:['small','high'],tb:['small','high'],why:'Your overpairs and broadway cards dominate a caller who mostly missed. Bet small, bet often.'},
- 'monotone':{srp:['small','med'],tb:['small','med'],why:'Flushes are already possible, so big bets only get called by hands beating you. Keep it small, check the air.'},
- 'trips':{srp:['small','high'],tb:['small','high'],why:'Almost nobody has a real hand. Small bets win a big share of these pots uncontested.'}};
+ 'ak-high-dry':{srp:['small','high'],tb:['small','high'],why:'Your range holds far more strong aces and kings than a caller\u2019s does, and little on this board improves by the turn. That argues for a small size across almost the whole range.'},
+ 'qj-high-dry':{srp:['small','med'],tb:['small','high'],why:'Your range is still ahead, but a caller defends queens and jacks much more often than they defend aces, so the edge is thinner. Same small size, fewer bets.'},
+ 'high-dynamic':{srp:['large','med'],tb:['small','high'],why:'Your range holds more of the very strong hands while a caller holds draws and pairs with real equity. Charging that equity is what the large size is for.'},
+ 'broadway-connected':{srp:['small','med'],tb:['small','high'],why:'A caller holds plenty of these cards too, so neither range is far ahead. Small size, and the hands with nothing give up.'},
+ 'mid-dry':{srp:['small','high'],tb:['small','high'],why:'Neither range connects hard here. Whoever bets first usually takes it, and a small size costs little when it fails.'},
+ 'mid-connected':{srp:['large','low'],tb:['large','med'],why:'This board fits a caller\u2019s range better than yours. Only hands that want a bigger pot or need to deny equity should bet, and they bet large.'},
+ 'low-dry':{srp:['small','high'],tb:['small','high'],why:'Your range has the overpairs, theirs has the small pairs. A small bet takes it down often enough.'},
+ 'low-connected':{srp:['large','low'],tb:['large','med'],why:'A caller\u2019s range is built out of exactly these cards. Bets here need a hand behind them, so only value and strong draws fire, and they fire large.'},
+ 'paired-high':{srp:['small','high'],tb:['small','high'],why:'Card removal means neither range has trips often, and the board cannot be drawn to. That makes a cheap, high-frequency stab correct.'},
+ 'paired-low':{srp:['small','high'],tb:['small','high'],why:'Your overpairs and broadway cards dominate a caller who mostly missed. Small size, high frequency.'},
+ 'monotone':{srp:['small','med'],tb:['small','med'],why:'Flushes are already possible, so a large bet only gets called by hands that beat you. Small size, and the air checks.'},
+ 'trips':{srp:['small','high'],tb:['small','high'],why:'Almost no hand connects with this board. A small bet wins a large share of these pots uncontested.'}};
+const TB_NOTE='In a 3bet pot the stack-to-pot ratio is already low, so the small size does the work the large one would.';
+/* explains where THIS hand sits, so the rationale can never contradict the answer */
+function freqLine(freq,size,acting,desc){
+  const sz=size==='small'?'a small bet':'a large bet';
+  if(freq==='high')
+    return 'The baseline bets close to its whole range on this texture, so '+desc+' takes '+sz+' along with everything else.';
+  if(freq==='med')
+    return acting==='check'
+      ?'The baseline bets a bit over half its range here and gives up the rest. With '+desc+' you are in the portion that checks.'
+      :'The baseline bets a bit over half its range here, and '+desc+' is comfortably inside the betting portion.';
+  return acting==='check'
+    ?'The baseline checks most of its range on this board. Only value hands and strong draws bet, and '+desc+' is neither.'
+    :'The baseline checks most of its range on this board. '+desc+' is one of the few hands that should still fire, and it fires large.';}
 const SIZE_TXT={check:'Check',small:'Small, 25\u201333%',large:'Large, 60\u201375%'};
 
 function gtoAction(arch,potType,hc){
@@ -367,10 +415,12 @@ function classifyTurn(board,turn){
   if(br.includes(turn.r))return'board pair';
   if((sc[turn.s]||0)===2)return'draw filler';
   const set=new Set(board.map(c=>c.r));if(set.has(14))set.add(1);
-  const ts=new Set(set);ts.add(turn.r);if(turn.r===14)ts.add(1);
-  for(let s=1;s<=10;s++){let pre=0,post=0;
-    for(let i=0;i<5;i++){if(set.has(s+i))pre++;if(ts.has(s+i))post++;}
-    if(pre===3&&post===4)return'draw filler';}
+  const tr=[turn.r];if(turn.r===14)tr.push(1);
+  for(let s=1;s<=10;s++){
+    const w=[s,s+1,s+2,s+3,s+4];
+    if(!tr.some(r=>w.includes(r)))continue;
+    const fromFlop=w.filter(r=>set.has(r)).length;
+    if(fromFlop>=2)return'draw filler';}
   if(turn.r>br[0])return'overcard';
   if(turn.r>br[2])return'through card';
   return'brick';}
@@ -390,6 +440,88 @@ function barrelAnswer(cat,hc,vt){
   return(cat==='overcard'||cat==='board pair'||cat==='draw filler')
     ?{a:'barrel',why:'Good representation card and nothing to protect. This is the bluff you planned on the flop.'}
     :{a:'check',why:'Bad card to represent with a hand that cannot win at showdown. Give up and save the bet.'};}
+
+/* ---------- river: proper 7-card evaluation ----------
+   The flop classifier is a shortcut that assumes a 3-card board. On the river
+   the board can make its own hand, so hero has to be scored against it. */
+function best5(cards){
+  const rc={},sc={};
+  cards.forEach(c=>{rc[c.r]=(rc[c.r]||0)+1;(sc[c.s]=sc[c.s]||[]).push(c.r);});
+  const fsuit=Object.keys(sc).find(s=>sc[s].length>=5);
+  const fr=fsuit?sc[fsuit].slice().sort((a,b)=>b-a):null;
+  const topRun=rs=>{const S=new Set(rs);if(S.has(14))S.add(1);
+    for(let s=10;s>=1;s--){let ok=true;
+      for(let i=0;i<5;i++)if(!S.has(s+i))ok=false;
+      if(ok)return s+4;}
+    return 0;};
+  if(fr){const sf=topRun(fr);if(sf)return[8,sf];}
+  const g=Object.keys(rc).map(Number).sort((a,b)=>rc[b]-rc[a]||b-a);
+  const c0=rc[g[0]],c1=g[1]?rc[g[1]]:0;
+  if(c0===4)return[7,g[0],g[1]];
+  if(c0===3&&c1>=2)return[6,g[0],g[1]];
+  if(fr)return[5,...fr.slice(0,5)];
+  const st=topRun(cards.map(c=>c.r));if(st)return[4,st];
+  if(c0===3)return[3,g[0],g[1],g[2]];
+  if(c0===2&&c1===2)return[2,g[0],g[1],g[2]];
+  if(c0===2)return[1,g[0],g[1],g[2],g[3]];
+  return[0,g[0],g[1],g[2],g[3],g[4]];}
+function cmp5(a,b){for(let i=0;i<Math.max(a.length,b.length);i++){
+  const x=a[i]||0,y=b[i]||0;if(x!==y)return x-y;}return 0;}
+
+function classifyRiver(hole,board,hadDraw){
+  const hero=best5([...hole,...board]), brd=best5(board);
+  if(cmp5(hero,brd)<=0)
+    return{cls:hadDraw?'missed':'air',desc:'nothing, playing the board'};
+  const cat=hero[0];
+  const brc={};board.forEach(c=>brc[c.r]=(brc[c.r]||0)+1);
+  const boardPaired=Object.values(brc).some(v=>v>=2);
+  const br=[...new Set(board.map(c=>c.r))].sort((a,b)=>b-a);
+  const pocket=hole[0].r===hole[1].r;
+  if(cat>=6)return{cls:'nutted',desc:'a full house or better'};
+  if(cat===5)return{cls:'nutted',desc:'a flush'};
+  if(cat===4)return{cls:'nutted',desc:'a straight'};
+  if(cat===3)return{cls:'nutted',desc:boardPaired?'trips':'a set'};
+  if(cat===2){
+    // on a paired board, "two pair" is often just a pocket pair riding the board pair
+    if(boardPaired&&pocket)
+      return hole[0].r>br[0]
+        ?{cls:'strong',desc:'an overpair on a paired board'}
+        :{cls:'bluffcatch',desc:'an underpair on a paired board'};
+    return{cls:'nutted',desc:'two pair'};}
+  if(cat===1){
+    const pr=hero[1];
+    if(pocket&&pr>br[0])return{cls:'strong',desc:'an overpair'};
+    if(pr===br[0]){
+      const k=hole.find(c=>c.r!==pr);
+      return(k&&k.r>=12)?{cls:'strong',desc:'top pair with a strong kicker'}
+                        :{cls:'thin',desc:'top pair with a weak kicker'};}
+    return{cls:'bluffcatch',desc:'a pair below top'};}
+  return hadDraw?{cls:'missed',desc:'a missed draw'}:{cls:'air',desc:'no pair and no draw'};}
+
+const RIVER={
+  gto:{nutted:'large',strong:'large',thin:'small',bluffcatch:'check',missed:'large',air:'check'},
+  reg:{nutted:'large',strong:'small',thin:'small',bluffcatch:'check',missed:'large',air:'check'},
+  station:{nutted:'large',strong:'large',thin:'large',bluffcatch:'check',missed:'check',air:'check'}};
+const RCLS_NAME={nutted:'hand you want stacks in with',strong:'strong but not nutted hand',
+  thin:'thin value hand',bluffcatch:'bluffcatcher',missed:'missed draw',air:'hand with no equity and no story'};
+const RIVER_WHY={
+  nutted:'Their range called two streets to get here. This is the pot you built the line for, so bet the size that charges it.',
+  strong:'Top pair still beats most of what calls twice. Bet, and bet enough that a worse pair pays.',
+  'strong-reg':'Against a thinking opponent, top pair on the river is closer to thin value than to the nuts. A large bet only gets called by better, so size down.',
+  thin:'Bet the size a worse hand can talk itself into calling. Large gets action only from hands that beat you.',
+  'thin-station':'They call large with second pair and ace high. This is the single biggest edge you have against this player type, and checking here is the leak.',
+  bluffcatch:'You beat the bluffs and lose to the value. Betting turns your hand into a bluff, folds out everything you beat, and gets called by everything that beats you. Check, and call a reasonable size.',
+  missed:'No showdown value and you hold cards that block their strong hands. This is the one class that should bluff the river.',
+  'missed-station':'They do not fold rivers. Your missed draw is worth exactly as much as a check, and a bet just donates.',
+  'missed-checked':'You checked the turn, so there is no story to tell. A river bet out of nowhere represents nothing they will believe.',
+  air:'No blockers, no story, no showdown value. Check and move on.'};
+function riverWhy(cls,vt,turnBet){
+  if(cls==='missed'&&!turnBet)return RIVER_WHY['missed-checked'];
+  const k=cls+'-'+vt;
+  return RIVER_WHY[k]||RIVER_WHY[cls];}
+function riverAction(cls,vt,turnBet){
+  if(cls==='missed'&&!turnBet)return'check';
+  return RIVER[vt][cls];}
 
 /* ---------- geometry ---------- */
 const GEO_OPTS=[25,33,50,66,75,100];
@@ -429,9 +561,12 @@ function drawTable(s){
   let h='<div class="rail" style="'+box(L.cx-L.fRx-20,L.cy-L.fRy-18,(L.fRx+20)*2,(L.fRy+18)*2)+'"></div>';
   h+='<div class="feltoval" style="'+box(L.cx-L.fRx,L.cy-L.fRy,L.fRx*2,L.fRy*2)+'"></div>';
   h+='<div class="tlogo" style="top:'+(L.potY-30)+'px">Bet Sizing</div>';
-  h+='<div class="potbox" style="top:'+L.potY+'px"><div class="pl">Pot</div><div class="pv">'+bb(s.pot)+'</div></div>';
-  const cards=s.kind==='turn'?[...s.board.map(c=>cardHTML(c,false,false)),cardHTML(s.turn,false,true)]
-                             :s.board.map(c=>cardHTML(c,false,false));
+  const shownPot=(s.kind==='turn'&&stage>=2)?s.riverPot:s.pot;
+  h+='<div class="potbox" style="top:'+L.potY+'px"><div class="pl">Pot</div><div class="pv">'+bb(shownPot)+'</div></div>';
+  let cards=s.board.map(c=>cardHTML(c,false,false));
+  if(s.kind==='turn'){
+    cards.push(cardHTML(s.turn,false,stage<2));
+    if(stage>=2)cards.push(cardHTML(s.river,false,true));}
   h+='<div class="boardrow" style="top:'+L.boardY+'px;gap:'+L.cg+'px">'+cards.join('')+'</div>';
   for(let i=0;i<n;i++){
     const pos=POS[(hi+i)%6],xy=seatXY(i,n),me=i===0;
@@ -440,8 +575,9 @@ function drawTable(s){
     let inner='';
     if(isVil)inner+='<div class="mini"><div class="back"></div><div class="back"></div></div>';
     let tag='';
-    if(me)tag='<div class="tag bet">'+(s.kind==='turn'?'You c-bet':'Your action')+'</div>';
-    else if(isVil)tag='<div class="tag '+(s.potType==='3bet'?'raise':'act')+'">'+s.villTag+'</div>';
+    if(me)tag='<div class="tag bet">'+(s.kind==='turn'?(stage>=2?(s.turnBet?'You barrelled':'You checked'):'You c-bet'):'Your action')+'</div>';
+    else if(isVil){const vt2=(s.kind==='turn'&&stage>=2)?(s.turnBet?'Called turn':'Checked back'):s.villTag;
+      tag='<div class="tag '+(s.potType==='3bet'?'raise':'act')+'">'+vt2+'</div>';}
     inner+='<div class="plate"><div class="pn">'+pos+'</div><div class="ps">'+
       (live?bb(s.stack):'&mdash;')+'</div>'+tag+'</div>';
     h+='<div class="'+cls+'" style="left:'+xy.x+'px;top:'+xy.y+'px">'+inner+'</div>';
@@ -455,6 +591,7 @@ function drawTable(s){
      s.hole.map(c=>cardHTML(c,true,false)).join('')+'</div>';
   T.innerHTML=h; fitTable();}
 window.addEventListener('resize',()=>{if(TBL&&spot&&spot.kind!=='geo')drawTable(spot);});
+/* stage is read inside drawTable, so redraws pick up the current street automatically */
 
 /* ---------- state ---------- */
 let mode=Store.get('bst_mode','flop');
@@ -498,11 +635,31 @@ function buildFlop(vt){
 function buildTurn(vt){
   const b=buildFlop(vt);
   const turn=dealBoard(1,[...b.hole,...b.board])[0];
+  const t4=[...b.board,turn];
   const cat=classifyTurn(b.board,turn);
-  const hc=classifyHand(b.hole,[...b.board,turn]);
-  const cb=Math.round(b.pot*0.33*10)/10;
-  return{...b,kind:'turn',turn,cat,hc,pot:+(b.pot+2*cb).toFixed(1),
-    barrel:barrelAnswer(cat,hc.cls,vt),villTag:'Called flop',stage:0};}
+  const hc=classifyHand(b.hole,t4);
+  const cb=+(b.pot*0.33).toFixed(1);
+  const turnPot=+(b.pot+2*cb).toFixed(1);
+  const barrel=barrelAnswer(cat,hc.cls,vt);
+  // hero had a real draw going to the river?
+  const sc={};t4.forEach(c=>sc[c.s]=(sc[c.s]||0)+1);
+  const hs={};[...b.hole,...t4].forEach(c=>hs[c.s]=(hs[c.s]||0)+1);
+  const fd=Math.max(...Object.values(hs))===4;
+  const S=new Set([...b.hole,...t4].map(c=>c.r));if(S.has(14))S.add(1);
+  let oesd=false;
+  for(let s=2;s<=10;s++)if(S.has(s)&&S.has(s+1)&&S.has(s+2)&&S.has(s+3))oesd=true;
+  const hadDraw=fd||oesd;
+  // the hand continues on the CORRECT turn line, never on a wrong one
+  const turnBet=barrel.a==='barrel';
+  const tb=turnBet?+(turnPot*0.66).toFixed(1):0;
+  const riverPot=+(turnPot+2*tb).toFixed(1);
+  const river=dealBoard(1,[...b.hole,...t4])[0];
+  const rhc=classifyRiver(b.hole,[...t4,river],hadDraw);
+  return{...b,kind:'turn',turn,river,cat,hc,rhc,hadDraw,turnBet,
+    pot:turnPot,flopPot:b.pot,riverPot,cbet:cb,turnBetAmt:tb,
+    barrel,riverCorrect:riverAction(rhc.cls,vt,turnBet),
+    riverWhy:riverWhy(rhc.cls,vt,turnBet),
+    villTag:'Called flop',stage:0};}
 function buildGeo(){
   const streets=Math.random()<.65?3:2;
   const spr=+(streets===3?(1+Math.random()*11):(0.8+Math.random()*3.2)).toFixed(1);
@@ -512,7 +669,8 @@ function buildGeo(){
   return{kind:'geo',streets,spr,pot,stack,exact:f,correct:best};}
 function newSpot(){
   answered=false;stage=0;
-  const vt=mode==='mixed'?pick(['gto','reg','station']):toggle;
+  // 10NL pool weighting: mostly regs, some no-read, fewer stations
+  const vt=mode==='mixed'?pick(['reg','reg','reg','reg','reg','gto','gto','gto','station','station']):toggle;
   spot=mode==='geo'?buildGeo():(mode==='turn'?buildTurn(vt):buildFlop(vt));
   render();}
 
@@ -545,11 +703,17 @@ function renderSpot(){
   const pre=spot.potType==='3bet'
     ?'<b>'+spot.pos.vill+'</b> opens, you 3bet from <b>'+spot.pos.hero+'</b>, they call.'
     :'You open <b>'+spot.pos.hero+'</b>, <b>'+spot.pos.vill+'</b> calls.';
-  const tail=spot.kind==='turn'
-    ?' You c-bet a third of the pot on the flop and they call.'
-    :' You are '+(spot.ip?'in position':'out of position')+'.';
-  $('scen').innerHTML=pre+tail+' You have <b>'+spot.hc.desc+'</b> on a <b>'+
-    ARCH_NAME[spot.bc.arch].toLowerCase()+'</b> '+spot.bc.suitTex+' board.';
+  if(spot.kind==='turn'&&stage>=2){
+    const line=spot.turnBet
+      ?' You c-bet a third on the flop, barrelled '+bb(spot.turnBetAmt)+' on the turn, and they called again.'
+      :' You c-bet a third on the flop, checked the turn back, and they checked too.';
+    $('scen').innerHTML=pre+line+' On the river you have <b>'+spot.rhc.desc+'</b>.';}
+  else{
+    const tail=spot.kind==='turn'
+      ?' You c-bet '+bb(spot.cbet)+' on the flop and they call.'
+      :' You are '+(spot.ip?'in position':'out of position')+'.';
+    $('scen').innerHTML=pre+tail+' You have <b>'+spot.hc.desc+'</b>. Board is <b>'+
+      ARCH_NAME[spot.bc.arch]+'</b>, '+spot.bc.suitTex+'.';}
   drawTable(spot);}
 
 function renderQuestion(){
@@ -563,10 +727,14 @@ function renderQuestion(){
     const cats=['overcard','brick','board pair','draw filler','through card'];
     q.innerHTML='<div class="grid c5">'+cats.map((c,i)=>
       opt(c,c.charAt(0).toUpperCase()+c.slice(1),'',i+1)).join('')+'</div>';}
-  else if(spot.kind==='turn'){
+  else if(spot.kind==='turn'&&stage===1){
     $('qtxt').textContent='Step 2 \u2014 second barrel or check?';
     q.innerHTML='<div class="grid c2">'+opt('barrel','Barrel','Bet the turn again',1)+
       opt('check','Check','Give up or control the pot',2)+'</div>';}
+  else if(spot.kind==='turn'){
+    $('qtxt').textContent='Step 3 \u2014 your action on the river';
+    q.innerHTML='<div class="grid">'+opt('check','Check','No bet',1)+
+      opt('small','Small','25\u201333% of pot',2)+opt('large','Large','66\u2013100% of pot',3)+'</div>';}
   else{
     $('qtxt').textContent='Your action on the flop';
     q.innerHTML='<div class="grid">'+opt('check','Check','No bet',1)+
@@ -610,21 +778,40 @@ function answer(a){
       [steps.join(', then ')+'. Final pot '+bb(pot)+', which is your '+bb(spot.stack)+' plus theirs.',
        'Solve for f where (1+2f)<sup>'+spot.streets+'</sup> = 1 + 2 \u00d7 SPR. Higher SPR means bigger bets on every street, not one big bet at the end.'],
       'SPR '+spot.spr+' \u00b7 '+spot.streets+' streets \u00b7 exact '+(spot.exact*100).toFixed(1)+'%');return;}
-  if(spot.kind==='turn'){
+  if(spot.kind==='turn'&&stage===1){
+    answered=false;
     const ok=a===spot.barrel.a;mark(a,spot.barrel.a);bump('turn:'+spot.cat,ok);
-    showFB(ok,ok?'Correct':'Correct answer: '+(spot.barrel.a==='barrel'?'Barrel':'Check'),
-      [spot.barrel.why],[TURN_WHY[spot.cat]],
-      spot.cat+' \u00b7 you hold '+spot.hc.desc+' \u00b7 vs '+VILLAINS[spot.vtype].name);return;}
+    const cont=spot.turnBet
+      ?'Barrel was right. You bet '+bb(spot.turnBetAmt)+' and they call.'
+      :'Check was right. They check back.';
+    $('fbwrap').innerHTML='<div class="fb '+(ok?'right':'wrong')+'">'+
+      '<div class="verdict '+(ok?'right':'wrong')+'">'+
+      (ok?'Correct':'Correct answer: '+(spot.barrel.a==='barrel'?'Barrel':'Check'))+'</div>'+
+      '<div class="fbline">'+spot.barrel.why+'</div>'+
+      '<div class="meta">'+cont+' The hand continues on the correct line.</div>'+
+      '<button class="next" id="nextBtn">See the river</button></div>';
+    $('nextBtn').onclick=()=>{stage=2;renderSpot();renderQuestion();$('fbwrap').innerHTML='';};
+    return;}
+  if(spot.kind==='turn'){
+    const ok=a===spot.riverCorrect;mark(a,spot.riverCorrect);bump('river:'+spot.rhc.cls,ok);
+    const alt=['gto','reg','station'].map(k=>{
+      const act=riverAction(spot.rhc.cls,k,spot.turnBet);
+      return '<div class="'+(k===spot.vtype?'hl':'')+'"><div class="who">'+VILLAINS[k].name+
+        '</div><div class="act '+act+'">'+act+'</div></div>';}).join('');
+    showFB(ok,ok?'Correct':'Correct answer: '+SIZE_TXT[spot.riverCorrect],
+      [spot.riverWhy],
+      ['You hold '+spot.rhc.desc+', which is a '+RCLS_NAME[spot.rhc.cls]+' on this river.'],
+      'River pot '+bb(spot.riverPot)+' \u00b7 '+(spot.turnBet?'turn barrelled':'turn checked')+
+      ' \u00b7 vs '+VILLAINS[spot.vtype].name,
+      '<div class="cmp">'+alt+'</div>');return;}
   const ok=a===spot.correct;mark(a,spot.correct);bump('flop:'+spot.bc.arch,ok);
-  const freqTxt={high:'bets close to its whole range here',med:'bets a bit over half its range here',
-    low:'checks most of its range here'}[spot.gto.freq];
+  const bullets=[freqLine(spot.gto.freq,spot.gto.size,spot.correct,spot.hc.desc)];
+  if(spot.potType==='3bet')bullets.push(TB_NOTE);
   const cmp='<div class="cmp">'+['gto','reg','station'].map(k=>{
     const act=spot.answers[k];
     return '<div class="'+(k===spot.vtype?'hl':'')+'"><div class="who">'+VILLAINS[k].name+
       '</div><div class="act '+act+'">'+act+'</div></div>';}).join('')+'</div>';
-  showFB(ok,ok?'Correct':'Correct answer: '+SIZE_TXT[spot.correct],[spot.why],
-    ['The baseline strategy '+freqTxt+', and you hold '+spot.hc.desc+', which puts you '+
-     (spot.gto.a==='check'?'in the checking portion':'in the betting portion')+'.'],
+  showFB(ok,ok?'Correct':'Correct answer: '+SIZE_TXT[spot.correct],[spot.why],bullets,
     ARCH_NAME[spot.bc.arch]+' \u00b7 '+spot.bc.suitTex+' \u00b7 '+
     (spot.potType==='3bet'?'3bet pot':'single raised pot')+' \u00b7 '+(spot.ip?'in position':'out of position'),
     cmp);}
@@ -636,6 +823,7 @@ function renderStats(){
   const label=k=>{const[m,rest]=k.split(':');
     if(m==='flop')return ARCH_NAME[rest]||rest;
     if(m==='turn')return rest.charAt(0).toUpperCase()+rest.slice(1);
+    if(m==='river')return RCLS_NAME[rest]?rest.charAt(0).toUpperCase()+rest.slice(1):rest;
     return rest==='3st'?'Flop to river, 3 streets':'Turn to river, 2 streets';};
   const group=(m,head)=>{
     const rows=keys.filter(k=>k.startsWith(m+':')).sort((a,b)=>(stats[a].c/stats[a].n)-(stats[b].c/stats[b].n));
@@ -646,7 +834,8 @@ function renderStats(){
         const col=p<60?'var(--bad)':p<80?'var(--gold)':'var(--good)';
         return '<tr><td class="bk">'+label(k)+'<div class="bar"><i style="width:'+p+'%;background:'+col+'"></i></div></td>'+
           '<td class="n">'+s.n+'</td><td class="n">'+p+'%</td></tr>';}).join('')+'</tbody></table>';};
-  $('statsBody').innerHTML=group('flop','Flop textures')+group('turn','Turn cards')+group('geo','Geometry')+
+  $('statsBody').innerHTML=group('flop','Flop textures')+group('turn','Turn cards')+
+    group('river','River hand classes')+group('geo','Geometry')+
     '<button class="reset" id="reset">Clear all progress</button>';
   $('reset').onclick=()=>{stats={};Store.set('bst_stats',stats);renderStats();};}
 $('statsBox').addEventListener('toggle',()=>{if($('statsBox').open)renderStats();});
