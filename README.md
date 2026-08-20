@@ -44,6 +44,16 @@ Two modes: straights and flushes only, or any improvement. Keyboard-driven — n
 ### [Combo Trainer](combo-trainer.html)
 Counting hand combinations, in four question types: raw combo counts, how a board changes them, how many combos beat a given hand, and what's currently beating you. Includes a reference tab.
 
+### [Bet Sizing Trainer](bet-sizing-trainer.html)
+Choosing a size, on a felt table with the spot dealt out — position, pot type, board, and your hand.
+
+- **Flop size** — check, small (25–33%), or large (60–75%), graded on board texture and where your hand falls in the range.
+- **Turn barrel** — two steps: classify the turn card (overcard, brick, board pair, draw filler, through card), then barrel or check.
+- **Geometry** — given a pot, an effective stack, and the streets left, pick the fraction of pot that gets stacks in by the river. Feedback shows the exact geometric size and the street-by-street path to it.
+- **Mixed** — all of the above, with a random opponent each hand.
+
+Grade against a **GTO baseline**, a **Reg**, or a **Station** — the same spot gets a different answer against each, and the feedback shows all three side by side so you can see which reads actually change the size. Accuracy is tracked per board texture and per turn card, so the weak textures surface on their own. Keyboard-driven: number keys answer, Enter deals the next hand, `M` cycles modes.
+
 ---
 
 ## Math
