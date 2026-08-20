@@ -325,6 +325,15 @@ function classifyHand(hole,board){
     if(run.every(r=>setA.has(r))&&heroIn(run))oesd=true;}
   const draw=fd||(oesd&&!madeStraight);
   const weakDraw=!draw&&gut&&!madeStraight;
+  /* backdoor equity: the difference between air that should bet and air that should not */
+  let bdFlush=false;
+  for(const su in sc)if(sc[su]===3&&hsc[su]>=1)bdFlush=true;
+  let bdStraight=false;
+  for(let st=1;st<=10;st++){
+    const w=[st,st+1,st+2,st+3,st+4];
+    if(w.filter(r=>setA.has(r)).length===3&&w.filter(r=>heroR.has(r)).length>=2)bdStraight=true;}
+  const twoOver=hole.every(c=>c.r>bU[0]);
+  const bd=bdFlush||bdStraight||twoOver||weakDraw;
 
   /* made hands, scored on what hero's two cards actually add to the board */
   let made,name;
@@ -362,7 +371,7 @@ function classifyHand(hole,board){
   else if(fd)desc+=' with a flush draw';
   else if(oesd&&!madeStraight)desc+=' with an open-ender';
   else if(weakDraw)desc+=' with a gutshot';
-  return{cls,made,name,desc};}
+  return{cls,made,name,desc,bd};}
 
 /* ---------- GTO table ---------- */
 const TABLE={
@@ -380,24 +389,33 @@ const TABLE={
  'trips':{srp:['small','high'],tb:['small','high'],why:'Almost no hand connects with this board. A small bet wins a large share of these pots uncontested.'}};
 const TB_NOTE='In a 3bet pot the stack-to-pot ratio is already low, so the small size does the work the large one would.';
 /* explains where THIS hand sits, so the rationale can never contradict the answer */
-function freqLine(freq,size,acting,desc){
+function freqLine(freq,size,acting,desc,ip,bd){
   const sz=size==='small'?'a small bet':'a large bet';
+  const oop=ip?'':' Out of position the raiser checks a tier more often than in position, which is why this is tighter than it would be on the button.';
   if(freq==='high')
-    return 'The baseline bets close to its whole range on this texture, so '+desc+' takes '+sz+' along with everything else.';
+    return (acting==='check'
+      ?'The baseline bets most of its range on this texture, but '+desc+' has no pair, no draw and no backdoor, so it is in the small checking portion.'
+      :'The baseline bets most of its range on this texture, so '+desc+' takes '+sz+(bd?', helped by its backdoor equity':'')+'.')+oop;
   if(freq==='med')
-    return acting==='check'
+    return (acting==='check'
       ?'The baseline bets a bit over half its range here and gives up the rest. With '+desc+' you are in the portion that checks.'
-      :'The baseline bets a bit over half its range here, and '+desc+' is comfortably inside the betting portion.';
-  return acting==='check'
+      :'The baseline bets a bit over half its range here, and '+desc+' is comfortably inside the betting portion.')+oop;
+  return (acting==='check'
     ?'The baseline checks most of its range on this board. Only value hands and strong draws bet, and '+desc+' is neither.'
-    :'The baseline checks most of its range on this board. '+desc+' is one of the few hands that should still fire, and it fires large.';}
+    :'The baseline checks most of its range on this board. '+desc+' is one of the few hands that should still fire, and it fires '+(size==='large'?'large':'small')+'.')+oop;}
 const SIZE_TXT={check:'Check',small:'Small, 25\u201333%',large:'Large, 60\u201375%'};
 
-function gtoAction(arch,potType,hc){
-  const row=TABLE[arch];const[size,freq]=potType==='3bet'?row.tb:row.srp;
-  if(freq==='high')return{a:size,freq,size};
-  if(freq==='med')return{a:hc==='air'?'check':size,freq,size};
-  return{a:(hc==='value'||hc==='draw')?size:'check',freq,size};}
+const TIER_DOWN={high:'med',med:'low',low:'low'};
+function gtoAction(arch,potType,hc,ip){
+  const row=TABLE[arch];
+  let[size,freq]=potType==='3bet'?row.tb:row.srp;
+  /* the preflop raiser out of position checks far more: no positional advantage to
+     realise, and betting invites a raise you have to answer first every street */
+  if(potType!=='3bet'&&!ip)freq=TIER_DOWN[freq];
+  const cls=(typeof hc==='string')?hc:hc.cls, bd=(typeof hc==='object')&&hc.bd;
+  if(freq==='high')return{a:(cls==='air'&&!bd)?'check':size,freq,size};
+  if(freq==='med')return{a:cls==='air'?'check':size,freq,size};
+  return{a:(cls==='value'||cls==='draw')?size:'check',freq,size};}
 function regAction(g,hc){
   if(hc==='air'&&g.freq==='med')return{a:g.size,why:'Regs in this pool under-defend. Take the fold equity the baseline leaves on the table and bet the air it would check.'};
   if(hc==='marginal'&&g.size==='large'&&g.a==='large')return{a:'check',why:'A capable opponent raises or floats you off a middling pair. Check, keep the pot small, get to showdown.'};
@@ -468,35 +486,67 @@ function best5(cards){
 function cmp5(a,b){for(let i=0;i<Math.max(a.length,b.length);i++){
   const x=a[i]||0,y=b[i]||0;if(x!==y)return x-y;}return 0;}
 
+function boardRunsTo4(board){            // four to a straight sitting on the board
+  const S=new Set(board.map(c=>c.r));if(S.has(14))S.add(1);
+  for(let st=1;st<=10;st++){
+    let n=0;for(let i=0;i<5;i++)if(S.has(st+i))n++;
+    if(n>=4)return true;}
+  return false;}
+
 function classifyRiver(hole,board,hadDraw){
   const hero=best5([...hole,...board]), brd=best5(board);
   if(cmp5(hero,brd)<=0)
-    return{cls:hadDraw?'missed':'air',desc:'nothing, playing the board'};
+    return{cls:hadDraw?'missed':'air',desc:'nothing, playing the board',caution:''};
   const cat=hero[0];
   const brc={};board.forEach(c=>brc[c.r]=(brc[c.r]||0)+1);
-  const boardPaired=Object.values(brc).some(v=>v>=2);
-  const br=[...new Set(board.map(c=>c.r))].sort((a,b)=>b-a);
+  const boardPairs=Object.keys(brc).map(Number).filter(r=>brc[r]>=2).sort((a,b)=>b-a);
+  const boardPaired=boardPairs.length>0;
+  const bU=[...new Set(board.map(c=>c.r))].sort((a,b)=>b-a);
   const pocket=hole[0].r===hole[1].r;
-  if(cat>=6)return{cls:'nutted',desc:'a full house or better'};
-  if(cat===5)return{cls:'nutted',desc:'a flush'};
-  if(cat===4)return{cls:'nutted',desc:'a straight'};
-  if(cat===3)return{cls:'nutted',desc:boardPaired?'trips':'a set'};
-  if(cat===2){
-    // on a paired board, "two pair" is often just a pocket pair riding the board pair
-    if(boardPaired&&pocket)
-      return hole[0].r>br[0]
-        ?{cls:'strong',desc:'an overpair on a paired board'}
-        :{cls:'bluffcatch',desc:'an underpair on a paired board'};
-    return{cls:'nutted',desc:'two pair'};}
-  if(cat===1){
-    const pr=hero[1];
-    if(pocket&&pr>br[0])return{cls:'strong',desc:'an overpair'};
-    if(pr===br[0]){
-      const k=hole.find(c=>c.r!==pr);
-      return(k&&k.r>=12)?{cls:'strong',desc:'top pair with a strong kicker'}
-                        :{cls:'thin',desc:'top pair with a weak kicker'};}
-    return{cls:'bluffcatch',desc:'a pair below top'};}
-  return hadDraw?{cls:'missed',desc:'a missed draw'}:{cls:'air',desc:'no pair and no draw'};}
+  const hits=hole.map(c=>c.r).filter(r=>bU.includes(r));
+  const bsc={};board.forEach(c=>bsc[c.s]=(bsc[c.s]||0)+1);
+  const boardSuited=Math.max(...Object.values(bsc));
+
+  let cls,desc;
+  if(cat>=6){cls='nutted';desc=cat===8?'a straight flush':(cat===7?'quads':'a full house');}
+  else if(cat===5){cls='nutted';desc='a flush';}
+  else if(cat===4){cls='nutted';desc='a straight';}
+  else if(cat===3){
+    if(pocket&&bU.includes(hole[0].r)){cls='nutted';desc='a set';}
+    else if(boardPaired&&hits.includes(boardPairs[0])){cls='nutted';desc='trips';}
+    else{cls='bluffcatch';desc='the board\u2019s trips with a kicker';}}
+  else{
+    /* One pair or "two pair". On a paired board the board supplies one of those
+       pairs, so score only what hero's own cards add. */
+    let own=0;
+    if(pocket&&!bU.includes(hole[0].r))own=hole[0].r;
+    else if(hits.length)own=Math.max(...hits);
+    if(cat===2&&!boardPaired&&hits.length===2&&hits[0]!==hits[1]){cls='nutted';desc='two pair';}
+    else if(!own){cls=hadDraw?'missed':'air';desc=hadDraw?'a missed draw':'no pair';}
+    else if(own>bU[0]){cls='strong';desc='an overpair';}
+    else if(own===bU[0]){
+      const k=hole.find(c=>c.r!==own);
+      if(k&&k.r>=12){cls='strong';desc='top pair with a strong kicker';}
+      else{cls='thin';desc='top pair with a weak kicker';}}
+    else if(own===bU[1]){cls='bluffcatch';desc='second pair';}
+    else{cls='bluffcatch';desc='a pair below second';}
+    if(cat===2&&boardPaired&&cls!=='air'&&cls!=='missed')
+      desc+=' alongside the board pair';}
+
+  /* Texture caution: a hand's value depends on what the board makes available,
+     not just on what hero holds. Each live threat costs one step of strength. */
+  const DOWN={nutted:'strong',strong:'thin',thin:'bluffcatch',bluffcatch:'bluffcatch'};
+  const notes=[];
+  if(boardPaired&&cat<6&&DOWN[cls]){
+    notes.push('The board is paired, so trips and full houses are live and beat you.');
+    cls=DOWN[cls];}
+  if(boardSuited>=4&&cat!==5&&cat!==8&&DOWN[cls]){
+    notes.push('Four to a flush is on the board and you do not have it.');
+    cls=DOWN[cls];}
+  if(boardRunsTo4(board)&&cat<4&&DOWN[cls]){
+    notes.push('The board runs four to a straight, so one card makes it for them.');
+    cls=DOWN[cls];}
+  return{cls,desc,caution:notes.join(' ')};}
 
 const RIVER={
   gto:{nutted:'large',strong:'large',thin:'small',bluffcatch:'check',missed:'large',air:'check'},
@@ -505,20 +555,20 @@ const RIVER={
 const RCLS_NAME={nutted:'hand you want stacks in with',strong:'strong but not nutted hand',
   thin:'thin value hand',bluffcatch:'bluffcatcher',missed:'missed draw',air:'hand with no equity and no story'};
 const RIVER_WHY={
-  nutted:'Their range called two streets to get here. This is the pot you built the line for, so bet the size that charges it.',
-  strong:'Top pair still beats most of what calls twice. Bet, and bet enough that a worse pair pays.',
+  nutted:'Nothing on this runout threatens you, and their range called twice to get here. Bet the size that charges it.',
+  strong:'Still ahead of the range that called twice, with no scare card undercutting it. Bet enough that a worse pair pays.',
   'strong-reg':'Against a thinking opponent, top pair on the river is closer to thin value than to the nuts. A large bet only gets called by better, so size down.',
-  thin:'Bet the size a worse hand can talk itself into calling. Large gets action only from hands that beat you.',
+  thin:'Bet a size a worse hand can talk itself into calling. Large here gets action almost only from hands that beat you.',
   'thin-station':'They call large with second pair and ace high. This is the single biggest edge you have against this player type, and checking here is the leak.',
   bluffcatch:'You beat the bluffs and lose to the value. Betting turns your hand into a bluff, folds out everything you beat, and gets called by everything that beats you. Check, and call a reasonable size.',
   missed:'No showdown value and you hold cards that block their strong hands. This is the one class that should bluff the river.',
   'missed-station':'They do not fold rivers. Your missed draw is worth exactly as much as a check, and a bet just donates.',
   'missed-checked':'You checked the turn, so there is no story to tell. A river bet out of nowhere represents nothing they will believe.',
   air:'No blockers, no story, no showdown value. Check and move on.'};
-function riverWhy(cls,vt,turnBet){
+function riverWhy(cls,vt,turnBet,caution){
   if(cls==='missed'&&!turnBet)return RIVER_WHY['missed-checked'];
-  const k=cls+'-'+vt;
-  return RIVER_WHY[k]||RIVER_WHY[cls];}
+  const base=RIVER_WHY[cls+'-'+vt]||RIVER_WHY[cls];
+  return caution?caution+' '+base:base;}
 function riverAction(cls,vt,turnBet){
   if(cls==='missed'&&!turnBet)return'check';
   return RIVER[vt][cls];}
@@ -624,7 +674,7 @@ function buildFlop(vt){
   let hole=null;while(!hole)hole=dealHand(pick(range),[]);
   const board=dealBoard(3,hole);
   const bc=classifyBoard(board),hc=classifyHand(hole,board);
-  const g=gtoAction(bc.arch,potType,hc.cls),r=regAction(g,hc.cls),st=stationAction(g,hc.cls);
+  const g=gtoAction(bc.arch,potType,hc,ip),r=regAction(g,hc.cls),st=stationAction(g,hc.cls);
   const answers={gto:g.a,reg:r.a,station:st.a};
   const raise=potType==='3bet'?(ip?9:12):(pos.hero==='SB'?3.5:3);
   const pot=potType==='3bet'?(ip?19.5:25):srpPot(pos.vill);
@@ -658,7 +708,7 @@ function buildTurn(vt){
   return{...b,kind:'turn',turn,river,cat,hc,rhc,hadDraw,turnBet,
     pot:turnPot,flopPot:b.pot,riverPot,cbet:cb,turnBetAmt:tb,
     barrel,riverCorrect:riverAction(rhc.cls,vt,turnBet),
-    riverWhy:riverWhy(rhc.cls,vt,turnBet),
+    riverWhy:riverWhy(rhc.cls,vt,turnBet,rhc.caution),
     villTag:'Called flop',stage:0};}
 function buildGeo(){
   const streets=Math.random()<.65?3:2;
@@ -764,9 +814,15 @@ function answer(a){
   if(answered)return;
   if(spot.kind==='turn'&&stage===0){
     const ok=a===spot.cat;mark(a,spot.cat);bump('turn:'+spot.cat,ok);
-    $('fbwrap').innerHTML='<div class="fb '+(ok?'right':'wrong')+'"><div class="verdict '+(ok?'right':'wrong')+'">'+
-      (ok?'Right card type':'That is a '+spot.cat)+'</div><div class="fbline">'+TURN_WHY[spot.cat]+'</div></div>';
-    setTimeout(()=>{stage=1;renderQuestion();$('fbwrap').innerHTML='';},1100);return;}
+    const tc=RN[spot.turn.r]+SG[spot.turn.s];
+    $('fbwrap').innerHTML='<div class="fb '+(ok?'right':'wrong')+'">'+
+      '<div class="verdict '+(ok?'right':'wrong')+'">'+
+      (ok?'Correct':'Correct answer: '+spot.cat)+'</div>'+
+      '<div class="fbline">The '+tc+' is a <b>'+spot.cat+'</b>.</div>'+
+      '<div class="fbline">'+TURN_WHY[spot.cat]+'</div>'+
+      '<button class="next" id="nextBtn">Continue to the turn decision</button></div>';
+    $('nextBtn').onclick=()=>{stage=1;renderQuestion();$('fbwrap').innerHTML='';};
+    return;}
   answered=true;
   if(spot.kind==='geo'){
     const ok=+a===spot.correct;mark(a,spot.correct);bump('geo:'+spot.streets+'st',ok);
@@ -805,7 +861,7 @@ function answer(a){
       ' \u00b7 vs '+VILLAINS[spot.vtype].name,
       '<div class="cmp">'+alt+'</div>');return;}
   const ok=a===spot.correct;mark(a,spot.correct);bump('flop:'+spot.bc.arch,ok);
-  const bullets=[freqLine(spot.gto.freq,spot.gto.size,spot.correct,spot.hc.desc)];
+  const bullets=[freqLine(spot.gto.freq,spot.gto.size,spot.correct,spot.hc.desc,spot.ip,spot.hc.bd)];
   if(spot.potType==='3bet')bullets.push(TB_NOTE);
   const cmp='<div class="cmp">'+['gto','reg','station'].map(k=>{
     const act=spot.answers[k];
@@ -845,7 +901,8 @@ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
   t.classList.add('on');mode=t.dataset.mode;Store.set('bst_mode',mode);newSpot();});
 document.addEventListener('keydown',e=>{
-  if(e.key==='Enter'){const b=$('nextBtn');if(b)newSpot();return;}
+  if(e.key==='Enter'){const b=document.getElementById('nextBtn');
+    if(b&&typeof b.onclick==='function'){e.preventDefault();b.onclick();}return;}
   if(e.key.toLowerCase()==='m'){const tabs=[...document.querySelectorAll('.tab')];
     const i=tabs.findIndex(t=>t.classList.contains('on'));tabs[(i+1)%tabs.length].click();return;}
   const n=parseInt(e.key,10);
