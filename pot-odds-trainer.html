@@ -32,6 +32,8 @@ body{
 .top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:16px}
 .brand{font-family:var(--mono);font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold)}
 .brand span{color:var(--dim)}
+#simpleBtn.on{color:var(--gold);border-color:rgba(240,201,138,.45);background:#1a1610}
+.ctrls{display:flex;gap:6px;align-items:center}
 .tol{
   font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--dim);background:var(--panel);border:1px solid var(--line);
@@ -264,7 +266,10 @@ summary:hover{color:var(--gold)}
 
   <div class="top">
     <div class="brand">Pot Odds <span>/ trainer</span></div>
-    <button class="tol" id="tolBtn"></button>
+    <div class="ctrls">
+      <button class="tol" id="simpleBtn"></button>
+      <button class="tol" id="tolBtn"></button>
+    </div>
   </div>
 
   <div class="tabs" id="tabs">
@@ -297,6 +302,18 @@ summary:hover{color:var(--gold)}
     <summary>Price by bet size</summary>
     <div class="sheet">
       <p style="margin-top:0">Bet measured against the pot before it went in. The pot size itself never matters: a half pot bet prices you at 25% whether the pot is 4bb or 40bb, so learn the sizings, not the arithmetic.</p>
+      <h4 style="margin-top:0">The six you will actually face</h4>
+      <p>These are the sizes the Ignition pool uses. Common sizes mode drills only these, heads up, so the answer is always one of six numbers.</p>
+      <table class="sizing">
+        <tr class="hdr"><td>Bet</td><td>You need</td><td>Odds</td></tr>
+        <tr class="key"><td>1/3 pot</td><td>20.0%</td><td>4 : 1</td></tr>
+        <tr class="key"><td>1/2 pot</td><td>25.0%</td><td>3 : 1</td></tr>
+        <tr class="key"><td>2/3 pot</td><td>28.6%</td><td>2.5 : 1</td></tr>
+        <tr class="key"><td>1x pot</td><td>33.3%</td><td>2 : 1</td></tr>
+        <tr><td>1.5x pot</td><td>37.5%</td><td>1.7 : 1</td></tr>
+        <tr><td>2x pot</td><td>40.0%</td><td>1.5 : 1</td></tr>
+      </table>
+      <h4>Everything else</h4>
       <table class="sizing">
         <tr class="hdr"><td>Bet</td><td>You need</td><td>Odds</td></tr>
         <tr class="key"><td>25% pot</td><td>16.7%</td><td>5 : 1</td></tr>
@@ -433,6 +450,7 @@ var MODES = ['odds','toeq','equity','decision'];
 var mode = 'odds';
 var strict = store.get('po_strict') === '1';
 var q = null, answered = false, answeredAt = 0;
+var simple = store.get('pot_simple') === '1';
 var stats = { correct:0, total:0, streak:0, best:0, hist:[] };
 
 var TOL = {
@@ -844,7 +862,47 @@ function revealCall(){
     (posted > 0 ? '<i>'+bb(call+posted)+' to match, '+bb(posted)+' already posted</i>' : '');
 }
 
+/* the sizes you actually face on Ignition. heads-up only and no extra caller, so the
+   answer is always one of six numbers and the pot size never enters into it.
+   price = bet / (pot + bet + your call) = f / (1 + 2f). */
+var SIMPLE = [
+  {w:6, f:1/3,  label:'a third of the pot'},
+  {w:7, f:0.5,  label:'half the pot'},
+  {w:5, f:2/3,  label:'two thirds of the pot'},
+  {w:6, f:1,    label:'the size of the pot'},
+  {w:2, f:1.5,  label:'one and a half times the pot'},
+  {w:2, f:2,    label:'twice the pot'}
+];
+SIMPLE.forEach(function(x){ x.need = x.f/(1 + 2*x.f)*100; });
+var SIMPLE_BAG = [];
+SIMPLE.forEach(function(x){ for(var i=0;i<x.w;i++) SIMPLE_BAG.push(x); });
+/* multiples of 3 only, so thirds are exact and halves land on one decimal */
+var SIMPLE_POTS = [3,6,9,12,15,18,21,24,30,36,45,60];
+
+function buildSimple(){
+  var street = pick(['flop','flop','turn','turn','river']);
+  var z = pick(SIMPLE_BAG);
+  var pre = pick(PRE_BAG);
+  /* keep the big multipliers on small pots so the bet stays inside a real stack */
+  var pool = z.f >= 1.5 ? SIMPLE_POTS.slice(0, 8) : SIMPLE_POTS;
+  var pot = pick(pool);
+  var bet = Math.round(pot * z.f * 10) / 10;
+  var seats = [{p:pre.hero, r:'hero', a:0}, {p:pre.seats[0], r:'bettor', a:bet}];
+  return {
+    kind:'num', simple:true,
+    street: street.toUpperCase() + ' \u00b7 heads up',
+    lines: ['Villain bets ' + bb(bet) + 'bb into ' + bb(pot) + 'bb'],
+    tbl: betWrap(pot, pot + bet, bet, pre.hero, seats, false),
+    figs:[],
+    ask:'How often do you need to win to break even on the call?',
+    unit:'%', correct: z.need,
+    pot: pot + bet, potBefore: pot, bet:bet, caller:0, shove:false,
+    sizeLabel:z.label, frac:z.f
+  };
+}
+
 function buildOdds(){
+  if(simple) return buildSimple();
   var street = pick(['pre','pre','flop','flop','flop','turn','turn','river']);
   if(street==='pre') return buildPre();
   var f = faceBet(street);
@@ -997,6 +1055,8 @@ function buildEquity(){
 /* deal a hand that actually holds the draw the question names, and count its outs
    from the cards. only the outs the label claims are counted, so a plain gutshot is 4
    and not 4 plus whatever pairing your undercards. no villain hand, so outs are nominal. */
+function cap(t){ return t.charAt(0).toUpperCase() + t.slice(1); }
+
 function article(n){ return /^(two|three)\b/.test(n) ? '' : (/^[aeiou]/i.test(n) ? 'an ' : 'a '); }
 
 function dealDraw(street){
@@ -1157,6 +1217,12 @@ function tolFor(){
   var t = strict ? TOL[mode].strict : TOL[mode].loose;
   return t;
 }
+function paintSimpleBtn(){
+  var b = document.getElementById('simpleBtn');
+  b.style.display = (mode==='odds') ? '' : 'none';
+  b.className = 'tol' + (simple ? ' on' : '');
+  b.innerHTML = simple ? 'Common <b>sizes</b>' : 'All <b>spots</b>';
+}
 function paintTolBtn(){
   var b = document.getElementById('tolBtn');
   if(mode==='decision'){ b.innerHTML = strict ? 'Grading <b>exact</b>' : 'Grading <b>close</b>'; return; }
@@ -1206,6 +1272,7 @@ function newHand(){
     });
   }
   paintTolBtn();
+  paintSimpleBtn();
 }
 
 /* ---------- grading ---------- */
@@ -1351,6 +1418,19 @@ function paintFeedback(ok, given, off){
       document.getElementById('nextBtn').focus();
       return;
     }
+    if(q.simple){
+      h += '<div class="math">He bet &nbsp;<b>'+q.sizeLabel+'</b><br>'+
+           'Pot now &nbsp;<b>'+bb(q.potBefore)+'</b> <i>pot</i> + <b>'+bb(q.bet)+'</b> <i>his bet</i> = <b>'+bb(q.pot)+'</b><br>'+
+           'Price &nbsp;<b>'+bb(q.bet)+'</b> <i>your call</i> / (<b>'+bb(q.pot)+'</b> + <b>'+bb(q.bet)+'</b>) = <span class="hi">'+pct(q.correct)+'</span></div>';
+      h += '<div class="note">'+cap(q.sizeLabel)+' is always <b>'+pct(q.correct)+'</b>. The pot was '+bb(q.potBefore)+'bb this time and it will be something else next time. The answer does not move.</div>';
+      h += '</div>';
+      f.innerHTML = h;
+      var areaS = document.getElementById('inputArea');
+      areaS.innerHTML = '<button class="go" id="nextBtn" style="width:100%;padding:14px 0">Next hand &nbsp;\u21b5</button>';
+      document.getElementById('nextBtn').onclick = function(){ newHand(); };
+      document.getElementById('nextBtn').focus();
+      return;
+    }
     h += '<div class="math">Pot now &nbsp;'+potChain(q)+'<br>'+
          'Price &nbsp;<b>'+bb(q.bet)+'</b> <i>your call</i> / (<b>'+bb(q.pot)+'</b> + <b>'+bb(q.bet)+'</b>) = <span class="hi">'+pct(q.correct)+'</span></div>';
     if(q.caller) h += '<div class="note">Villain bet '+pct(sizePct)+' of the pot, but the extra caller improved your price to '+pct(q.correct)+'.</div>';
@@ -1396,6 +1476,13 @@ document.getElementById('tolBtn').onclick = function(){
   strict = !strict;
   store.set('po_strict', strict?'1':'0');
   paintTolBtn();
+};
+
+document.getElementById('simpleBtn').onclick = function(){
+  simple = !simple;
+  store.set('pot_simple', simple?'1':'0');
+  paintSimpleBtn();
+  newHand();
 };
 
 document.getElementById('resetBtn').onclick = function(){
