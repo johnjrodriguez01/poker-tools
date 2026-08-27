@@ -124,11 +124,9 @@ body{
 .ptt.sm .ptbtn{width:18px;height:18px;font-size:9px}
 .ptact{display:flex;justify-content:center;margin:10px 0 2px}
 .ptcall{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
-  background:#12181b;color:#9aa6a2;border:1px solid #2b3a3f;border-radius:4px;padding:9px 26px;
-  cursor:pointer;line-height:1.35;transition:all .15s}
-.ptcall:hover{border-color:#40575e;color:#c8d2cf}
+  background:#16211d;color:#c8d2cf;border:1px solid #33474a;border-radius:4px;
+  padding:9px 26px;line-height:1.35;text-align:center}
 .ptcall b{color:var(--gold);font-weight:700}
-.ptcall.on{background:#16211d;border-color:rgba(240,201,138,.4);color:#e6ebed}
 .ptcall i{display:block;font-style:normal;font-size:9px;letter-spacing:.04em;
   text-transform:none;color:#7d8a86;margin-top:3px}
 .ptseat.dim{opacity:.62}
@@ -850,16 +848,9 @@ function betWrap(main, total, toCall, heroPos, seats, shove, board, hole){
          '" data-shove="'+(shove?1:0)+'"'+
          (board ? ' data-board="'+board.join(',')+'" data-hole="'+hole.join(',')+'"' : '')+
          '></div>'+
-         '<div class="ptact"><button class="ptcall" id="ptcall">Call <b>?</b></button></div>';
-}
-
-function revealCall(){
-  var b = document.getElementById('ptcall'), w = document.getElementById('ptwrap');
-  if(!b || !w) return;
-  var posted = +w.dataset.posted, call = +w.dataset.tocall;
-  b.classList.add('on');
-  b.innerHTML = 'Call <b>'+bb(call)+'bb</b>' +
-    (posted > 0 ? '<i>'+bb(call+posted)+' to match, '+bb(posted)+' already posted</i>' : '');
+         '<div class="ptact"><div class="ptcall">Call <b>'+bb(toCall)+'bb</b>'+
+         (posted > 0 ? '<i>'+bb(toCall+posted)+' to match, '+bb(posted)+' already in</i>' : '')+
+         '</div></div>';
 }
 
 /* the sizes you actually face on Ignition. heads-up only and no extra caller, so the
@@ -1240,8 +1231,6 @@ function newHand(){
   }).join('');
   document.getElementById('cards').innerHTML = q.cardsHTML || q.tbl || '';
   if(q.isOuts) pokerTable(); else if(q.tbl) betTable();
-  var cb = document.getElementById('ptcall');
-  if(cb) cb.addEventListener('click', revealCall);
   document.getElementById('ref-odds').style.display   = (mode==='odds')   ? 'block' : 'none';
   document.getElementById('ref-equity').style.display = (mode==='equity' || mode==='toeq') ? 'block' : 'none';
   document.getElementById('figs').innerHTML = (q.figs||[]).map(function(f){
