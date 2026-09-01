@@ -54,6 +54,15 @@ Choosing a size, on a felt table with the spot dealt out — position, pot type,
 
 Grade against a **GTO baseline**, a **Reg**, or a **Station** — the same spot gets a different answer against each, and the feedback shows all three side by side so you can see which reads actually change the size. Accuracy is tracked per board texture and per turn card, so the weak textures surface on their own. Keyboard-driven: number keys answer, Enter deals the next hand, `M` cycles modes.
 
+### [Flop Texture Drill](flop-texture-drill.html)
+Continuation betting decisions on a dealt flop, following Jonathan Little's framework: frequency comes from range advantage and position, size comes from nut advantage and how well the board hits the opponent's continuing range.
+
+Each spot deals a six-max table — single-raised pots as the raiser or the caller, or a 3-bet pot — and asks three questions: how big the range advantage is, who holds the nut advantage, and whether to bet small or large. Filter to one pot type, and keep an even mix of textures so rainbow, two-tone, monotone, connected, and paired boards all come up.
+
+The answers are computed rather than looked up. Range-vs-range equity is a 30,000-runout Monte Carlo on the actual flop, nut advantage compares each side's share of sets and better, and connectivity is the share of villain's range that continues. Feedback breaks both ranges into six buckets with the actual combos in each, names which straight draws the board allows, and flags spots sitting near a band edge as mixed.
+
+The Ranges tab holds every preflop range as editable text — edit any of them, hit Apply, and every answer recomputes off the new ranges. The Reference tab documents the framework, the thresholds, and the one deliberate departure from Little's chart.
+
 ---
 
 ## Math

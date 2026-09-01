@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flop Texture Drill</title>
+<style>
+:root{
+  --bg:#0a0a0b; --panel:#131315; --panel2:#1a1a1d; --line:#2a2a2f;
+  --ink:#eceae4; --dim:#8a8a90; --card:#f4f2ec; --red:#c0392b; --black:#141414;
+  --gold:#c9a227; --good:#4e9d6b; --bad:#bf6350; --me:#c9a227; --them:#5b8fb9;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+.num{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+.wrap{max-width:860px;margin:0 auto;padding:18px 16px 60px}
+header{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+h1{font-size:19px;margin:0;letter-spacing:.02em;font-weight:600}
+.tabs{display:flex;gap:4px;margin-left:auto}
+.tab{background:none;border:1px solid var(--line);color:var(--dim);padding:5px 12px;
+  border-radius:6px;cursor:pointer;font-size:13px}
+.tab.on{background:var(--panel2);color:var(--ink);border-color:var(--gold)}
+.card-panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.scenario{font-size:16px;font-weight:600;margin-bottom:2px}
+.sub{color:var(--dim);font-size:13px}
+.tableWrap{position:relative;width:100%;overflow:hidden;margin:6px 0 2px}
+.canvas{position:absolute;top:0;left:0;transform-origin:top left}
+.felt{position:absolute;border-radius:50%;
+  background:radial-gradient(ellipse at 50% 38%, #1a3a2c 0%, #113025 55%, #0a1f18 100%);
+  box-shadow:inset 0 0 60px rgba(0,0,0,.55), 0 0 0 9px #17171a, 0 0 0 10px #2c2c31,
+             0 12px 30px rgba(0,0,0,.6);}
+.pc{background:var(--card);border-radius:5px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;line-height:1;
+  box-shadow:0 1px 0 rgba(255,255,255,.08),0 3px 9px rgba(0,0,0,.65)}
+.pc .r{font-weight:700} .pc .s{margin-top:1px}
+.pc.h{color:#c0392b} .pc.d{color:#3b7dd8} .pc.c{color:#2f9e5c} .pc.s{color:#171717}
+.boardRow{position:absolute;transform:translate(-50%,-50%);display:flex}
+.potTag{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;
+  font-size:11px;letter-spacing:.1em;color:#cfc9b4;background:rgba(0,0,0,.4);
+  border:1px solid rgba(255,255,255,.08);border-radius:11px;padding:3px 11px}
+.potTag b{color:var(--gold);letter-spacing:0}
+.street{position:absolute;transform:translate(-50%,-50%);font-size:10px;letter-spacing:.18em;
+  color:rgba(255,255,255,.28)}
+.seat{position:absolute;transform:translate(-50%,-50%);text-align:center;white-space:nowrap}
+.hole{display:flex;justify-content:center;margin-bottom:4px}
+.back{border-radius:3px;background:
+  repeating-linear-gradient(45deg,#8e2018 0 3px,#6d1712 3px 6px);
+  border:1px solid #40100c;box-shadow:0 2px 5px rgba(0,0,0,.5)}
+.back.mine{border-color:var(--gold);box-shadow:0 0 0 1px rgba(201,162,39,.55),0 2px 5px rgba(0,0,0,.5)}
+.plate{background:rgba(8,8,9,.86);border:1px solid var(--line);border-radius:6px;
+  padding:3px 9px;display:inline-block;line-height:1.25}
+.plate .pos{font-size:12px;font-weight:600;color:var(--ink)}
+.plate .stk{font-size:10.5px;color:var(--dim);font-variant-numeric:tabular-nums}
+.seat.me .plate{border-color:var(--gold)} .seat.me .plate .pos{color:var(--gold)}
+.seat.vil .plate{border-color:#3f5c73}
+.seat.out{opacity:.32}
+.seat.out .plate{border-style:dashed}
+.dbtn{position:absolute;transform:translate(-50%,-50%);width:20px;height:20px;border-radius:50%;
+  background:#efeadb;color:#15150f;font-size:10px;font-weight:800;display:flex;
+  align-items:center;justify-content:center;box-shadow:0 2px 5px rgba(0,0,0,.6)}
+.q{border-top:1px solid var(--line);padding:12px 0 10px}
+.q:first-of-type{border-top:none}
+.qlabel{font-size:13px;color:var(--dim);margin-bottom:7px}
+.opts{display:flex;gap:8px;flex-wrap:wrap}
+.opt{flex:1 1 150px;background:var(--panel2);border:1px solid var(--line);color:var(--ink);
+  padding:9px 10px;border-radius:7px;cursor:pointer;font-size:14px;text-align:left}
+.opt:hover:not(:disabled){border-color:var(--gold)}
+.opt:disabled{cursor:default;opacity:.55}
+.opt.sel{border-color:var(--gold);background:#2a2517}
+.opt.right{border-color:var(--good);background:#17281d;opacity:1}
+.opt.wrong{border-color:var(--bad);background:#2c1b16;opacity:1}
+.fb{margin-top:6px;font-size:13.5px;color:var(--dim)}
+.fb b{color:var(--ink);font-weight:600}
+.bar{height:22px;border-radius:5px;overflow:hidden;display:flex;margin:6px 0 4px;
+  border:1px solid var(--line)}
+.bar span{display:flex;align-items:center;padding:0 7px;font-size:11.5px;white-space:nowrap}
+.bar .a{background:#4a3d0e;color:#e8cf85} .bar .b{background:#1b3548;color:#b8d4e6}
+.grid-out{background:var(--panel2);border:1px solid var(--gold);border-radius:8px;
+  padding:12px 14px;margin-top:12px}
+.grid-out .hd{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:4px}
+.grid-out .line{font-size:17px;font-weight:600}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+button.go{background:var(--gold);color:#20180a;border:none;padding:10px 20px;border-radius:7px;
+  font-weight:600;cursor:pointer;font-size:14px}
+button.go:hover{filter:brightness(1.08)}
+select,textarea{background:var(--panel2);color:var(--ink);border:1px solid var(--line);
+  border-radius:6px;padding:6px 8px;font-size:13px;font-family:inherit}
+textarea{width:100%;min-height:52px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+label.sw{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--dim);cursor:pointer}
+table{border-collapse:collapse;width:100%;font-size:13.5px;margin:8px 0 16px}
+th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+th{background:var(--panel2);font-weight:600;color:var(--gold);font-size:12px;
+  text-transform:uppercase;letter-spacing:.05em}
+h3{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--gold);
+  margin:22px 0 6px;font-weight:600}
+h3:first-child{margin-top:0}
+p{margin:0 0 10px}
+table.bk{font-size:12.5px;margin:8px 0 10px}
+table.bk td,table.bk th{padding:4px 8px;border-color:var(--line)}
+table.bk td.n{text-align:right;width:82px;white-space:nowrap}
+table.bk td.hands{color:var(--dim);font-size:12px}
+table.bk tr.lead td{color:var(--ink)}
+.who{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)}
+.stats{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--dim)}
+.stats b{color:var(--ink)}
+.rg{margin-bottom:12px}
+.rg .nm{font-size:12.5px;color:var(--gold);margin-bottom:3px}
+.hide{display:none}
+.note{font-size:12.5px;color:var(--dim);border-left:2px solid var(--line);padding-left:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Flop Texture Drill</h1>
+  <span class="sub num" id="tally"></span>
+  <div class="tabs">
+    <button class="tab on" data-t="drill">Drill</button>
+    <button class="tab" data-t="ref">Reference</button>
+    <button class="tab" data-t="rng">Ranges</button>
+  </div>
+</header>
+
+<!-- ================= DRILL ================= -->
+<div id="drill">
+  <div class="card-panel">
+    <div class="row" style="margin-bottom:10px">
+      <select id="filter">
+        <option value="all">All spots</option>
+        <option value="raiser">Single-raised, I'm the raiser</option>
+        <option value="caller">Single-raised, I'm the caller</option>
+        <option value="3bet">3-bet pots</option>
+      </select>
+      <label class="sw"><input type="checkbox" id="balanced" checked> Even mix of textures</label>
+      <button class="go" id="next" style="margin-left:auto">Next flop</button>
+    </div>
+    <div class="scenario" id="scen">&nbsp;</div>
+    <div class="sub" id="scensub">&nbsp;</div>
+    <div class="tableWrap" id="tw"><div class="canvas" id="cv"></div></div>
+  </div>
+
+  <div class="card-panel" id="qs"></div>
+
+  <div id="result"></div>
+</div>
+
+<!-- ================= REFERENCE ================= -->
+<div id="ref" class="hide">
+  <div class="card-panel">
+    <p class="note" style="margin-bottom:16px">This follows Jonathan Little's continuation betting
+    framework from the Master The Fundamentals series on PokerCoaching, with one deliberate change,
+    noted at the bottom.</p>
+
+    <h3>The two questions</h3>
+    <p><b>Frequency</b> is set by hand types, range advantage and position.<br>
+       <b>Size</b> is set by nut advantage, range connectivity and stack depth.</p>
+
+    <h3>Range advantage sets frequency</h3>
+    <table>
+      <tr><th>Equity</th><th>Advantage</th><th>What I bet</th></tr>
+      <tr><td>Over 58%</td><td>Strong, bet most of the time</td><td>Premium + Draw + Marginal + Junk</td></tr>
+      <tr><td>54–58%</td><td>Moderate, bet often</td><td>Premium + Draw + extra bluffs</td></tr>
+      <tr><td>Under 54%</td><td>Weak, bet less often</td><td>Premium + Draw</td></tr>
+    </table>
+    <p>Premium is Stacks plus Thick Value, Draw is Draws, Marginal is Thin Value plus Showdown,
+    Junk is Air. The bucket table in the feedback names the actual combos in each.</p>
+
+    <h3>Position also sets frequency</h3>
+    <p>Bet more often in position than out of position, and position informs range advantage in the
+    first place through the default starting ranges. A strong advantage out of position is listed as
+    not applicable, so every band drops one step when I'm out of position.</p>
+    <table>
+      <tr><th>Advantage</th><th>In position</th><th>Out of position</th></tr>
+      <tr><td>Strong</td><td>Nearly every flop, 80%+</td><td>Not applicable, so bet often instead</td></tr>
+      <tr><td>Moderate</td><td>Often, 40–80%</td><td>Often, 25–75%</td></tr>
+      <tr><td>Weak</td><td>Less often</td><td>Less often</td></tr>
+    </table>
+
+    <h3>Nut advantage and connectivity set size</h3>
+    <p><b>Nut advantage</b> is holding more combinations of premium hands, usually two pair and
+    better, than the opponent on this board. Have it, bet larger. Don't, bet smaller.</p>
+    <p><b>Range connectivity</b> is how strongly the board hits the opponent's likely continuing
+    range. Their range connects well, bet larger. It connects poorly, bet smaller. It only really
+    matters once I already have the range advantage.</p>
+    <table>
+      <tr><th>Over 50% equity</th><th>Nut advantage</th><th>Their range connects</th><th>Size</th></tr>
+      <tr><td>No</td><td>Yes</td><td>—</td><td>Large, about 2/3 pot, polarised</td></tr>
+      <tr><td>No</td><td>No</td><td>—</td><td>Small, about 1/3 pot</td></tr>
+      <tr><td>Yes</td><td>No</td><td>—</td><td>Small, about 1/3 pot</td></tr>
+      <tr><td>Yes</td><td>Yes</td><td>No</td><td>Small, about 1/3 pot</td></tr>
+      <tr><td>Yes</td><td>Yes</td><td>Yes</td><td>Large, about 2/3 pot</td></tr>
+    </table>
+    <p>Two different lines are in play and it's worth keeping them apart. The 54% and 58% lines sort
+    the advantage into strong, moderate or weak, which sets frequency. The 50% line is the yes/no
+    branch at the top of the sizing tree. A spot can be a weak advantage at 52% and still take the
+    "yes" branch for sizing.</p>
+    <p>His chart says small is under 33% and large is over 50%. Those are boundaries rather than
+    sizes, so the drill uses about 1/3 pot and about 2/3 pot, which is what you'd actually click.
+    Half pot is what a solver picks when the two size inputs pull opposite ways, and it isn't worth
+    carrying as a third option here.</p>
+    <p>There is also a general relationship between the two. Bet more often, bet smaller. Bet less
+    often, bet bigger.</p>
+
+    <h3>Static and dynamic</h3>
+    <p>Not one of his three size inputs, but he makes the same point another way: bet small on boards
+    where the current nuts is likely to still be the nuts by the river. That's a static board. The
+    drill shows it as supporting evidence rather than grading it.</p>
+    <p>Two things flip a board dynamic. Flush draws, which is why A72 with two spades is dynamic
+    despite looking bone dry, and enough straight draws, which is why 976 is dynamic and 972 isn't.
+    AKJ rainbow looks coordinated and plays static, because the ace caps the board and no two cards
+    make an open-ender.</p>
+
+    <h3>How the answers are computed</h3>
+    <table>
+      <tr><th>Item</th><th>Method</th></tr>
+      <tr><td>Range advantage</td><td>Monte Carlo equity of range vs range on this flop, 30,000
+        runouts, then bucketed at his 58% and 54% lines. Within 0.8 of the 58%, 54% or 50% line is
+        flagged as mixed.</td></tr>
+      <tr><td>Nut advantage</td><td>Share of each range making a set or better, a straight, a flush,
+        or two pair using the top board card. Within 10% relative is flagged as a wash.</td></tr>
+      <tr><td>Range connectivity</td><td>Share of the <i>opponent's</i> range in Stacks, Thick Value
+        or Draws, which is the part of their range that continues. Over 33% counts as connected,
+        28–38% is flagged as borderline.</td></tr>
+      <tr><td>Texture</td><td>Share of combos across both ranges flopping an open-ender or better,
+        or a flush draw or better. Over 5% is dynamic.</td></tr>
+    </table>
+
+    <h3>The one change from his charts</h3>
+    <p>His sizing tree sends every flop under 50% equity to large. This tool sends it there only when
+    I also hold the nut advantage. With neither advantage it bets less often and small, which is the
+    more conservative read and avoids building a pot I can't defend.</p>
+
+    <h3>What the drill asks and why</h3>
+    <p>Three questions: how big the range advantage is, who has the nut advantage, and how big to
+    bet. Frequency isn't asked because it's the range advantage question wearing a different hat,
+    it's just the band plus which seat I'm in. Connectivity isn't asked because it only changes the
+    answer in one branch of the sizing tree, so the size question tests it directly.</p>
+    <p class="note">Ranges are approximations of standard 100bb 6-max charts, not solver output.
+    Edit them on the Ranges tab and every answer recomputes. Stack depth is his third size input and
+    is not drilled here, since every spot is 100bb to start.</p>
+  </div>
+</div>
+
+<!-- ================= RANGES ================= -->
+<div id="rng" class="hide">
+  <div class="card-panel">
+    <p class="note" style="margin-bottom:14px">Standard notation: <span class="num">22+,
+    A2s-A5s, KTs+, AQo+</span>. Edit any box and hit Apply, the drill recomputes from the new
+    ranges. Nothing is saved, a page reload restores the defaults.</p>
+    <div id="rngList"></div>
+    <button class="go" id="applyR">Apply ranges</button>
+    <span id="rngMsg" class="sub" style="margin-left:10px"></span>
+  </div>
+</div>
+</div>
+
+<script>
+/* ============ card + hand evaluation ============ */
+const RANKS='23456789TJQKA', SUITS='cdhs', SYM={c:'♣',d:'♦',h:'♥',s:'♠'};
+const rkOf=c=>c>>2, suOf=c=>c&3;
+
+function straightHigh(m){
+  let best=-1;
+  if(((m>>12)&1)&&(m&1)&&((m>>1)&1)&&((m>>2)&1)&&((m>>3)&1)) best=3;
+  for(let hi=4;hi<13;hi++){let ok=1;for(let j=0;j<5;j++) if(!((m>>(hi-j))&1)){ok=0;break;} if(ok) best=hi;}
+  return best;
+}
+function enc(cat,k0,k1,k2,k3,k4){return ((((cat*16+k0)*16+(k1||0))*16+(k2||0))*16+(k3||0))*16+(k4||0);}
+function ev(cs){
+  const rc=[0,0,0,0,0,0,0,0,0,0,0,0,0], sc=[0,0,0,0], sr=[[],[],[],[]];
+  for(let i=0;i<cs.length;i++){const c=cs[i],r=c>>2,s=c&3;rc[r]++;sc[s]++;sr[s].push(r);}
+  let fs=-1; for(let s=0;s<4;s++) if(sc[s]>=5) fs=s;
+  if(fs>=0){
+    const rs=sr[fs].slice().sort((a,b)=>b-a);
+    let m=0; for(const r of rs) m|=1<<r;
+    const sh=straightHigh(m);
+    if(sh>=0) return enc(8,sh,0,0,0,0);
+    return enc(5,rs[0],rs[1],rs[2],rs[3],rs[4]);
+  }
+  let m=0; for(let r=0;r<13;r++) if(rc[r]) m|=1<<r;
+  const sh=straightHigh(m);
+  const c4=[],c3=[],c2=[];
+  for(let r=12;r>=0;r--){ if(rc[r]===4)c4.push(r); else if(rc[r]===3)c3.push(r); else if(rc[r]===2)c2.push(r); }
+  if(c4.length){let k=-1;for(let r=12;r>=0;r--) if(rc[r]&&r!==c4[0]){k=r;break;} return enc(7,c4[0],k<0?0:k);}
+  if(c3.length>=2) return enc(6,c3[0],Math.max(c3[1],c2.length?c2[0]:-1));
+  if(c3.length===1&&c2.length) return enc(6,c3[0],c2[0]);
+  if(sh>=0) return enc(4,sh);
+  if(c3.length===1){const t=c3[0],ks=[];for(let r=12;r>=0&&ks.length<2;r--) if(rc[r]&&r!==t)ks.push(r);return enc(3,t,ks[0],ks[1]);}
+  if(c2.length>=2){const p1=c2[0],p2=c2[1];let k=-1;for(let r=12;r>=0;r--) if(rc[r]&&r!==p1&&r!==p2){k=r;break;}return enc(2,p1,p2,k<0?0:k);}
+  if(c2.length===1){const p=c2[0],ks=[];for(let r=12;r>=0&&ks.length<3;r--) if(rc[r]&&r!==p)ks.push(r);return enc(1,p,ks[0],ks[1],ks[2]);}
+  const ks=[];for(let r=12;r>=0&&ks.length<5;r--) if(rc[r])ks.push(r);
+  return enc(0,ks[0],ks[1],ks[2],ks[3],ks[4]);
+}
+
+/* ============ range parsing ============ */
+function ri(ch){return RANKS.indexOf(ch);}
+function expandTok(t){
+  t=t.trim(); const out=[];
+  if(!t) return out;
+  if(t.endsWith('+')){
+    const b=t.slice(0,-1);
+    if(b.length===2&&b[0]===b[1]){for(let x=ri(b[0]);x<13;x++) out.push([x,x,'p']); return out;}
+    const a=ri(b[0]),lo=ri(b[1]),ty=b[2];
+    for(let x=lo;x<a;x++) out.push([a,x,ty]); return out;
+  }
+  if(t.includes('-')){
+    const p=t.split('-'), l=p[0], r=p[1];
+    if(l.length===2&&l[0]===l[1]){const h=ri(l[0]),o=ri(r[0]);for(let x=Math.min(h,o);x<=Math.max(h,o);x++) out.push([x,x,'p']);return out;}
+    const a=ri(l[0]),b1=ri(l[1]),b2=ri(r[1]),ty=l[2];
+    for(let x=Math.min(b1,b2);x<=Math.max(b1,b2);x++) out.push([a,x,ty]); return out;
+  }
+  if(t.length===2&&t[0]===t[1]){out.push([ri(t[0]),ri(t[0]),'p']);return out;}
+  out.push([ri(t[0]),ri(t[1]),t[2]]); return out;
+}
+function parseRange(s){
+  const seen={}, combos=[];
+  for(const tok of s.split(',')){
+    for(const h of expandTok(tok)){
+      if(h[0]<0||h[1]<0) continue;
+      const key=h.join('|'); if(seen[key])continue; seen[key]=1;
+      const a=h[0],b=h[1],ty=h[2];
+      if(ty==='p'){for(let s1=0;s1<4;s1++)for(let s2=s1+1;s2<4;s2++) combos.push([a*4+s1,a*4+s2]);}
+      else if(ty==='s'){for(let s1=0;s1<4;s1++) combos.push([a*4+s1,b*4+s1]);}
+      else {for(let s1=0;s1<4;s1++)for(let s2=0;s2<4;s2++) if(s1!==s2) combos.push([a*4+s1,b*4+s2]);}
+    }
+  }
+  return combos;
+}
+const freeCombos=(cs,b)=>cs.filter(c=>c[0]!==b[0]&&c[0]!==b[1]&&c[0]!==b[2]&&c[1]!==b[0]&&c[1]!==b[1]&&c[1]!==b[2]);
+
+/* ============ the three measurements ============ */
+function equity(rA,rB,board,iters){
+  const A=freeCombos(rA,board), B=freeCombos(rB,board);
+  if(!A.length||!B.length) return 50;
+  const deck=[]; for(let c=0;c<52;c++) if(c!==board[0]&&c!==board[1]&&c!==board[2]) deck.push(c);
+  let w=0,t=0,n=0,g=0;
+  while(n<iters && g<iters*25){
+    g++;
+    const a=A[(Math.random()*A.length)|0], b=B[(Math.random()*B.length)|0];
+    if(a[0]===b[0]||a[0]===b[1]||a[1]===b[0]||a[1]===b[1]) continue;
+    let x,y;
+    do{x=deck[(Math.random()*deck.length)|0];}while(x===a[0]||x===a[1]||x===b[0]||x===b[1]);
+    do{y=deck[(Math.random()*deck.length)|0];}while(y===a[0]||y===a[1]||y===b[0]||y===b[1]||y===x);
+    const sa=ev([a[0],a[1],board[0],board[1],board[2],x,y]);
+    const sb=ev([b[0],b[1],board[0],board[1],board[2],x,y]);
+    if(sa>sb)w++; else if(sa===sb)t++;
+    n++;
+  }
+  return n?100*(w+t/2)/n:50;
+}
+// sets+/straights/flushes/top two pair
+function nutShare(range,board){
+  const R=freeCombos(range,board);
+  if(!R.length) return {pct:0,n:0,sets:0};
+  const topB=Math.max(rkOf(board[0]),rkOf(board[1]),rkOf(board[2]));
+  let n=0, sets=0;
+  for(const h of R){
+    const cs=[h[0],h[1],board[0],board[1],board[2]];
+    const rc=[0,0,0,0,0,0,0,0,0,0,0,0,0], sc=[0,0,0,0]; let m=0;
+    for(const c of cs){rc[c>>2]++; sc[c&3]++; m|=1<<(c>>2);}
+    const trips=rc.some(x=>x>=3), fl=sc.some(x=>x>=5), st=straightHigh(m)>=0;
+    let hit=false;
+    if(trips||fl||st){hit=true; if(trips||fl)sets++;}
+    else{
+      const pairs=[]; for(let r=12;r>=0;r--) if(rc[r]===2) pairs.push(r);
+      if(pairs.length>=2 && pairs.indexOf(topB)>=0) hit=true;
+    }
+    if(hit) n++;
+  }
+  return {pct:100*n/R.length, sets:100*sets/R.length, n:R.length};
+}
+// draw density across the two ranges combined
+function drawDensity(pool,board){
+  const R=freeCombos(pool,board);
+  let fd=0,sd=0,u=0;
+  for(const h of R){
+    const cs=[h[0],h[1],board[0],board[1],board[2]];
+    const sc=[0,0,0,0]; let m=0;
+    for(const c of cs){sc[c&3]++; m|=1<<(c>>2);}
+    const f=Math.max(sc[0],sc[1],sc[2],sc[3])>=4;
+    let made=straightHigh(m)>=0, outs=0;
+    if(!made) for(let r=0;r<13;r++){ if((m>>r)&1) continue; if(straightHigh(m|(1<<r))>=0) outs++; }
+    const s=made||outs>=2;
+    if(f)fd++; if(s)sd++; if(f||s)u++;
+  }
+  return {fd:100*fd/R.length, sd:100*sd/R.length, score:100*u/R.length};
+}
+
+/* ============ naming and buckets: why the numbers are what they are ============ */
+function handName(c){
+  const r1=rkOf(c[0]), r2=rkOf(c[1]);
+  const hi=Math.max(r1,r2), lo=Math.min(r1,r2);
+  if(hi===lo) return RANKS[hi]+RANKS[hi];
+  return RANKS[hi]+RANKS[lo]+(suOf(c[0])===suOf(c[1])?'s':'o');
+}
+const BUCKETS=['Stacks','Thick Value','Thin Value','Draws','Showdown','Air'];
+function classify(h,board){
+  const bR=[rkOf(board[0]),rkOf(board[1]),rkOf(board[2])].sort((a,b)=>b-a);
+  const topB=bR[0];
+  const cs=[h[0],h[1],board[0],board[1],board[2]];
+  const rc=[0,0,0,0,0,0,0,0,0,0,0,0,0], sc=[0,0,0,0]; let m=0;
+  for(const c of cs){rc[c>>2]++; sc[c&3]++; m|=1<<(c>>2);}
+  const trips=rc.some(x=>x>=3), fl=sc.some(x=>x>=5), st=straightHigh(m)>=0;
+  const pairs=[]; for(let r=12;r>=0;r--) if(rc[r]===2) pairs.push(r);
+  if(trips||fl||st) return 0;
+  if(pairs.length>=2 && pairs.indexOf(topB)>=0) return 0;
+  const h1=rkOf(h[0]), h2=rkOf(h[1]), pocket=(h1===h2);
+  if(pocket && h1>topB) return 1;
+  if(pairs.length>=2) return 1;
+  const hitsTop=!pocket && (h1===topB||h2===topB);
+  const kick = h1===topB?h2:h1;
+  if(hitsTop && kick>=8) return 1;
+  const fd=sc.some(x=>x===4);
+  let outs=0; for(let r=0;r<13;r++){ if((m>>r)&1) continue; if(straightHigh(m|(1<<r))>=0) outs++; }
+  if(fd||outs>=2) return 3;
+  if(hitsTop) return 2;
+  if(pocket && h1>bR[2]) return 2;
+  if(!pocket && (h1===bR[1]||h2===bR[1])) return 2;
+  if(!pocket && (h1===bR[2]||h2===bR[2])) return 4;
+  if(pocket) return 4;
+  if(h1===12||h2===12) return 4;
+  return 5;
+}
+function buckets(range,board){
+  const R=freeCombos(range,board);
+  const cnt=[0,0,0,0,0,0], names=[{},{},{},{},{},{}];
+  for(const h of R){
+    const b=classify(h,board); cnt[b]++;
+    const n=handName(h); names[b][n]=(names[b][n]||0)+1;
+  }
+  return {cnt,names,total:R.length||1};
+}
+function topNames(obj,k){
+  const ks=Object.keys(obj).sort((a,b)=>obj[b]-obj[a]||a.localeCompare(b)).slice(0,k);
+  if(!ks.length) return 'none';
+  return ks.map(n=>n+' <span class="num">'+obj[n]+'</span>').join(', ');
+}
+function onlyIn(a,b,k){
+  const ks=Object.keys(a).filter(n=>!b[n]).sort((x,y)=>a[y]-a[x]).slice(0,k);
+  return ks.length? ks.map(n=>n+' <span class="num">'+a[n]+'</span>').join(', ') : '';
+}
+// which two-card hands flop a made straight, and which flop an open-ender
+function straightMap(board){
+  let m0=0; for(const c of board) m0|=1<<(c>>2);
+  const boardStraight = straightHigh(m0)>=0;
+  const made=[], oesd=[];
+  for(let hi=12;hi>=0;hi--) for(let lo=hi;lo>=0;lo--){
+    const m=m0|(1<<hi)|(1<<lo);
+    if(straightHigh(m)>=0){ if(!boardStraight) made.push(RANKS[hi]+RANKS[lo]); continue; }
+    let outs=0; for(let r=0;r<13;r++){ if((m>>r)&1) continue; if(straightHigh(m|(1<<r))>=0) outs++; }
+    if(outs>=2) oesd.push(RANKS[hi]+RANKS[lo]);
+  }
+  return {made:collapse(made), oesd:collapse(oesd), boardStraight};
+}
+function collapse(list){
+  const cnt={};
+  for(const h of list){ const set={}; for(const ch of h) set[ch]=1; for(const ch in set) cnt[ch]=(cnt[ch]||0)+1; }
+  const any=Object.keys(cnt).filter(ch=>cnt[ch]>=9);
+  const rest=list.filter(h=>!any.some(ch=>h.indexOf(ch)>=0));
+  return any.map(ch=>'any '+ch).concat(rest.slice(0,10));
+}
+function flushText(board){
+  const sc=[0,0,0,0]; for(const c of board) sc[c&3]++;
+  const mx=Math.max(sc[0],sc[1],sc[2],sc[3]);
+  if(mx===1) return "Rainbow, so no flush draw exists.";
+  const su=SUITS[sc.indexOf(mx)];
+  if(mx===2) return "Two "+SYM[su]+" out, so any two "+SYM[su]+" is a flush draw.";
+  return "Monotone, so one "+SYM[su]+" is already a flush draw and two is a made flush.";
+}
+
+/* ============ ranges ============ */
+const RANGES={
+  LJ:      "55+,A8s+,A5s-A4s,K9s+,Q9s+,J9s+,T8s+,98s,ATo+,KQo",
+  HJ:       "44+,A7s+,A5s-A2s,K8s+,Q8s+,J8s+,T8s+,97s+,87s,76s,ATo+,KJo+,QJo",
+  CO:       "22+,A2s+,K6s+,Q7s+,J7s+,T7s+,96s+,86s+,75s+,65s,54s,A9o+,KTo+,QTo+,JTo",
+  BTN:      "22+,A2s+,K2s+,Q4s+,J6s+,T6s+,95s+,85s+,74s+,64s+,53s+,43s,A2o+,K7o+,Q9o+,J9o+,T8o+,98o,87o",
+  SB:       "22+,A2s+,K4s+,Q6s+,J7s+,T7s+,96s+,86s+,75s+,65s,54s,A5o+,K8o+,Q9o+,J9o+,T9o,98o",
+  BB_vLJ:  "22-JJ,A2s-AJs,K7s-KQs,Q8s-QJs,J8s-JTs,T8s+,97s+,87s,76s,65s,A8o-AJo,KTo+,QTo+,JTo",
+  BB_vHJ:   "22-JJ,A2s-AJs,K5s-KQs,Q7s-QJs,J7s-JTs,T7s+,96s+,86s+,75s+,65s,54s,A7o-AJo,K9o+,Q9o+,J9o+,T9o,98o",
+  BB_vCO:   "22-JJ,A2s-AJs,K4s-KQs,Q6s-QJs,J7s-JTs,T7s+,96s+,86s+,75s+,65s,54s,A2o-AJo,K8o+,Q9o+,J9o+,T9o,98o,87o",
+  BB_vBTN:  "22-JJ,A2s-AJs,K2s-KJs,Q4s-QJs,J6s-JTs,T6s+,95s+,85s+,74s+,64s+,53s+,43s,A2o-AJo,K7o+,Q8o+,J8o+,T8o,98o,87o,76o",
+  BB_vSB:   "22-JJ,A2s-AJs,K2s-KJs,Q3s-QJs,J5s-JTs,T6s+,95s+,85s+,74s+,64s+,53s+,43s,A2o-AJo,K5o+,Q7o+,J7o+,T7o+,96o+,86o+,75o+,65o,54o",
+  SB_vBTN:  "22-TT,A2s-A5s,ATs-AQs,K9s-KQs,Q9s-QJs,J9s+,T9s,98s,87s,76s,AJo,KQo",
+  BTN_vCO:  "22-JJ,A2s-A5s,A8s-AQs,K9s-KQs,Q9s-QJs,J9s+,T8s+,97s+,87s,76s,65s,ATo,AJo,KQo,KJo,QJo",
+  BB3B_vBTN:"99+,AQs+,A5s-A2s,KJs+,QJs,JTs,T9s,87s,AJo+,KQo",
+  BTN3B_vCO:"TT+,AJs+,A5s-A4s,KJs+,QJs,JTs,T9s,76s,AQo+,KQo",
+  BTNcall3B:"55-JJ,A2s-A5s,ATs-AQs,K9s-KQs,Q9s-QJs,J9s+,T9s,98s,87s,76s,ATo,AJo,KQo,KJo,QJo",
+  COcall3B: "55-JJ,A2s-A5s,ATs-AQs,KTs-KQs,QTs-QJs,JTs,T9s,98s,87s,AQo,AJo,KQo"
+};
+const RLABEL={
+  LJ:"LJ open", HJ:"HJ open", CO:"CO open", BTN:"BTN open", SB:"SB open",
+  BB_vLJ:"BB call vs LJ", BB_vHJ:"BB call vs HJ", BB_vCO:"BB call vs CO",
+  BB_vBTN:"BB call vs BTN", BB_vSB:"BB call vs SB", SB_vBTN:"SB call vs BTN",
+  BTN_vCO:"BTN call vs CO", BB3B_vBTN:"BB 3-bet vs BTN", BTN3B_vCO:"BTN 3-bet vs CO",
+  BTNcall3B:"BTN call vs BB 3-bet", COcall3B:"CO call vs BTN 3-bet"
+};
+const SCENARIOS=[
+ {t:'raiser',s:"I open LJ, BB calls",   h:'LJ', v:'BB_vLJ',  hp:'LJ',vp:'BB', pot:5.5, hs:97.5,vs:97.5, pos:"I'm in position"},
+ {t:'raiser',s:"I open HJ, BB calls",    h:'HJ',  v:'BB_vHJ',   hp:'HJ', vp:'BB', pot:5.5, hs:97.5,vs:97.5, pos:"I'm in position"},
+ {t:'raiser',s:"I open CO, BB calls",    h:'CO',  v:'BB_vCO',   hp:'CO', vp:'BB', pot:5.5, hs:97.5,vs:97.5, pos:"I'm in position"},
+ {t:'raiser',s:"I open BTN, BB calls",   h:'BTN', v:'BB_vBTN',  hp:'BTN',vp:'BB', pot:5.5, hs:97.5,vs:97.5, pos:"I'm in position"},
+ {t:'raiser',s:"I open BTN, SB calls",   h:'BTN', v:'SB_vBTN',  hp:'BTN',vp:'SB', pot:6,   hs:97.5,vs:97.5, pos:"I'm in position"},
+ {t:'raiser',s:"I open CO, BTN calls",   h:'CO',  v:'BTN_vCO',  hp:'CO', vp:'BTN',pot:6.5, hs:97.5,vs:97.5, pos:"I'm out of position"},
+ {t:'raiser',s:"I open SB, BB calls",    h:'SB',  v:'BB_vSB',   hp:'SB', vp:'BB', pot:6,   hs:97,  vs:97,   pos:"I'm out of position"},
+ {t:'caller',s:"I defend BB vs LJ open",h:'BB_vLJ', v:'LJ',  hp:'BB', vp:'LJ',pot:5.5, hs:97.5,vs:97.5, pos:"Out of position, no initiative"},
+ {t:'caller',s:"I defend BB vs CO open", h:'BB_vCO',  v:'CO',   hp:'BB', vp:'CO', pot:5.5, hs:97.5,vs:97.5, pos:"Out of position, no initiative"},
+ {t:'caller',s:"I defend BB vs BTN open",h:'BB_vBTN', v:'BTN',  hp:'BB', vp:'BTN',pot:5.5, hs:97.5,vs:97.5, pos:"Out of position, no initiative"},
+ {t:'caller',s:"I defend BB vs SB open", h:'BB_vSB',  v:'SB',   hp:'BB', vp:'SB', pot:6,   hs:97,  vs:97,   pos:"In position, no initiative"},
+ {t:'caller',s:"I call BTN vs CO open",  h:'BTN_vCO', v:'CO',   hp:'BTN',vp:'CO', pot:6.5, hs:97.5,vs:97.5, pos:"In position, no initiative"},
+ {t:'3bet',  s:"I 3-bet BB vs BTN, BTN calls", h:'BB3B_vBTN', v:'BTNcall3B', hp:'BB', vp:'BTN',pot:22.5,hs:89,vs:89, pos:"Out of position, 3-bet pot"},
+ {t:'3bet',  s:"I 3-bet BTN vs CO, CO calls",  h:'BTN3B_vCO', v:'COcall3B',  hp:'BTN',vp:'CO', pot:18.5,hs:91.5,vs:91.5, pos:"In position, 3-bet pot"},
+ {t:'3bet',  s:"I open BTN, BB 3-bets, I call",h:'BTNcall3B', v:'BB3B_vBTN', hp:'BTN',vp:'BB', pot:22.5,hs:89,vs:89, pos:"In position, no initiative"},
+ {t:'3bet',  s:"I open CO, BTN 3-bets, I call",h:'COcall3B',  v:'BTN3B_vCO', hp:'CO', vp:'BTN',pot:18.5,hs:91.5,vs:91.5, pos:"Out of position, no initiative"}
+];
+
+/* ============ Jonathan Little's two flow charts ============ */
+/* Frequency is set by hand types, range advantage and position.
+   Size is set by nut advantage, range connectivity and stack depth. */
+const BANDS=[
+  {k:'strong',  txt:'Strong, over 58%'},
+  {k:'moderate',txt:'Moderate, 54\u201358%'},
+  {k:'weak',    txt:'Weak, under 54%'}
+];
+const FREQS=[
+  {k:'f80',txt:'Nearly every flop, 80%+'},
+  {k:'f50',txt:'Often, 40\u201375%'},
+  {k:'f25',txt:'Less often, under 30%'}
+];
+const SIZES=[{k:'small',txt:'Small, about 1/3 pot'},{k:'large',txt:'Large, about 2/3 pot'}];
+const bandOf=eq=> eq>58?'strong': eq>=54?'moderate':'weak';
+// Little lists strong advantage out of position as not applicable, so it drops to often.
+function freqOf(band,ip){
+  if(band==='strong') return ip?'f80':'f50';
+  return band==='moderate' ? 'f50' : 'f25';
+}
+// Little's sizing tree, with one change: with no range advantage and no nut advantage
+// this bets small rather than his large, which is the more conservative read.
+// hasAdv is the 50% line from Little's sizing tree, a different cut from the weak category above.
+function sizeOf(hasAdv,nutMine,connYes){
+  if(!hasAdv) return nutMine?'large':'small';
+  if(!nutMine) return 'small';
+  return connYes?'large':'small';
+}
+// Little's hand-type sets, mapped onto the six buckets.
+// Premium = Stacks + Thick Value, Draw = Draws, Marginal = Thin Value + Showdown, Junk = Air.
+const BETSET={
+  strong:  {label:'Premium + Draw + Marginal + Junk, so nearly everything', idx:[0,1,3,2,4,5]},
+  moderate:{label:'Premium + Draw + extra bluffs',                          idx:[0,1,3,5]},
+  weak:    {label:'Premium + Draw only',                                    idx:[0,1,3]}
+};
+// Range connectivity: how hard the board hits THEIR continuing range.
+// Stacks + Thick Value + Draws on the villain side.
+function connectivity(vRange,board){
+  const x=buckets(vRange,board);
+  return 100*(x.cnt[0]+x.cnt[1]+x.cnt[3])/x.total;
+}
+
+/* ============ board dealing ============ */
+function dealFlop(balanced){
+  if(!balanced){
+    const d=[]; while(d.length<3){const c=(Math.random()*52)|0; if(d.indexOf(c)<0)d.push(c);} return d;
+  }
+  const want=(Math.random()*5)|0; // 0 rainbow spread, 1 rainbow connected, 2 two-tone, 3 monotone, 4 paired
+  for(let tries=0;tries<4000;tries++){
+    const d=[]; while(d.length<3){const c=(Math.random()*52)|0; if(d.indexOf(c)<0)d.push(c);}
+    const rs=d.map(rkOf).sort((a,b)=>a-b), ss=d.map(suOf);
+    const paired=rs[0]===rs[1]||rs[1]===rs[2];
+    const uniqS=new Set(ss).size;
+    const span=rs[2]-rs[0];
+    if(want===4 && paired) return d;
+    if(paired) continue;
+    if(want===3 && uniqS===1) return d;
+    if(want===2 && uniqS===2) return d;
+    if(want===1 && uniqS===3 && span<=5) return d;
+    if(want===0 && uniqS===3 && span>=5) return d;
+  }
+  const d=[]; while(d.length<3){const c=(Math.random()*52)|0; if(d.indexOf(c)<0)d.push(c);} return d;
+}
+
+/* ============ state ============ */
+let R={}, cur=null, ans={}, stats={n:0,band:0,nut:0,size:0};
+function buildRanges(){ R={}; for(const k in RANGES) R[k]=parseRange(RANGES[k]); }
+buildRanges();
+
+const el=id=>document.getElementById(id);
+
+/* ============ the table ============ */
+const POSORDER=['SB','BB','LJ','HJ','CO','BTN'];   // clockwise seating
+const SLOTANG=[90,150,210,270,330,30];              // hero bottom centre, then clockwise
+const LAY={
+  wide:{w:860,h:460,fx:430,fy:232,frx:352,fry:150,srx:400,sry:185,
+        cw:46,ch:64,gap:7,cardFs:24,potDy:-58,streetDy:-84,seatCw:28,seatCh:39,dOff:26},
+  tall:{w:400,h:660,fx:200,fy:330,frx:150,fry:250,srx:170,sry:290,
+        cw:38,ch:53,gap:5,cardFs:20,potDy:-52,streetDy:-74,seatCw:24,seatCh:33,dOff:22}
+};
+function cardHTML(c,L){
+  const r=RANKS[rkOf(c)], su=SUITS[suOf(c)];
+  return `<div class="pc ${su}" style="width:${L.cw}px;height:${L.ch}px">
+    <div class="r" style="font-size:${L.cardFs}px">${r}</div>
+    <div class="s" style="font-size:${Math.round(L.cardFs*0.78)}px">${SYM[su]}</div></div>`;
+}
+function backHTML(L,mine){
+  return `<div class="back${mine?' mine':''}" style="width:${L.seatCw}px;height:${L.seatCh}px"></div>`;
+}
+function renderTable(c){
+  const wrap=el('tw');
+  const L = wrap.clientWidth>=560 ? LAY.wide : LAY.tall;
+  const sc=c.sc;
+  const hi=POSORDER.indexOf(sc.hp);
+  const seats=[]; for(let i=0;i<6;i++) seats.push(POSORDER[(hi+i)%6]);
+  const pts=SLOTANG.map(a=>({x:L.fx+L.srx*Math.cos(a*Math.PI/180), y:L.fy+L.sry*Math.sin(a*Math.PI/180)}));
+
+  let html=`<div class="felt" style="left:${L.fx-L.frx}px;top:${L.fy-L.fry}px;
+      width:${L.frx*2}px;height:${L.fry*2}px"></div>`;
+  html+=`<div class="street" style="left:${L.fx}px;top:${L.fy+L.streetDy}px">FLOP</div>`;
+  html+=`<div class="potTag" style="left:${L.fx}px;top:${L.fy+L.potDy}px">POT <b>${sc.pot} BB</b></div>`;
+  html+=`<div class="boardRow" style="left:${L.fx}px;top:${L.fy+6}px;gap:${L.gap}px">
+      ${c.board.map(x=>cardHTML(x,L)).join('')}</div>`;
+
+  seats.forEach((pos,i)=>{
+    const p=pts[i];
+    const me = pos===sc.hp, vil = pos===sc.vp;
+    const cls = me?'me':(vil?'vil':'out');
+    const stack = me?sc.hs:(vil?sc.vs:100);
+    const cards = (me||vil) ? `<div class="hole" style="gap:${Math.round(L.gap*0.5)}px">
+        ${backHTML(L,me)}${backHTML(L,me)}</div>` : '';
+    const name = me?'ME':pos;
+    html+=`<div class="seat ${cls}" style="left:${p.x}px;top:${p.y}px">
+      ${cards}<div class="plate"><div class="pos">${name}</div>
+      <div class="stk">${me?pos+' · ':''}${stack} BB</div></div></div>`;
+    if(pos==='BTN'){
+      const inx=L.fx+(p.x-L.fx)*0.80, iny=L.fy+(p.y-L.fy)*0.80;
+      html+=`<div class="dbtn" style="left:${inx}px;top:${iny}px">D</div>`;
+    }
+  });
+
+  const cv=el('cv');
+  cv.innerHTML=html;
+  const k=Math.min(1, wrap.clientWidth/L.w);
+  cv.style.width=L.w+'px'; cv.style.height=L.h+'px';
+  cv.style.transform='scale('+k+') translateX('+((wrap.clientWidth/k - L.w)/2)+'px)';
+  wrap.style.height=(L.h*k)+'px';
+}
+
+function deal(){
+  const f=el('filter').value;
+  const pool=SCENARIOS.filter(s=>f==='all'||s.t===f);
+  const sc=pool[(Math.random()*pool.length)|0];
+  const board=dealFlop(el('balanced').checked);
+  const H=R[sc.h], V=R[sc.v];
+  const eq=equity(H,V,board,30000);
+  const nh=nutShare(H,board), nv=nutShare(V,board);
+  const dd=drawDensity(H.concat(V),board);
+
+  const nutYou  = nh.pct>=nv.pct;
+  const dynamic = dd.score>=5;
+  const ip      = POSORDER.indexOf(sc.hp) > POSORDER.indexOf(sc.vp);
+  const band    = bandOf(eq);
+  const hasAdv  = eq>=50;
+  const cpct    = connectivity(V,board);
+  const connYes = cpct>=33;
+  cur={sc,board,eq,nh,nv,dd,nutYou,dynamic,ip,band,hasAdv,cpct,connYes,
+       freq:freqOf(band,ip), size:sizeOf(hasAdv,nutYou,connYes),
+       bandClose:[58,54,50].some(t=>Math.abs(eq-t)<0.8),
+       nutClose:(nh.pct+nv.pct)>0 && Math.abs(nh.pct-nv.pct)/(nh.pct+nv.pct)<0.10,
+       connClose:cpct>=28&&cpct<=38,
+       texClose:dd.score>=4&&dd.score<=7};
+  cur.pf=basePF(sc);
+  ans={};
+  el('scen').textContent=sc.s;
+  el('scensub').textContent=sc.pos;
+  renderTable(cur);
+  el('result').innerHTML='';
+  renderQuestions();
+}
+
+const QS=[
+  {k:'band',q:"How big is my range advantage?", o:BANDS.map(b=>[b.k,b.txt])},
+  {k:'nut', q:"Who has the nut advantage?",     o:[['you','Me'],['them','Them']]},
+  {k:'size',q:"How big do I bet?",              o:SIZES.map(z=>[z.k,z.txt])}
+];
+function renderQuestions(){
+  el('qs').innerHTML=QS.map(q=>`
+    <div class="q">
+      <div class="qlabel">${q.q}</div>
+      <div class="opts">${q.o.map(o=>
+        `<button class="opt" data-k="${q.k}" data-v="${o[0]}">${o[1]}</button>`).join('')}</div>
+    </div>`).join('');
+  el('qs').querySelectorAll('.opt').forEach(b=>b.onclick=()=>pick(b));
+}
+function pick(b){
+  const k=b.dataset.k;
+  ans[k]=b.dataset.v;
+  el('qs').querySelectorAll(`.opt[data-k="${k}"]`).forEach(x=>x.classList.remove('sel'));
+  b.classList.add('sel');
+  if(ans.band&&ans.nut&&ans.size) grade();
+}
+
+function pct(x){return x.toFixed(1)+'%';}
+function grade(){
+  const c=cur;
+  const key={band:c.band, nut:c.nutYou?'you':'them', size:c.size};
+  el('qs').querySelectorAll('.opt').forEach(b=>{
+    b.disabled=true; b.classList.remove('sel');
+    if(b.dataset.v===key[b.dataset.k]) b.classList.add('right');
+    else if(b.dataset.v===ans[b.dataset.k]) b.classList.add('wrong');
+  });
+  stats.n++;
+  for(const k of ['band','nut','size']) if(ans[k]===key[k]) stats[k]++;
+  const pc=k=>Math.round(100*stats[k]/stats.n);
+  el('tally').textContent=
+    `${stats.n} flops · advantage ${pc('band')}% · nuts ${pc('nut')}% · size ${pc('size')}%`;
+
+  const eqYou=c.eq, eqThem=100-c.eq;
+  const bM=buckets(R[c.sc.h],c.board), bT=buckets(R[c.sc.v],c.board);
+  const shM=i=>100*bM.cnt[i]/bM.total, shT=i=>100*bT.cnt[i]/bT.total;
+  const bandTxt=BANDS.find(x=>x.k===c.band).txt;
+  const freqTxt=FREQS.find(x=>x.k===c.freq).txt;
+  const sizeTxt=SIZES.find(x=>x.k===c.size).txt;
+  const posTxt=c.ip?'in position':'out of position';
+
+  let myB=-1,myG=0, thB=-1,thG=0;
+  for(let i=0;i<5;i++){
+    const g=shM(i)-shT(i);
+    if(g>myG){myG=g;myB=i;}
+    if(-g>thG){thG=-g;thB=i;}
+  }
+  const edgeMine = myB<0?'' :
+    `I hold more <b>${BUCKETS[myB].toLowerCase()}</b>, ${shM(myB).toFixed(0)}% of my range against ${shT(myB).toFixed(0)}% of theirs: ${topNames(bM.names[myB],4)}.`;
+  const edgeTheirs = thB<0?'' :
+    `They hold more <b>${BUCKETS[thB].toLowerCase()}</b>, ${shT(thB).toFixed(0)}% against ${shM(thB).toFixed(0)}%: ${topNames(bT.names[thB],4)}.`;
+
+  const bkRows=BUCKETS.map((bn,i)=>{
+    const lead = shM(i)>shT(i)+1 ? 'lead':'';
+    return `<tr class="${lead}"><td>${bn}</td>
+      <td class="n num">${bM.cnt[i]} \u00b7 ${shM(i).toFixed(0)}%</td>
+      <td class="n num">${bT.cnt[i]} \u00b7 ${shT(i).toFixed(0)}%</td>
+      <td class="hands">${topNames(bM.names[i],3)}</td></tr>`;
+  }).join('');
+
+  const uniqM=onlyIn(bM.names[0],bT.names[0],5), uniqT=onlyIn(bT.names[0],bM.names[0],5);
+  const nutDiff = uniqM||uniqT
+    ? `${uniqM?`Only I have <b>${uniqM}</b>. `:''}${uniqT?`Only they have <b>${uniqT}</b>.`:''}`
+    : `Both sides hold the same nutted hands, the gap is only combo counts.`;
+
+  const sm=straightMap(c.board);
+  const strText = sm.boardStraight
+    ? "The board is already a straight, so everyone has one."
+    : (sm.oesd.length
+        ? `Open-enders: <b>${sm.oesd.join(', ')}</b>.` + (sm.made.length?` Already a straight: <b>${sm.made.join(', ')}</b>.`:'')
+        : `No two cards make an open-ender, the best straight draw available is a gutshot.`);
+
+  const connHands=[0,1,3].map(i=>bT.cnt[i]?BUCKETS[i].toLowerCase()+' '+topNames(bT.names[i],2):null)
+                          .filter(Boolean).join('; ');
+  const bs=BETSET[c.band];
+  const betList=bs.idx.filter(i=>bM.cnt[i]>0)
+    .map(i=>BUCKETS[i]+' <span class="num">'+bM.cnt[i]+'</span>').join(', ');
+  const betTotal=bs.idx.reduce((t,i)=>t+bM.cnt[i],0);
+
+  const freqWhy = (!c.ip && c.band==='strong')
+    ? `A strong advantage would be an 80%+ betting flop in position, but Little lists strong advantage out of position as not applicable, so it drops a band.`
+    : `${bandTxt.split(',')[0]} advantage ${posTxt}.` + (c.ip?'':' Out of position drops it one band.');
+  const sizeWhy = !c.hasAdv
+    ? (c.nutYou
+        ? "No range advantage but I hold the nutted hands, so the betting range is polarised. Few bets, big ones."
+        : "No range advantage and no nut advantage. Little's chart says large here, this is the conservative read: bet rarely and keep it cheap.")
+    : (!c.nutYou
+        ? "I have the range advantage but they hold more of the nutted hands. Bet big and I get raised off the pot I just built."
+        : (c.connYes
+            ? "Both advantages, and the board hits their continuing range, so there is something to charge."
+            : "Both advantages, but the board misses their range. Nothing to charge, so bet cheap and often instead."));
+
+  el('result').innerHTML=`
+  <div class="card-panel">
+    <div class="q" style="border:none;padding-top:0">
+      <div class="qlabel">Range advantage \u00b7 the read behind the frequency</div>
+      <div class="bar">
+        <span class="a" style="width:${eqYou}%">Me ${pct(eqYou)}</span>
+        <span class="b" style="width:${eqThem}%">Them ${pct(eqThem)}</span>
+      </div>
+      <div class="fb"><b>${bandTxt}.</b> ${edgeMine} ${edgeTheirs}
+        ${c.bandClose?'<br><b>Close to a band edge</b>, so treat this one as mixed.':''}</div>
+      <table class="bk">
+        <tr><th>Bucket</th><th class="n">Me</th><th class="n">Them</th><th>My biggest holdings there</th></tr>
+        ${bkRows}
+      </table>
+    </div>
+
+    <div class="q">
+      <div class="qlabel">Nut advantage \u00b7 sets size, together with connectivity</div>
+      <div class="fb">
+        <span class="who">Mine</span> <b class="num">${bM.cnt[0]}</b> combos, <b class="num">${pct(shM(0))}</b> of my range: ${topNames(bM.names[0],7)}<br>
+        <span class="who">Theirs</span> <b class="num">${bT.cnt[0]}</b> combos, <b class="num">${pct(shT(0))}</b> of theirs: ${topNames(bT.names[0],7)}<br>
+        ${nutDiff}${c.nutClose?' Close enough to call it a wash, which means no big bets from either side.':''}</div>
+    </div>
+
+    <div class="q">
+      <div class="qlabel">Range connectivity \u00b7 the read behind the size</div>
+      <div class="fb"><b class="num">${pct(c.cpct)}</b> of their range continues here, ${c.connYes?'above':'below'} the 33% line, so the board
+        <b>${c.connYes?'connects':'misses'}</b>. ${connHands?'What they keep: '+connHands+'.':''}
+        ${c.connClose?' <b>Borderline</b>, this one sits near the line.':''}
+        ${!c.hasAdv?' Under 50% equity, and Little notes connectivity only matters once I have the range advantage.':''}</div>
+    </div>
+
+    <div class="q">
+      <div class="qlabel">Texture \u00b7 supporting read, not part of the decision</div>
+      <div class="fb">${flushText(c.board)} ${strText}<br>
+        <b>${c.dynamic?'Dynamic':'Static'}</b>, <span class="num">${pct(c.dd.score)}</span> of combos across both ranges are on a draw.
+        ${c.dynamic?'The hand that is best now often is not best by the river.'
+                   :'Whoever is ahead now is almost always still ahead on the river, which is the other reason to bet small.'}</div>
+    </div>
+
+    <div class="grid-out">
+      <div class="hd">Frequency, from the advantage and my seat</div>
+      <div class="line">${freqTxt}</div>
+      <div class="fb" style="margin-top:3px">${freqWhy}</div>
+      <div class="hd" style="margin-top:12px">Size</div>
+      <div class="line">${sizeTxt}</div>
+      <div class="fb" style="margin-top:3px">${sizeWhy}</div>
+      ${ans.nut===(c.nutYou?'you':'them')&&ans.size!==c.size
+        ? '<div class="fb" style="margin-top:6px;color:var(--bad)">Nut advantage was right and the size was not, so the connectivity read is what broke.</div>':''}
+      <div class="hd" style="margin-top:12px">What I bet</div>
+      <div class="fb" style="margin-top:2px">${bs.label}.<br>${betList}
+        ${c.band==='moderate'?'<br>Air is the bluff supply, take the best of it rather than all of it.':''}
+        <br><span class="num">${betTotal}</span> of my <span class="num">${bM.total}</span> combos.</div>
+    </div>
+  </div>`;
+}
+
+/* preflop baseline, cached per scenario */
+const PFCACHE={};
+function basePF(sc){
+  const key=sc.h+'|'+sc.v;
+  if(PFCACHE[key]!==undefined) return PFCACHE[key];
+  const A=R[sc.h], B=R[sc.v];
+  let w=0,t=0,n=0,g=0;
+  while(n<12000&&g<300000){
+    g++;
+    const a=A[(Math.random()*A.length)|0], b=B[(Math.random()*B.length)|0];
+    if(a[0]===b[0]||a[0]===b[1]||a[1]===b[0]||a[1]===b[1]) continue;
+    const used=[a[0],a[1],b[0],b[1]], brd=[];
+    while(brd.length<5){const c=(Math.random()*52)|0; if(used.indexOf(c)<0&&brd.indexOf(c)<0)brd.push(c);}
+    const sa=ev([a[0],a[1]].concat(brd)), sb=ev([b[0],b[1]].concat(brd));
+    if(sa>sb)w++; else if(sa===sb)t++;
+    n++;
+  }
+  return PFCACHE[key]= n?100*(w+t/2)/n:50;
+}
+
+/* ============ tabs + ranges tab ============ */
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));
+  ['drill','ref','rng'].forEach(id=>el(id).classList.toggle('hide',id!==b.dataset.t));
+});
+function renderRanges(){
+  el('rngList').innerHTML=Object.keys(RANGES).map(k=>
+    `<div class="rg"><div class="nm">${RLABEL[k]} <span class="num" id="w_${k}"></span></div>
+     <textarea data-k="${k}">${RANGES[k]}</textarea></div>`).join('');
+  updateWidths();
+}
+function updateWidths(){
+  for(const k in RANGES){
+    const n=R[k]?R[k].length:0;
+    const s=el('w_'+k); if(s) s.textContent='· '+(100*n/1326).toFixed(1)+'% of hands';
+  }
+}
+el('applyR').onclick=()=>{
+  let bad='';
+  document.querySelectorAll('#rngList textarea').forEach(t=>{
+    const v=t.value.trim();
+    try{ if(parseRange(v).length===0) bad=RLABEL[t.dataset.k]; else RANGES[t.dataset.k]=v; }
+    catch(e){ bad=RLABEL[t.dataset.k]; }
+  });
+  buildRanges();
+  for(const k in PFCACHE) delete PFCACHE[k];
+  updateWidths();
+  el('rngMsg').textContent = bad ? `${bad} didn't parse, that one was left alone.` : 'Applied. Next flop uses these.';
+  setTimeout(()=>el('rngMsg').textContent='',4000);
+};
+
+el('next').onclick=deal;
+el('filter').onchange=deal;
+
+renderRanges();
+deal();
+let rtmr; addEventListener('resize',()=>{clearTimeout(rtmr);rtmr=setTimeout(()=>{if(cur)renderTable(cur);},120);});
+</script>
+</body>
+</html>
