@@ -69,9 +69,11 @@ h1{font-size:19px;margin:0;letter-spacing:.02em;font-weight:600}
 .opt:disabled{cursor:default;opacity:.55}
 .opt.sel{border-color:var(--gold);background:#2a2517}
 .opt.right{border-color:var(--good);background:#17281d;opacity:1}
+.opt.alt{border-color:var(--good);border-style:dashed;background:#121a15;opacity:.9}
 .opt.wrong{border-color:var(--bad);background:#2c1b16;opacity:1}
 .fb{margin-top:6px;font-size:13.5px;color:var(--dim)}
 .fb b{color:var(--ink);font-weight:600}
+.qnote{font-size:12px;color:var(--good);margin-top:6px}
 .bar{height:22px;border-radius:5px;overflow:hidden;display:flex;margin:6px 0 4px;
   border:1px solid var(--line)}
 .bar span{display:flex;align-items:center;padding:0 7px;font-size:11.5px;white-space:nowrap}
@@ -96,6 +98,12 @@ h3{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--gold
   margin:22px 0 6px;font-weight:600}
 h3:first-child{margin-top:0}
 p{margin:0 0 10px}
+details.nums{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+details.nums summary{cursor:pointer;font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--dim);list-style:none}
+details.nums summary::-webkit-details-marker{display:none}
+details.nums summary:before{content:"+ ";color:var(--gold)}
+details.nums[open] summary:before{content:"\2212 ";color:var(--gold)}
 table.bk{font-size:12.5px;margin:8px 0 10px}
 table.bk td,table.bk th{padding:4px 8px;border-color:var(--line)}
 table.bk td.n{text-align:right;width:82px;white-space:nowrap}
@@ -180,11 +188,19 @@ table.bk tr.lead td{color:var(--ink)}
     <h3>Nut advantage and connectivity set size</h3>
     <p><b>Nut advantage</b> is holding more combinations of premium hands, usually two pair and
     better, than the opponent on this board. Have it, bet larger. Don't, bet smaller.</p>
+    <p class="note" style="margin:8px 0 12px">Little's slide says nut advantage is having more
+    <i>combinations</i> of premium hands. This tool compares the <i>share</i> of each range instead,
+    because raw combinations mostly just measure whose range is wider. On the same random flops, the
+    combination count hands the nut advantage to the CO opener 100% of the time against a BTN caller
+    and to the LJ opener only 21% of the time against the big blind, purely on range width. Share is
+    also the number that matters for the decision: if I bet big, how often can they show up with a
+    hand that raises me.</p>
     <p><b>Range connectivity</b> is how strongly the board hits the opponent's likely continuing
     range. Their range connects well, bet larger. It connects poorly, bet smaller. It only really
     matters once I already have the range advantage.</p>
     <table>
       <tr><th>Over 50% equity</th><th>Nut advantage</th><th>Their range connects</th><th>Size</th></tr>
+      <tr><td>—</td><td>A wash, within 10%</td><td>—</td><td>Small, about 1/3 pot</td></tr>
       <tr><td>No</td><td>Yes</td><td>—</td><td>Large, about 2/3 pot, polarised</td></tr>
       <tr><td>No</td><td>No</td><td>—</td><td>Small, about 1/3 pot</td></tr>
       <tr><td>Yes</td><td>No</td><td>—</td><td>Small, about 1/3 pot</td></tr>
@@ -195,6 +211,9 @@ table.bk tr.lead td{color:var(--ink)}
     the advantage into strong, moderate or weak, which sets frequency. The 50% line is the yes/no
     branch at the top of the sizing tree. A spot can be a weak advantage at 52% and still take the
     "yes" branch for sizing.</p>
+    <p>One more rule sits on top of the tree. When the two nut shares are within 10% of each other
+    the nut advantage is a wash, and the size drops to small no matter what the rest of the tree says,
+    because neither side can build a big pot without more of the top hands than the other.</p>
     <p>His chart says small is under 33% and large is over 50%. Those are boundaries rather than
     sizes, so the drill uses about 1/3 pot and about 2/3 pot, which is what you'd actually click.
     Half pot is what a solver picks when the two size inputs pull opposite ways, and it isn't worth
@@ -232,10 +251,35 @@ table.bk tr.lead td{color:var(--ink)}
     more conservative read and avoids building a pot I can't defend.</p>
 
     <h3>What the drill asks and why</h3>
-    <p>Three questions: how big the range advantage is, who has the nut advantage, and how big to
-    bet. Frequency isn't asked because it's the range advantage question wearing a different hat,
-    it's just the band plus which seat I'm in. Connectivity isn't asked because it only changes the
-    answer in one branch of the sizing tree, so the size question tests it directly.</p>
+    <p>Three reads, then the two decisions they feed. Is the board static or dynamic, whose range
+    does it favour, who holds more of the nutted hands, then how often to bet and how big.</p>
+    <p>The two decisions aren't just the reads repeated back. Frequency takes the advantage and
+    applies position on top, which is where a strong advantage out of position drops a band.
+    Size takes the nut advantage and applies connectivity on top, which is the one input the drill
+    doesn't ask for directly, so the size answer is what tests it.</p>
+    <p>The advantage question doesn't ask for a percentage, because nobody can read equity to a
+    decimal mid-hand. Strongly mine is over 58%, slightly mine is 54–58%, even or theirs is under
+    54%, but the way to get there at the table is the seat matchup plus the board family. An LJ open
+    against a big blind is strongly mine on most boards, because 15% of hands is playing against 23%.
+    A button open against a big blind is barely mine at all, because they defend nearly as wide as I
+    open. As the caller it's never mine. Then the board family shifts it a step.</p>
+
+    <h3>Flop families</h3>
+    <p>Every flop gets a name so boards can be learned in groups instead of one at a time. The family
+    comes first, then the suits.</p>
+    <table>
+      <tr><th>Family</th><th>What it means</th><th>Who it favours</th></tr>
+      <tr><td>Ace-high</td><td>An ace and two low cards</td><td>The raiser, who holds far more aces</td></tr>
+      <tr><td>Broadway</td><td>Two or more cards ten or higher</td><td>The raiser, who holds more big cards</td></tr>
+      <tr><td>One high card</td><td>One card ten or higher, nothing else</td><td>The raiser, but only mildly</td></tr>
+      <tr><td>Low</td><td>Nothing above a nine, disconnected</td><td>Misses both, so the raiser leads on overcards</td></tr>
+      <tr><td>Connected</td><td>Enough straight draws to matter</td><td>The caller, with more small suited and connected hands</td></tr>
+      <tr><td>Paired</td><td>Any pair on board</td><td>Nobody, whoever was ahead preflop stays ahead</td></tr>
+    </table>
+    <p>Then rainbow, two-tone or monotone. Any flush draw on board makes it dynamic on its own, which
+    is why about two flops in three come out dynamic.</p>
+    <p>Anything sitting within a hair of a threshold accepts either answer, so a coin flip is never
+    marked as a miss. That covers roughly 40% of nut advantage reps.</p>
     <p class="note">Ranges are approximations of standard 100bb 6-max charts, not solver output.
     Edit them on the Ranges tab and every answer recomputes. Stack depth is his third size input and
     is not drilled here, since every spot is 100bb to start.</p>
@@ -537,17 +581,46 @@ function freqOf(band,ip){
 // Little's sizing tree, with one change: with no range advantage and no nut advantage
 // this bets small rather than his large, which is the more conservative read.
 // hasAdv is the 50% line from Little's sizing tree, a different cut from the weak category above.
-function sizeOf(hasAdv,nutMine,connYes){
+// A nut advantage too close to call counts as not having one, so it sizes down.
+function sizeOf(hasAdv,nutMine,connYes,nutWash){
+  if(nutWash) return 'small';
   if(!hasAdv) return nutMine?'large':'small';
   if(!nutMine) return 'small';
   return connYes?'large':'small';
 }
+// roughly how much of my range each frequency tier is worth betting
+const FREQCAP={f80:0.80, f50:0.55, f25:0.28};
 // Little's hand-type sets, mapped onto the six buckets.
 // Premium = Stacks + Thick Value, Draw = Draws, Marginal = Thin Value + Showdown, Junk = Air.
 const BETSET={
   strong:  {label:'Premium + Draw + Marginal + Junk, so nearly everything', idx:[0,1,3,2,4,5]},
   moderate:{label:'Premium + Draw + extra bluffs',                          idx:[0,1,3,5]},
   weak:    {label:'Premium + Draw only',                                    idx:[0,1,3]}
+};
+// A name for the flop, so boards can be grouped instead of memorised one at a time.
+function flopType(board,sdPct){
+  const r=[rkOf(board[0]),rkOf(board[1]),rkOf(board[2])].sort((a,b)=>b-a);
+  const sc=[0,0,0,0]; for(const c of board) sc[c&3]++;
+  const mx=Math.max(sc[0],sc[1],sc[2],sc[3]);
+  const suit = mx===3?'monotone' : mx===2?'two-tone' : 'rainbow';
+  const paired = r[0]===r[1]||r[1]===r[2];
+  let fam;
+  if(paired) fam='Paired';
+  else if(sdPct>=8) fam='Connected';
+  else if(r[1]>=8) fam='Broadway';
+  else if(r[0]===12) fam='Ace-high';
+  else if(r[0]>=8) fam='One high card';
+  else fam='Low';
+  return {fam, suit, label:fam+', '+suit};
+}
+// the generalisable lesson for that family
+const TYPELESSON={
+  'Ace-high':     'Ace-high boards favour whoever raised, because the raiser holds far more aces.',
+  'Broadway':     'Broadway boards favour whoever raised, because the raiser holds more big cards.',
+  'One high card':'One high card and nothing else still favours the raiser, but only mildly.',
+  'Low':          'Low and disconnected misses both ranges, so the raiser stays ahead on overcards alone.',
+  'Connected':    'Connected boards favour the caller, who holds far more small suited and connected hands.',
+  'Paired':       'Paired boards have almost no draws, so whoever was ahead preflop is still ahead.'
 };
 // Range connectivity: how hard the board hits THEIR continuing range.
 // Stacks + Thick Value + Draws on the villain side.
@@ -579,7 +652,7 @@ function dealFlop(balanced){
 }
 
 /* ============ state ============ */
-let R={}, cur=null, ans={}, stats={n:0,band:0,nut:0,size:0};
+let R={}, cur=null, ans={}, stats={n:0,tex:0,band:0,nut:0,freq:0,size:0};
 function buildRanges(){ R={}; for(const k in RANGES) R[k]=parseRange(RANGES[k]); }
 buildRanges();
 
@@ -660,10 +733,13 @@ function deal(){
   const hasAdv  = eq>=50;
   const cpct    = connectivity(V,board);
   const connYes = cpct>=33;
-  cur={sc,board,eq,nh,nv,dd,nutYou,dynamic,ip,band,hasAdv,cpct,connYes,
-       freq:freqOf(band,ip), size:sizeOf(hasAdv,nutYou,connYes),
+  const nutWash = (nh.pct+nv.pct)>0 && Math.abs(nh.pct-nv.pct)/(nh.pct+nv.pct)<0.10;
+  const ft = flopType(board, dd.sd);
+  const hw = 100*H.length/1326, vw = 100*V.length/1326;
+  cur={sc,board,eq,nh,nv,dd,nutYou,dynamic,ip,band,hasAdv,cpct,connYes,nutWash,ft,hw,vw,
+       freq:freqOf(band,ip), size:sizeOf(hasAdv,nutYou,connYes,nutWash),
        bandClose:[58,54,50].some(t=>Math.abs(eq-t)<0.8),
-       nutClose:(nh.pct+nv.pct)>0 && Math.abs(nh.pct-nv.pct)/(nh.pct+nv.pct)<0.10,
+       nutClose:nutWash,
        connClose:cpct>=28&&cpct<=38,
        texClose:dd.score>=4&&dd.score<=7};
   cur.pf=basePF(sc);
@@ -676,13 +752,15 @@ function deal(){
 }
 
 const QS=[
-  {k:'band',q:"How big is my range advantage?", o:BANDS.map(b=>[b.k,b.txt])},
-  {k:'nut', q:"Who has the nut advantage?",     o:[['you','Me'],['them','Them']]},
-  {k:'size',q:"How big do I bet?",              o:SIZES.map(z=>[z.k,z.txt])}
+  {k:'tex', q:"Static or dynamic?",                  o:[['static','Static'],['dynamic','Dynamic']]},
+  {k:'band',q:"Whose range does this board favour?", o:[['strong','Strongly mine'],['moderate','Slightly mine'],['weak','Even, or theirs']]},
+  {k:'nut', q:"Who holds more of the nutted hands?", o:[['you','Me'],['them','Them']]},
+  {k:'freq',q:"So how often do I bet?",              o:FREQS.map(f=>[f.k,f.txt])},
+  {k:'size',q:"And how big?",                        o:SIZES.map(z=>[z.k,z.txt])}
 ];
 function renderQuestions(){
   el('qs').innerHTML=QS.map(q=>`
-    <div class="q">
+    <div class="q" id="q_${q.k}">
       <div class="qlabel">${q.q}</div>
       <div class="opts">${q.o.map(o=>
         `<button class="opt" data-k="${q.k}" data-v="${o[0]}">${o[1]}</button>`).join('')}</div>
@@ -694,31 +772,57 @@ function pick(b){
   ans[k]=b.dataset.v;
   el('qs').querySelectorAll(`.opt[data-k="${k}"]`).forEach(x=>x.classList.remove('sel'));
   b.classList.add('sel');
-  if(ans.band&&ans.nut&&ans.size) grade();
+  if(ans.tex&&ans.band&&ans.nut&&ans.freq&&ans.size) grade();
 }
 
 function pct(x){return x.toFixed(1)+'%';}
 function grade(){
   const c=cur;
-  const key={band:c.band, nut:c.nutYou?'you':'them', size:c.size};
+  // anything sitting on a threshold accepts either side, since a coin flip is not a miss.
+  // the computed answer stays first in the list and is the one marked as primary.
+  const notes={};
+  let bandAlt=[c.band];
+  if(Math.abs(c.eq-58)<0.8){bandAlt.push('strong','moderate'); notes.band='Equity is sitting on the 58% line between strongly and slightly mine, so either counts.';}
+  if(Math.abs(c.eq-54)<0.8){bandAlt.push('moderate','weak');   notes.band='Equity is sitting on the 54% line between slightly mine and even, so either counts.';}
+  bandAlt=[...new Set(bandAlt)];
+  // frequency follows the band, so any band that counts brings its frequency with it
+  const freqAlt=[...new Set(bandAlt.map(b=>freqOf(b,c.ip)))];
+  // when connectivity is the deciding input and it sits on the line, either size counts
+  const sizeAlt = (!c.nutWash && c.hasAdv && c.nutYou && c.connClose) ? ['small','large'] : [c.size];
+  const key={tex: c.texClose ? [c.dynamic?'dynamic':'static', c.dynamic?'static':'dynamic'] : [c.dynamic?'dynamic':'static'],
+             band:bandAlt,
+             nut: c.nutWash ? [c.nutYou?'you':'them', c.nutYou?'them':'you'] : [c.nutYou?'you':'them'],
+             freq:freqAlt, size:sizeAlt};
+  const prim={tex:c.dynamic?'dynamic':'static', band:c.band,
+              nut:c.nutYou?'you':'them', freq:c.freq, size:c.size};
+  if(c.texClose)  notes.tex='Draw density is right on the 5% line, so either counts.';
+  if(c.nutWash)   notes.nut='The two sides are within a hair of each other, so either counts.';
+  if(key.freq.length>1) notes.freq='Frequency follows the board question, and that one is on a line, so both follow.';
+  if(key.size.length>1) notes.size='Their range is right on the 33% line, so either counts.';
   el('qs').querySelectorAll('.opt').forEach(b=>{
     b.disabled=true; b.classList.remove('sel');
-    if(b.dataset.v===key[b.dataset.k]) b.classList.add('right');
-    else if(b.dataset.v===ans[b.dataset.k]) b.classList.add('wrong');
+    const k=b.dataset.k, v=b.dataset.v;
+    if(v===prim[k]) b.classList.add('right');
+    else if(key[k].indexOf(v)>=0) b.classList.add('alt');
+    else if(v===ans[k]) b.classList.add('wrong');
   });
+  for(const k in notes){
+    const q=el('q_'+k);
+    if(q && key[k].length>1) q.insertAdjacentHTML('beforeend',
+      `<div class="qnote">Solid is the computed answer, dashed also counts. ${notes[k]}</div>`);
+  }
   stats.n++;
-  for(const k of ['band','nut','size']) if(ans[k]===key[k]) stats[k]++;
+  for(const k of ['tex','band','nut','freq','size']) if(key[k].indexOf(ans[k])>=0) stats[k]++;
   const pc=k=>Math.round(100*stats[k]/stats.n);
   el('tally').textContent=
-    `${stats.n} flops · advantage ${pc('band')}% · nuts ${pc('nut')}% · size ${pc('size')}%`;
+    `${stats.n} flops · texture ${pc('tex')}% · board ${pc('band')}% · nuts ${pc('nut')}% · often ${pc('freq')}% · size ${pc('size')}%`;
 
   const eqYou=c.eq, eqThem=100-c.eq;
   const bM=buckets(R[c.sc.h],c.board), bT=buckets(R[c.sc.v],c.board);
   const shM=i=>100*bM.cnt[i]/bM.total, shT=i=>100*bT.cnt[i]/bT.total;
-  const bandTxt=BANDS.find(x=>x.k===c.band).txt;
   const freqTxt=FREQS.find(x=>x.k===c.freq).txt;
   const sizeTxt=SIZES.find(x=>x.k===c.size).txt;
-  const posTxt=c.ip?'in position':'out of position';
+  const advWord={strong:'Strongly mine',moderate:'Slightly mine',weak:'Even, or theirs'}[c.band];
 
   let myB=-1,myG=0, thB=-1,thG=0;
   for(let i=0;i<5;i++){
@@ -726,105 +830,101 @@ function grade(){
     if(g>myG){myG=g;myB=i;}
     if(-g>thG){thG=-g;thB=i;}
   }
-  const edgeMine = myB<0?'' :
-    `I hold more <b>${BUCKETS[myB].toLowerCase()}</b>, ${shM(myB).toFixed(0)}% of my range against ${shT(myB).toFixed(0)}% of theirs: ${topNames(bM.names[myB],4)}.`;
-  const edgeTheirs = thB<0?'' :
-    `They hold more <b>${BUCKETS[thB].toLowerCase()}</b>, ${shT(thB).toFixed(0)}% against ${shM(thB).toFixed(0)}%: ${topNames(bT.names[thB],4)}.`;
+  const plain=(o,k)=>Object.keys(o).sort((x,y)=>o[y]-o[x]||x.localeCompare(y)).slice(0,k).join(', ');
 
-  const bkRows=BUCKETS.map((bn,i)=>{
-    const lead = shM(i)>shT(i)+1 ? 'lead':'';
-    return `<tr class="${lead}"><td>${bn}</td>
-      <td class="n num">${bM.cnt[i]} \u00b7 ${shM(i).toFixed(0)}%</td>
-      <td class="n num">${bT.cnt[i]} \u00b7 ${shT(i).toFixed(0)}%</td>
-      <td class="hands">${topNames(bM.names[i],3)}</td></tr>`;
-  }).join('');
+  const bkRows=BUCKETS.map((bn,i)=>
+    `<tr><td>${bn}</td>
+      <td class="n num">${bM.cnt[i]} · ${shM(i).toFixed(0)}%</td>
+      <td class="n num">${bT.cnt[i]} · ${shT(i).toFixed(0)}%</td>
+      <td class="hands">${topNames(bM.names[i],3)}</td></tr>`).join('');
 
-  const uniqM=onlyIn(bM.names[0],bT.names[0],5), uniqT=onlyIn(bT.names[0],bM.names[0],5);
-  const nutDiff = uniqM||uniqT
-    ? `${uniqM?`Only I have <b>${uniqM}</b>. `:''}${uniqT?`Only they have <b>${uniqT}</b>.`:''}`
-    : `Both sides hold the same nutted hands, the gap is only combo counts.`;
+  // nutted hand classes on this board, named rather than counted
+  const allNut={}; for(const k in bM.names[0]) allNut[k]=1; for(const k in bT.names[0]) allNut[k]=1;
+  const nutClasses=Object.keys(allNut).sort().slice(0,6).join(', ') || 'nothing yet';
+  const uniqM=Object.keys(bM.names[0]).filter(k=>!bT.names[0][k]).sort((x,y)=>bM.names[0][y]-bM.names[0][x]).slice(0,3);
+  const uniqT=Object.keys(bT.names[0]).filter(k=>!bM.names[0][k]).sort((x,y)=>bT.names[0][y]-bT.names[0][x]).slice(0,3);
+  const nutVerdict = c.nutWash ? 'Neither, it is a wash' : (c.nutYou ? 'Mine' : 'Theirs');
+  const nutWhy = c.nutWash
+    ? 'Both of us turn these up about as often, so neither side can build a big pot.'
+    : (c.nutYou
+        ? (uniqM.length ? `I hold ${uniqM.join(', ')} and they don't.`
+                        : 'Same hands both sides, but they make up more of my range.')
+        : (uniqT.length ? `They hold ${uniqT.join(', ')} and I don't.`
+                        : 'Same hands both sides, but they make up more of theirs.'));
 
   const sm=straightMap(c.board);
-  const strText = sm.boardStraight
-    ? "The board is already a straight, so everyone has one."
-    : (sm.oesd.length
-        ? `Open-enders: <b>${sm.oesd.join(', ')}</b>.` + (sm.made.length?` Already a straight: <b>${sm.made.join(', ')}</b>.`:'')
-        : `No two cards make an open-ender, the best straight draw available is a gutshot.`);
+  const strText = sm.boardStraight ? 'The board is already a straight.'
+    : (sm.oesd.length ? `Open-enders: ${sm.oesd.slice(0,4).join(', ')}.` : 'Nothing makes an open-ender.');
 
-  const connHands=[0,1,3].map(i=>bT.cnt[i]?BUCKETS[i].toLowerCase()+' '+topNames(bT.names[i],2):null)
-                          .filter(Boolean).join('; ');
-  const bs=BETSET[c.band];
-  const betList=bs.idx.filter(i=>bM.cnt[i]>0)
-    .map(i=>BUCKETS[i]+' <span class="num">'+bM.cnt[i]+'</span>').join(', ');
-  const betTotal=bs.idx.reduce((t,i)=>t+bM.cnt[i],0);
+  const bs=BETSET[c.band], cap=Math.round(bM.total*FREQCAP[c.freq]);
+  let left=cap; const take=[];
+  for(const i of bs.idx){
+    if(left<=0) break;
+    const n=Math.min(bM.cnt[i],left);
+    if(n>0) take.push(`${BUCKETS[i]} <span class="num">${n}</span>${n<bM.cnt[i]?' of '+bM.cnt[i]:''}`);
+    left-=n;
+  }
 
   const freqWhy = (!c.ip && c.band==='strong')
-    ? `A strong advantage would be an 80%+ betting flop in position, but Little lists strong advantage out of position as not applicable, so it drops a band.`
-    : `${bandTxt.split(',')[0]} advantage ${posTxt}.` + (c.ip?'':' Out of position drops it one band.');
-  const sizeWhy = !c.hasAdv
-    ? (c.nutYou
-        ? "No range advantage but I hold the nutted hands, so the betting range is polarised. Few bets, big ones."
-        : "No range advantage and no nut advantage. Little's chart says large here, this is the conservative read: bet rarely and keep it cheap.")
-    : (!c.nutYou
-        ? "I have the range advantage but they hold more of the nutted hands. Bet big and I get raised off the pot I just built."
-        : (c.connYes
-            ? "Both advantages, and the board hits their continuing range, so there is something to charge."
-            : "Both advantages, but the board misses their range. Nothing to charge, so bet cheap and often instead."));
+    ? 'Strong advantage bets nearly every flop in position, but Little lists that as not applicable out of position.'
+    : `${advWord}, and I'm ${c.ip?'in':'out of'} position.`;
+  const sizeWhy = c.nutWash
+    ? 'Nobody has enough of the top hands to charge the other, so keep it cheap.'
+    : (!c.hasAdv
+        ? (c.nutYou ? 'Behind overall but holding the top hands, so bet rarely and bet big when I do.'
+                    : 'Behind overall and short of top hands. Nothing here worth building a pot with.')
+        : (!c.nutYou ? 'They hold more of the top hands, so a big bet just gets raised off the pot.'
+        : (c.connYes ? 'I hold the top hands and the board hits their range, so there is something to charge.'
+                     : 'I hold the top hands but the board misses their range. Nothing to charge, so bet cheap.')));
 
   el('result').innerHTML=`
   <div class="card-panel">
     <div class="q" style="border:none;padding-top:0">
-      <div class="qlabel">Range advantage \u00b7 the read behind the frequency</div>
-      <div class="bar">
-        <span class="a" style="width:${eqYou}%">Me ${pct(eqYou)}</span>
-        <span class="b" style="width:${eqThem}%">Them ${pct(eqThem)}</span>
-      </div>
-      <div class="fb"><b>${bandTxt}.</b> ${edgeMine} ${edgeTheirs}
-        ${c.bandClose?'<br><b>Close to a band edge</b>, so treat this one as mixed.':''}</div>
+      <div class="qlabel">Texture</div>
+      <div class="fb"><b>${c.dynamic?'Dynamic':'Static'} · ${c.ft.label}.</b>
+        ${flushText(c.board)} ${strText}${c.texClose?' Sits on the line, so either answer counts.':''}</div>
+    </div>
+
+    <div class="q">
+      <div class="qlabel">Whose board is it</div>
+      <div class="fb"><b>${advWord}.</b> ${TYPELESSON[c.ft.fam]}
+        I'm playing <span class="num">${c.hw.toFixed(0)}%</span> of hands here, they're playing
+        <span class="num">${c.vw.toFixed(0)}%</span>.
+        ${myB<0?'':`My edge on this flop is ${BUCKETS[myB].toLowerCase()}: ${plain(bM.names[myB],3)}.`}
+        ${thB<0?'':`Theirs is ${BUCKETS[thB].toLowerCase()}: ${plain(bT.names[thB],3)}.`}
+        ${c.bandClose?'<br>Right on a line, so either answer counts.':''}</div>
+    </div>
+
+    <div class="q">
+      <div class="qlabel">Nutted hands</div>
+      <div class="fb"><b>${nutVerdict}.</b> What counts as nutted here: ${nutClasses}. ${nutWhy}</div>
+    </div>
+
+    <div class="grid-out">
+      <div class="hd">How often</div>
+      <div class="line">${freqTxt}</div>
+      <div class="fb" style="margin-top:3px">${freqWhy}</div>
+      <div class="hd" style="margin-top:12px">How big</div>
+      <div class="line">${sizeTxt}</div>
+      <div class="fb" style="margin-top:3px">${sizeWhy}</div>
+      <div class="hd" style="margin-top:12px">Which hands</div>
+      <div class="fb" style="margin-top:2px">${bs.label}. About
+        <span class="num">${cap}</span> of my <span class="num">${bM.total}</span> combos:
+        ${take.join(', ')}.</div>
+    </div>
+
+    <details class="nums">
+      <summary>Show the numbers</summary>
+      <div class="fb" style="margin:8px 0">Equity <span class="num">${pct(eqYou)}</span> against
+        <span class="num">${pct(eqThem)}</span>. Nutted share mine <span class="num">${pct(shM(0))}</span>
+        (${bM.cnt[0]} combos), theirs <span class="num">${pct(shT(0))}</span> (${bT.cnt[0]}).
+        Their range keeps going <span class="num">${pct(c.cpct)}</span> of the time, line at 33%.
+        Draw density <span class="num">${pct(c.dd.score)}</span>, line at 5%.</div>
       <table class="bk">
         <tr><th>Bucket</th><th class="n">Me</th><th class="n">Them</th><th>My biggest holdings there</th></tr>
         ${bkRows}
       </table>
-    </div>
-
-    <div class="q">
-      <div class="qlabel">Nut advantage \u00b7 sets size, together with connectivity</div>
-      <div class="fb">
-        <span class="who">Mine</span> <b class="num">${bM.cnt[0]}</b> combos, <b class="num">${pct(shM(0))}</b> of my range: ${topNames(bM.names[0],7)}<br>
-        <span class="who">Theirs</span> <b class="num">${bT.cnt[0]}</b> combos, <b class="num">${pct(shT(0))}</b> of theirs: ${topNames(bT.names[0],7)}<br>
-        ${nutDiff}${c.nutClose?' Close enough to call it a wash, which means no big bets from either side.':''}</div>
-    </div>
-
-    <div class="q">
-      <div class="qlabel">Range connectivity \u00b7 the read behind the size</div>
-      <div class="fb"><b class="num">${pct(c.cpct)}</b> of their range continues here, ${c.connYes?'above':'below'} the 33% line, so the board
-        <b>${c.connYes?'connects':'misses'}</b>. ${connHands?'What they keep: '+connHands+'.':''}
-        ${c.connClose?' <b>Borderline</b>, this one sits near the line.':''}
-        ${!c.hasAdv?' Under 50% equity, and Little notes connectivity only matters once I have the range advantage.':''}</div>
-    </div>
-
-    <div class="q">
-      <div class="qlabel">Texture \u00b7 supporting read, not part of the decision</div>
-      <div class="fb">${flushText(c.board)} ${strText}<br>
-        <b>${c.dynamic?'Dynamic':'Static'}</b>, <span class="num">${pct(c.dd.score)}</span> of combos across both ranges are on a draw.
-        ${c.dynamic?'The hand that is best now often is not best by the river.'
-                   :'Whoever is ahead now is almost always still ahead on the river, which is the other reason to bet small.'}</div>
-    </div>
-
-    <div class="grid-out">
-      <div class="hd">Frequency, from the advantage and my seat</div>
-      <div class="line">${freqTxt}</div>
-      <div class="fb" style="margin-top:3px">${freqWhy}</div>
-      <div class="hd" style="margin-top:12px">Size</div>
-      <div class="line">${sizeTxt}</div>
-      <div class="fb" style="margin-top:3px">${sizeWhy}</div>
-      ${ans.nut===(c.nutYou?'you':'them')&&ans.size!==c.size
-        ? '<div class="fb" style="margin-top:6px;color:var(--bad)">Nut advantage was right and the size was not, so the connectivity read is what broke.</div>':''}
-      <div class="hd" style="margin-top:12px">What I bet</div>
-      <div class="fb" style="margin-top:2px">${bs.label}.<br>${betList}
-        ${c.band==='moderate'?'<br>Air is the bluff supply, take the best of it rather than all of it.':''}
-        <br><span class="num">${betTotal}</span> of my <span class="num">${bM.total}</span> combos.</div>
-    </div>
+    </details>
   </div>`;
 }
 
