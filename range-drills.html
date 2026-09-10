@@ -392,6 +392,41 @@ function straightNeed(br){
   for(let a=2;a<=14;a++)for(let b=a;b<=14;b++) if(straightHigh([...br,a,b])) return 2;
   return 3;
 }
+const _dynC={};
+function dynamism(board){
+  const k=board.map(cardStr).join("");
+  if(_dynC[k]!=null) return _dynC[k];
+  const used=new Set(board.map(cardStr));
+  const rem=deck().filter(c=>!used.has(cardStr(c)));
+  let hit=0,tot=0;
+  for(let i=0;i<rem.length;i++)for(let j=i+1;j<rem.length;j++){
+    const h=[rem[i],rem[j]]; tot++;
+    if(evaluate([...h,...board]).cat>=4){hit++;continue;}
+    if(drawInfo(h,board).oesd) hit++;
+  }
+  return _dynC[k]=hit/tot;
+}
+function familyOf(flop){
+  const r=flop.map(c=>c.r), u=[...new Set(r)];
+  if(u.length<r.length) return "Paired";
+  const big=r.filter(x=>x>=10).length;
+  if(big>=2) return "Broadway";
+  if(r.includes(14)) return "Ace-high";
+  if(straightNeed(r)===2) return "Connected";
+  if(big===1) return "One high card";
+  return "Low";
+}
+function threatWords(t){
+  const a=[];
+  if(t.maxSuit>=5) a.push("a flush is already on board");
+  else if(t.fourFlush) a.push("four to a flush");
+  else if(t.flushPoss) a.push("a flush is live");
+  if(t.need===0) a.push("a straight is on board");
+  else if(t.need===1) a.push("one card makes a straight");
+  else if(t.need===2) a.push("two cards make a straight");
+  if(t.paired) a.push("the board is paired");
+  return a;
+}
 const _texC={};
 function texture(board){
   const _k=board.map(cardStr).join("");
@@ -407,16 +442,24 @@ function texture(board){
     need, fourStraight:need<=1, boardStraight:need===0,
     high:Math.max(...br), uniq:[...new Set(br)].sort((a,b)=>b-a)
   };
-  let conn=false;
-  for(let i=0;i<t.uniq.length;i++)for(let j=i+1;j<t.uniq.length;j++)
-    if(t.uniq[i]-t.uniq[j]<=3) conn=true;
+  const street=board.length;
+  const conn = need===2;
   t.connected=conn;
   t.danger=(t.fourFlush?2:t.flushPoss?1:0)+(t.fourStraight?1:conn?0.5:0)+(t.paired?1:0);
-  t.words=[];
-  t.words.push(maxS>=4?maxS+"-flush on board":maxS===3?"3 to a flush":maxS===2?"two-tone":"rainbow");
-  if(t.paired)t.words.push(t.trips?"trips on board":"paired");
-  t.words.push(need===0?"straight on board":need===1?"4 to a straight":conn?"connected":"disconnected");
-  t.label=(t.danger<1?"Dry":t.danger<2?"Semi-wet":"Wet")+": "+t.words.join(", ");
+  const flushLive = street===3 ? true : street===4 ? maxS>=2 : maxS>=3;
+  t.suitWord = maxS>=5?"flush on board":maxS===4?"four to a flush":maxS===3?"three to a flush"
+    :(!flushLive?"no flush possible":(maxS===2?"two-tone":"rainbow"));
+  t.strWord = need===0?"straight on board":need===1?"four to a straight":need===2?"connected"
+    :(street===5?"no straight possible":"disconnected");
+  t.family = familyOf(board.slice(0,3));
+  t.words=[t.suitWord]; if(t.paired)t.words.push(t.trips?"trips on board":"paired");
+  t.words.push(t.strWord);
+  const stem=t.family+" flop, "+t.words.join(", ");
+  // dynamism is display-only and costs ~15ms, so never compute it during sampling
+  Object.defineProperty(t,"dynShare",{get(){return street<5?dynamism(board):null;}});
+  Object.defineProperty(t,"dynamic",{get(){return street<5?(maxS>=2||dynamism(board)>0.05):null;}});
+  Object.defineProperty(t,"label",{get(){
+    return stem+(street>=5?"":" \u00b7 "+(maxS>=2||dynamism(board)>0.05?"dynamic":"static"));}});
   return _texC[_k]=t;
 }
 
@@ -579,7 +622,7 @@ function classify(hole,board,players){
       if(b==="AIR") why.push("Bluffing into "+(players-1)+" players at these stakes is close to lighting money on fire. Give up.");
       if(b==="STACKS") why.push("Multiway only adds payers to a hand this strong. Bet bigger, not smaller.");
     }
-    why.push("Board is "+t.label.toLowerCase()+".");
+    why.push("Board: "+t.label+".");
     return {bucket:b,alt,huBucket:hu,demoted:!!dm,players,why,ev,tex:t,shape:s,draws:d,nut};
   };
 
@@ -608,10 +651,12 @@ function classify(hole,board,players){
     else { b="THICK"; alt="STACKS"; why.push("Non-nut straight. You can be on the wrong end of it."); }
   }
   else if(ev.cat===3 && s.set){
+    const th=threatWords(t);
     if(t.fourFlush||t.boardStraight){ b="THIN"; why.push("A set drops to thin value when the board itself makes a flush or straight."); }
-    else if(t.danger>=2){ b="THICK"; why.push("Set on a wet board. Strong, but a raise means trouble."); }
-    else if(t.danger>=1){ b="THICK"; alt="STACKS"; why.push("Set on a semi-wet board. Usually still a stack-off, one flag of danger."); }
-    else { b="STACKS"; why.push("Set on a dry board. Nothing realistic beats you."); }
+    else if(t.danger>=2){ b="THICK"; why.push("Set, but "+th.join(" and ")+". Strong, and still a fold to heavy aggression."); }
+    else if(t.danger>=1){ b="THICK"; alt="STACKS"; why.push("Set, but "+th.join(" and ")+". Usually still a stack-off."); }
+    else if(th.length){ b="STACKS"; alt="THICK"; why.push("Set, and "+th.join(" and ")+". Still a stack-off at 100bb, but you are not the nuts."); }
+    else { b="STACKS"; why.push("Set with no flush or straight available. Nothing realistic beats you."); }
   }
   else if(ev.cat===3){
     b = (t.danger>=2) ? "THIN" : "THICK";
@@ -625,21 +670,23 @@ function classify(hole,board,players){
     }
     else if(s.usesBoardPair){ b="THIN"; why.push("Two pair using the board pair. Anyone with that card has the same thing."); }
     else if(s.topTwo && t.danger<=1){ b="THICK"; alt="STACKS"; why.push("Top two on a manageable board. Three streets of value."); }
-    else { b="THIN"; alt="THICK"; why.push("Two pair, but "+(t.danger>=2?"the board is wet":"it is not the top two")+"."); }
+    else { b="THIN"; alt="THICK"; why.push("Two pair, but "+(t.danger>=2?"the board is heavily textured":"it is not the top two")+"."); }
   }
   else if(ev.cat===1){
     if(s.overpair){
-      if(t.danger>=2){ b="THIN"; why.push("Overpair on a wet board. One pair, and the board hits his calling range hard."); }
-      else if(t.danger>=1){ b="THICK"; why.push("Overpair, some texture. Bet three streets but fold to real aggression."); }
-      else { b="THICK"; why.push("Overpair on a dry board. Classic thick value: bet, bet, bet."); }
+      const th=threatWords(t);
+      if(t.danger>=2){ b="THIN"; why.push("Overpair, but "+th.join(" and ")+". One pair, and the board hits his calling range hard."); }
+      else if(t.danger>=1){ b="THICK"; why.push("Overpair, but "+th.join(" and ")+". Bet three streets, fold to real aggression."); }
+      else if(th.length){ b="THICK"; why.push("Overpair, though "+th.join(" and ")+". Bet three streets and slow down if he raises."); }
+      else { b="THICK"; why.push("Overpair with no flush or straight available. Classic thick value: bet, bet, bet."); }
     }
     else if(s.pairKind==="top"){
       if((s.kickTier==="top"||s.kickTier==="good") && t.danger<=1){ b="THICK"; why.push("Top pair with a real kicker. Three streets, but a check-raise at 5NL is usually a monster."); }
       else if(s.kickTier==="weak"){ b="THIN"; why.push("Top pair, weak kicker. Bet twice at most, you are dominated by every better top pair."); }
-      else { b="THIN"; alt="THICK"; why.push("Top pair on a "+(t.danger>=2?"wet":"marginal")+" board. Pot control."); }
+      else { b="THIN"; alt="THICK"; why.push("Top pair on a "+(t.danger>=2?"dangerous":"marginal")+" board. Pot control."); }
     }
     else if(s.pairKind==="second"||s.pairKind==="underpair-2nd"){
-      if(t.danger<1 && (s.kickTier==="top"||s.kickTier==="good"||s.pairKind==="underpair-2nd")){ b="THIN"; alt="SDV"; why.push("Second pair on a dry board. Worth one or two small bets."); }
+      if(t.danger<1 && (s.kickTier==="top"||s.kickTier==="good"||s.pairKind==="underpair-2nd")){ b="THIN"; alt="SDV"; why.push(threatWords(t).length?"Second pair, and "+threatWords(t).join(" and ")+". One small bet at most.":"Second pair with nothing live on board. Worth one or two small bets."); }
       else { b="SDV"; alt="THIN"; why.push("Second pair, no kicker help. Get to showdown cheap."); }
     }
     else if(s.pairKind==="boardpair"){ b="SDV"; why.push("You paired the board card everyone shares. It is a kicker contest."); }
@@ -1363,7 +1410,10 @@ $("mwrules").innerHTML=[
  "Cold-calling a bet with a player still behind you is the single most expensive multiway leak. Thin value and showdown value fold there."
 ].map(x=>"<li>"+x+"</li>").join("");
 $("rules").innerHTML=[
- "Danger flags on a board: three or more to a flush, four to a straight, a pair. Zero flags is dry, one is semi-wet, two or more is wet.",
+ "Board labels match the flop texture drill. The family comes first (ace-high, broadway, one high card, low, connected, paired), then the suits, then static or dynamic.",
+ "Dynamic means a flush draw is on board, or more than 5% of all two-card combos flop an open-ender or better. That is why A-7-2 with two spades is dynamic and A-7-2 rainbow is not, and why 9-7-6 is dynamic and 9-7-2 is not.",
+ "Connected means two hole cards can complete a straight right now. A-K-J is connected because Q-T makes broadway, and still static because no two cards make an open-ender.",
+ "Bucket strength runs off danger flags, not the label: three or more to a flush, four to a straight, a pair, and half a flag for a connected board.",
  "A set on a dry board plays for stacks. One danger flag keeps it there most of the time. Two flags drop it to thick value. If the board itself makes a straight or a four-flush, a set is thin value.",
  "A flush is a stack-off if it's the nuts, or K-high or better on an unpaired board. On a paired board it's thick value because boats are live.",
  "One pair is never a stack-off at 100bb, no matter how pretty the kicker is.",

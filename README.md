@@ -19,7 +19,7 @@ Opening and defending ranges by seat and situation, built from solver output.
 
 Progress is exportable and importable as a file, so stats survive a browser reset or move between devices.
 
-### [Range Drills](my-range-drills.html)
+### [Range Drills](range-drills.html)
 Hand reading through a six-bucket framework, for 6-max — heads-up and multiway, all amounts in big blinds.
 
 Filter by street, number of players, and bucket focus. Two stages: name the bucket, or name the bucket *and* the action. Tracks accuracy, streak, and time per decision.
