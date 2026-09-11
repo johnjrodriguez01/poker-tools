@@ -413,7 +413,6 @@ function answer(choice){
   if(ok){stats.correct++; stats.streak++; stats.best=Math.max(stats.best,stats.streak);} else stats.streak=0;
   result={ok,sol,choice}; save();
   renderHand(); renderActions(); renderFeedback(); renderStats(); renderWeak();
-  if(ok) setTimeout(()=>{ if(result&&result.ok) deal(); },620);
 }
 function rowTokens(sol){
   if(sol.type==='pair') return PAIR[sol.key].map(t=>t==='YN'&&!rules.das?'N':t);
@@ -431,7 +430,7 @@ function renderFeedback(){
     '</span><span class="fb-where">'+sol.label+' vs '+UPLBL[sol.col]+'</span></div>'+
     '<div class="fb-plain">'+PLAIN[sol.token]+(sol.token==='SUR'?' — surrender beats hitting against a big card.':'')+'</div>'+
     '<div class="strip">'+strip+'</div>'+
-    (ok?'':'<button class="next" id="next">Next hand</button>')+'</div>';
+    '<button class="next" id="next">Next hand</button></div>';
   const n=document.getElementById('next'); if(n) n.addEventListener('click',deal);
 }
 function renderStats(){
@@ -481,7 +480,7 @@ document.getElementById('tab-drill').addEventListener('click',()=>setTab('drill'
 document.addEventListener('keydown',e=>{
   if(document.getElementById('view-drill').classList.contains('hidden'))return;
   const k=e.key.toLowerCase();
-  if((k===' '||k==='enter')&&result&&!result.ok){e.preventDefault();deal();return;}
+  if((k===' '||k==='enter')&&result){e.preventDefault();deal();return;}
   const a=ACTIONS.find(x=>x[2]===k); if(a) answer(a[0]);
 });
 
