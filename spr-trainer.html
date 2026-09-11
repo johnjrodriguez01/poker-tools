@@ -2,616 +2,575 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SPR Trainer — 6-max cash</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SPR Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ground:#171b21;
-  --panel:#1e242c;
-  --panel2:#232a33;
-  --line:#2f3843;
-  --line2:#3d4855;
-  --ink:#e6e9ed;
-  --dim:#828e9c;
-  --dimmer:#5d6874;
-  --brass:#d4a24c;
-  --z1:#e5544b;
-  --z2:#e08a3c;
-  --z3:#d4a24c;
-  --z4:#57a2b5;
-  --z5:#7089d6;
-  --ok:#5fb87a;
-  --bad:#e5544b;
-  --mono:ui-monospace,"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
-  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --bg:#0C1012; --panel:#141A1D; --line:#232C31; --soft:#1A2226;
+  --ink:#EAEFF1; --muted:#8397A0; --dim:#5A6B73;
+  --raise:#E8977C; --call:#8BBB8B; --fold:#6CA3C1; --allin:#8B0000; --dead:#606060;
+  --hot:#D93025; --good:#2E9E63; --warn:#E0A93B;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
-body{padding:22px 16px 70px}
-.wrap{max-width:780px;margin:0 auto}
+body{background:var(--bg);color:var(--ink);
+  font-family:'Space Grotesk',ui-sans-serif,system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;padding:16px 14px 40px;max-width:1020px;margin:0 auto}
+header{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+h1{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.sub{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--dim)}
+.modes{display:flex;gap:5px;background:var(--panel);padding:4px;border-radius:7px;border:1px solid var(--soft)}
+.modes button{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--muted);
+  background:none;border:0;padding:7px 15px;border-radius:5px;cursor:pointer}
+.modes button:hover:not(.on){color:var(--ink)}
+.modes button.on{background:var(--ink);color:var(--bg)}
 
-/* labels — tracker-software vernacular */
-.lab{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dimmer)}
-.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.nav{margin:14px 0 4px;display:grid;gap:7px}
+.lvl{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.lvl .tag{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);width:74px;flex:none}
+.pill{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;color:var(--muted);
+  background:var(--panel);border:1px solid var(--soft);border-radius:5px;padding:7px 10px;
+  cursor:pointer;white-space:nowrap;transition:color .12s,border-color .12s,background .12s}
+.pill:hover:not(.on){color:var(--ink);border-color:var(--line)}
+.pill.on{background:var(--hot);border-color:var(--hot);color:#fff;font-weight:600}
+.pill:focus-visible{outline:2px solid var(--raise);outline-offset:2px}
 
-/* header */
-header{border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:20px}
-.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-h1{font-size:17px;font-weight:600;letter-spacing:-.01em}
-.sub{font-family:var(--mono);font-size:11px;color:var(--dimmer);letter-spacing:.06em}
-nav{display:flex;gap:2px;margin-top:14px}
-nav button{background:none;border:none;border-bottom:2px solid transparent;color:var(--dim);
-  font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
-  padding:7px 13px;cursor:pointer}
-nav button:hover{color:var(--ink)}
-nav button[aria-selected="true"]{color:var(--brass);border-bottom-color:var(--brass)}
-nav button:focus-visible,input:focus-visible,.btn:focus-visible,.opt:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+#calc,#drill,#ref{display:none}
+#calc.on,#drill.on,#ref.on{display:block}
 
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:16px}
-.panel + .panel{margin-top:12px}
-section[hidden]{display:none}
+.wrap{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start;margin-top:14px}
+@media(max-width:900px){.wrap{grid-template-columns:1fr}}
+.side{display:grid;gap:10px}
+.card{background:var(--panel);border:1px solid var(--soft);border-radius:5px;padding:12px 13px}
+.card h2{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--dim);font-weight:500;margin-bottom:9px}
+.card + .card{margin-top:0}
 
 /* inputs */
-.inputs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.field label{display:block;margin-bottom:6px}
-.field input{width:100%;background:var(--ground);border:1px solid var(--line2);border-radius:3px;
-  color:var(--ink);font-family:var(--mono);font-size:22px;font-variant-numeric:tabular-nums;
-  padding:9px 11px;text-align:right}
-.field .unit{font-size:11px;color:var(--dimmer);font-family:var(--mono)}
-
-.presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
-.chip{background:var(--panel2);border:1px solid var(--line2);border-radius:2px;color:var(--dim);
-  font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;padding:5px 9px;cursor:pointer}
-.chip:hover{color:var(--ink);border-color:var(--dim)}
+.ins{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.ins label{display:block;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);margin-bottom:5px}
+.ins input{width:100%;background:var(--bg);border:1px solid var(--soft);border-radius:5px;
+  padding:9px 11px;color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:19px;
+  font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.ins input:focus{outline:1px solid var(--line)}
+.presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px;padding-top:11px;border-top:1px solid var(--soft)}
 
 /* readout */
-.readout{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center}
-.sprbig{font-family:var(--mono);font-size:62px;line-height:.9;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
-.zonename{font-size:17px;font-weight:600;letter-spacing:-.01em;margin-bottom:3px}
-.zonehand{color:var(--dim);font-size:13.5px}
-.effline{margin-top:2px}
-.effline .num{color:var(--ink)}
+.read{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap;margin-top:14px;
+  padding-top:14px;border-top:1px solid var(--soft)}
+.spr{font-family:'IBM Plex Mono',monospace;font-size:clamp(46px,10vw,64px);font-weight:600;
+  letter-spacing:-.03em;line-height:.95;font-variant-numeric:tabular-nums}
+.zname{font-size:15px;font-weight:600}
+.zhand{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:2px;max-width:360px}
+.eff{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--dim);margin-top:5px;
+  letter-spacing:.06em;text-transform:uppercase}
+.eff b{color:var(--ink);font-weight:600}
 
-/* SIGNATURE: commitment bar */
-.cbar{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
-.track{position:relative;height:9px;border-radius:2px;
-  background:linear-gradient(90deg,var(--z1) 0%,var(--z2) 16%,var(--z3) 34%,var(--z4) 62%,var(--z5) 100%)}
-.track .tick{position:absolute;top:-4px;width:1px;height:17px;background:var(--ground);opacity:.75}
-.marker{position:absolute;top:-7px;width:3px;height:23px;background:var(--ink);border-radius:1px;
-  box-shadow:0 0 0 2px var(--panel);transition:left .22s cubic-bezier(.2,.7,.3,1)}
-.scale{position:relative;height:15px;margin-top:5px}
-.scale span{position:absolute;transform:translateX(-50%);font-family:var(--mono);font-size:9.5px;color:var(--dimmer)}
-.zonelabels{display:flex;justify-content:space-between;margin-top:2px}
-.zonelabels span{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--dimmer)}
+/* commitment scale */
+.scaleblk{margin-top:16px}
+.track{position:relative;height:8px;border-radius:4px;
+  background:linear-gradient(90deg,var(--hot) 0%,var(--raise) 17%,var(--warn) 35%,var(--call) 62%,var(--fold) 100%)}
+.track .tk{position:absolute;top:-3px;width:1px;height:14px;background:var(--bg);opacity:.8}
+.mk{position:absolute;top:-5px;width:3px;height:18px;background:#fff;border-radius:2px;
+  box-shadow:0 0 0 2px var(--panel);transition:left .2s ease}
+.ticks{position:relative;height:15px;margin-top:6px}
+.ticks span{position:absolute;transform:translateX(-50%);font-family:'IBM Plex Mono',monospace;
+  font-size:9px;color:var(--dim)}
+.ends{display:flex;justify-content:space-between;margin-top:4px}
+.ends span{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--dim)}
 
-/* SIGNATURE: sizing ladder */
-.ladder{margin-top:14px}
-.rung{display:grid;grid-template-columns:42px 1fr 74px;gap:10px;align-items:center;margin-bottom:6px}
-.rung .st{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dimmer)}
-.rung .barwrap{height:20px;background:var(--ground);border-radius:2px;overflow:hidden}
-.rung .bar{height:100%;background:var(--brass);opacity:.85;border-radius:2px;transition:width .25s ease}
-.rung .amt{font-family:var(--mono);font-size:13px;text-align:right;font-variant-numeric:tabular-nums}
-.plannote{color:var(--dim);font-size:13px;margin-top:10px}
-.plannote b{color:var(--ink);font-weight:600}
-.alt{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);color:var(--dim);font-size:13px}
-.warn{color:var(--z2)}
+/* sizing ladder — same idiom as the mix bars */
+.mix{display:grid;gap:6px;margin-top:4px}
+.m{display:grid;grid-template-columns:44px 1fr 58px;gap:8px;align-items:center;
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--muted)}
+.m .t{height:5px;border-radius:3px;background:#0a0d0f;overflow:hidden}
+.m .t i{display:block;height:100%;background:var(--warn);transition:width .2s ease}
+.m .v{text-align:right;color:var(--ink);font-weight:600}
+.plan{font-size:12.5px;color:var(--muted);line-height:1.55;margin-bottom:10px}
+.plan b{color:var(--ink);font-weight:600}
+.zl{display:grid;grid-template-columns:10px 64px 1fr;gap:9px;align-items:center;
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--muted)}
+.zl .sw{margin:0}
+.empty{font-size:12px;color:var(--dim);line-height:1.5}
+.note{margin:10px 0 0;padding:9px 12px;background:rgba(224,169,59,.09);border:1px solid rgba(224,169,59,.28);
+  border-radius:5px;font-size:12px;color:#DFC98F;line-height:1.5}
 
 /* drill */
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
-  border:1px solid var(--line);border-radius:3px;overflow:hidden;margin-bottom:12px}
-.stat{background:var(--panel);padding:10px 12px}
-.stat .v{font-family:var(--mono);font-size:20px;font-variant-numeric:tabular-nums;margin-top:2px}
-.qtype{margin-bottom:12px}
-.scenario{background:var(--ground);border:1px solid var(--line);border-radius:3px;padding:13px 14px;margin-bottom:14px}
-.action{color:var(--dim);font-size:13.5px;margin-bottom:11px;font-style:normal}
-.stacks{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.sk .v{font-family:var(--mono);font-size:19px;font-variant-numeric:tabular-nums;margin-top:1px}
-.sk .v small{font-size:11px;color:var(--dimmer);margin-left:2px}
-.qtext{font-size:16px;margin-bottom:12px}
-.answer{display:flex;gap:8px;align-items:center}
-.answer input{width:130px;background:var(--ground);border:1px solid var(--line2);border-radius:3px;color:var(--ink);
-  font-family:var(--mono);font-size:22px;padding:8px 11px;text-align:right;font-variant-numeric:tabular-nums}
-.opts{display:grid;gap:6px}
-.opt{display:grid;grid-template-columns:20px 1fr;gap:10px;align-items:start;text-align:left;
-  background:var(--panel2);border:1px solid var(--line2);border-radius:3px;color:var(--ink);
-  padding:10px 12px;cursor:pointer;font-size:14px;font-family:inherit}
-.opt:hover:not(:disabled){border-color:var(--dim)}
-.opt:disabled{cursor:default;opacity:.55}
-.opt .k{font-family:var(--mono);font-size:11px;color:var(--dimmer);padding-top:2px}
-.opt.right{border-color:var(--ok);background:rgba(95,184,122,.09);opacity:1}
-.opt.wrong{border-color:var(--bad);background:rgba(229,84,75,.09);opacity:1}
-.btn{background:var(--brass);border:none;border-radius:3px;color:#1a1408;font-family:var(--mono);
-  font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:11px 18px;cursor:pointer}
-.btn:hover{filter:brightness(1.08)}
-.btn.ghost{background:none;border:1px solid var(--line2);color:var(--dim)}
-.btn.ghost:hover{color:var(--ink);border-color:var(--dim)}
-.fb{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
-.verdict{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:7px}
-.verdict.ok{color:var(--ok)} .verdict.no{color:var(--bad)}
-.fbbody{font-size:14px;color:var(--dim)}
-.fbbody b{color:var(--ink);font-weight:600}
-.fbmath{font-family:var(--mono);font-size:13px;color:var(--ink);margin:7px 0}
-.row{display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap}
-.hint{font-family:var(--mono);font-size:10px;color:var(--dimmer);letter-spacing:.06em}
+.stats{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.stat{flex:1 1 88px;background:var(--panel);border:1px solid var(--soft);border-radius:5px;padding:9px 10px}
+.stat .k{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+.stat .v{font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:600;margin-top:2px}
+.qcard{background:var(--panel);border:1px solid var(--soft);border-radius:7px;padding:20px 16px;
+  text-align:center;margin-top:12px}
+.qspot{font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.5}
+.qspot b{color:var(--ink);font-weight:600}
+.sk{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
+.sk div{flex:0 1 118px;background:var(--bg);border:1px solid var(--soft);border-radius:5px;padding:8px 6px}
+.sk .k{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+.sk .v{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
+.sk .v small{font-size:10px;color:var(--dim);margin-left:2px;font-weight:400}
+.qask{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:.06em;margin-bottom:14px}
+.qopts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;max-width:620px;margin:0 auto}
+.qopts.col{flex-direction:column;max-width:460px}
+.qopt{position:relative;flex:0 1 106px;min-width:84px;border:1.5px solid var(--ac,#888);border-radius:7px;
+  padding:9px 10px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;
+  letter-spacing:.11em;text-transform:uppercase;color:var(--ac,#ccc);cursor:pointer;
+  background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(0,0,0,.4)),#0E1417;
+  box-shadow:0 2px 7px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.07);
+  transition:filter .1s,transform .06s}
+.qopts.col .qopt{flex:none;letter-spacing:.02em;text-transform:none;font-weight:600;font-size:12px;
+  text-align:left;padding:10px 34px 10px 12px;line-height:1.4}
+.qopt:hover:not(:disabled){filter:brightness(1.3);transform:translateY(-1px)}
+.qopt:active:not(:disabled){transform:translateY(1px)}
+.qopt small{position:absolute;top:3px;right:6px;display:block;font-size:8.5px;opacity:.45;
+  font-weight:600;letter-spacing:0;margin:0}
+.qopts.col .qopt small{top:50%;transform:translateY(-50%);right:10px;font-size:9.5px}
+.qopt:disabled{cursor:default;opacity:.4}
+.qopt.pick{outline:2px solid #fff;outline-offset:2px;opacity:1}
+.qopt.best{outline:2px solid var(--warn);outline-offset:2px;opacity:1}
+.numrow{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap}
+.numrow input{width:150px;background:var(--bg);border:1px solid var(--soft);border-radius:5px;
+  padding:10px 12px;color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:22px;
+  font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.numrow input:focus{outline:1px solid var(--line)}
+.verdict{margin-top:16px;font-size:14px;font-weight:600;min-height:22px}
+.verdict.ok{color:var(--good)} .verdict.no{color:var(--hot)}
+.truth{margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--muted);line-height:1.7}
+.truth b{color:var(--ink);font-weight:600}
+.next{margin-top:16px;background:var(--ink);color:var(--bg);border:0;border-radius:6px;padding:12px 26px;
+  font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;cursor:pointer}
+.next:hover{filter:brightness(.92)}
+.rowend{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;justify-content:center}
+.ghost{background:none;border:1px solid var(--soft);color:var(--muted);border-radius:5px;padding:7px 12px;
+  font-family:'IBM Plex Mono',monospace;font-size:11.5px;cursor:pointer}
+.ghost:hover{color:var(--ink);border-color:var(--line)}
+.keys{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;color:var(--dim);
+  text-align:center;margin-top:12px}
+kbd{background:var(--panel);border:1px solid var(--soft);border-radius:3px;padding:1px 5px;color:var(--muted)}
 
-/* reference */
-table{width:100%;border-collapse:collapse;font-size:13.5px}
-th{text-align:left;font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--dimmer);font-weight:400;padding:0 10px 8px 0;border-bottom:1px solid var(--line)}
-td{padding:9px 10px 9px 0;border-bottom:1px solid var(--line);vertical-align:top}
-tr:last-child td{border-bottom:none}
-td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
-.swatch{display:inline-block;width:7px;height:7px;border-radius:1px;margin-right:7px;vertical-align:middle}
-h2{font-size:13px;font-weight:600;margin-bottom:12px;letter-spacing:-.005em}
-.pnote{color:var(--dim);font-size:13.5px;margin-top:12px}
-.pnote + .pnote{margin-top:7px}
-
-@media (max-width:620px){
-  .inputs{grid-template-columns:1fr 1fr}
-  .readout{grid-template-columns:1fr;gap:8px}
-  .sprbig{font-size:48px}
-  .stats{grid-template-columns:1fr 1fr}
-  .rung{grid-template-columns:38px 1fr 66px}
-}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* reference tables */
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);font-weight:500;padding:0 10px 8px 0;border-bottom:1px solid var(--line)}
+td{padding:8px 10px 8px 0;border-bottom:1px solid var(--soft);vertical-align:top;line-height:1.5}
+tr:last-child td{border-bottom:0}
+td.n{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.mu{color:var(--muted)}
+.sw{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:7px;vertical-align:middle}
+.refgrid{display:grid;gap:10px;margin-top:14px}
+:focus-visible{outline:2px solid var(--raise);outline-offset:2px}
+input[type=number]{-moz-appearance:textfield}
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+@media(max-width:560px){.ins{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
-<div class="wrap">
 
 <header>
-  <div class="brand">
+  <div>
     <h1>SPR Trainer</h1>
-    <span class="sub">6-MAX CASH · ALL AMOUNTS IN BB</span>
+    <div class="sub">6-max cash &middot; all amounts in bb</div>
   </div>
-  <nav role="tablist">
-    <button role="tab" id="t-calc" aria-selected="true" onclick="tab('calc')">Calculator</button>
-    <button role="tab" id="t-drill" aria-selected="false" onclick="tab('drill')">Drill</button>
-    <button role="tab" id="t-ref" aria-selected="false" onclick="tab('ref')">Reference</button>
-  </nav>
+  <div class="modes" id="tabs">
+    <button class="on" data-tab="calc">Calculator</button>
+    <button data-tab="drill">Drill</button>
+    <button data-tab="ref">Reference</button>
+  </div>
 </header>
 
-<!-- ============ CALCULATOR ============ -->
-<section id="calc">
-  <div class="panel">
-    <div class="inputs">
-      <div class="field">
-        <label class="lab">Your stack</label>
-        <input id="i-me" class="num" type="number" step="0.5" value="97.5" inputmode="decimal">
-      </div>
-      <div class="field">
-        <label class="lab">Villain stack</label>
-        <input id="i-vil" class="num" type="number" step="0.5" value="97.5" inputmode="decimal">
-      </div>
-      <div class="field">
-        <label class="lab">Pot on flop</label>
-        <input id="i-pot" class="num" type="number" step="0.5" value="5.5" inputmode="decimal">
-      </div>
-    </div>
-    <div class="presets">
-      <span class="lab" style="align-self:center;margin-right:3px">Fill from 100bb</span>
-      <button class="chip" onclick="preset(99,3)">Limped</button>
-      <button class="chip" onclick="preset(97.5,5.5)">2.5x SRP</button>
-      <button class="chip" onclick="preset(97,7.5)">3x SRP</button>
-      <button class="chip" onclick="preset(97.5,8)">SRP 3-way</button>
-      <button class="chip" onclick="preset(91,18.5)">3-bet pot</button>
-      <button class="chip" onclick="preset(88,26.5)">Squeeze pot</button>
-      <button class="chip" onclick="preset(77,46.5)">4-bet pot</button>
-    </div>
-  </div>
+<!-- CALCULATOR -->
+<section id="calc" class="on">
+  <div class="wrap">
+    <div>
+      <div class="card">
+        <h2>Effective stack &divide; pot</h2>
+        <div class="ins">
+          <div><label>Your stack</label><input id="i-me" type="number" step="0.5" value="97.5" inputmode="decimal"></div>
+          <div><label>Villain stack</label><input id="i-vil" type="number" step="0.5" value="97.5" inputmode="decimal"></div>
+          <div><label>Pot on flop</label><input id="i-pot" type="number" step="0.5" value="5.5" inputmode="decimal"></div>
+        </div>
+        <div class="presets" id="presets"></div>
 
-  <div class="panel">
-    <div class="readout">
-      <div>
-        <div class="lab">SPR</div>
-        <div class="sprbig num" id="o-spr">17.7</div>
-      </div>
-      <div>
-        <div class="zonename" id="o-zone">Very deep</div>
-        <div class="zonehand" id="o-hand">—</div>
-        <div class="effline lab">Effective stack <span class="num" id="o-eff">97.5</span> bb</div>
+        <div class="read">
+          <div class="spr" id="o-spr">17.7</div>
+          <div style="flex:1 1 220px">
+            <div class="zname" id="o-zone">Very deep</div>
+            <div class="zhand" id="o-hand">&mdash;</div>
+            <div class="eff">Effective stack <b id="o-eff">97.5</b> bb</div>
+          </div>
+        </div>
+
+        <div class="scaleblk">
+          <div class="track" id="track"><div class="mk" id="mk" style="left:0%"></div></div>
+          <div class="ticks" id="ticks"></div>
+          <div class="ends"><span>Commit</span><span>Standard</span><span>Pot control</span></div>
+        </div>
       </div>
     </div>
 
-    <div class="cbar">
-      <div class="lab" style="margin-bottom:9px">Commitment scale</div>
-      <div class="track" id="track">
-        <div class="marker" id="marker" style="left:0%"></div>
+    <div class="side">
+      <div class="card">
+        <h2>Getting stacks in</h2>
+        <div class="plan" id="o-plan">&mdash;</div>
+        <div class="mix" id="o-ladder"></div>
+        <div class="note" id="o-alt"></div>
       </div>
-      <div class="scale" id="scale"></div>
-      <div class="zonelabels">
-        <span>Commit</span><span>Standard</span><span>Pot control</span>
+      <div class="card">
+        <h2>Zone map</h2>
+        <div class="mix" id="o-zones"></div>
       </div>
     </div>
-  </div>
-
-  <div class="panel">
-    <div class="lab" style="margin-bottom:3px">Getting stacks in</div>
-    <div class="plannote" id="o-plan">—</div>
-    <div class="ladder" id="o-ladder"></div>
-    <div class="alt" id="o-alt"></div>
   </div>
 </section>
 
-<!-- ============ DRILL ============ -->
-<section id="drill" hidden>
+<!-- DRILL -->
+<section id="drill">
+  <div class="nav">
+    <div class="lvl">
+      <span class="tag">Drill</span>
+      <button class="pill on" data-mode="mix">Mixed</button>
+      <button class="pill" data-mode="spr">SPR only</button>
+      <button class="pill" data-mode="size">Sizing only</button>
+      <button class="pill" data-mode="zone">Stack-off only</button>
+    </div>
+  </div>
+
   <div class="stats">
-    <div class="stat"><div class="lab">Correct</div><div class="v" id="s-score">0 / 0</div></div>
-    <div class="stat"><div class="lab">Accuracy</div><div class="v" id="s-acc">—</div></div>
-    <div class="stat"><div class="lab">Streak</div><div class="v" id="s-streak">0</div></div>
-    <div class="stat"><div class="lab">Best</div><div class="v" id="s-best">0</div></div>
+    <div class="stat"><div class="k" id="s-label">Correct &middot; all</div><div class="v" id="s-score">0 / 0</div></div>
+    <div class="stat"><div class="k">Accuracy</div><div class="v" id="s-acc">&mdash;</div></div>
+    <div class="stat"><div class="k">Streak</div><div class="v" id="s-streak">0</div></div>
+    <div class="stat"><div class="k">Best</div><div class="v" id="s-best">0</div></div>
   </div>
 
-  <div class="panel">
-    <div class="qtype lab" id="d-type">Question</div>
-    <div class="scenario">
-      <div class="action" id="d-action">—</div>
-      <div class="stacks">
-        <div class="sk"><div class="lab">Your stack</div><div class="v" id="d-me">—<small>bb</small></div></div>
-        <div class="sk"><div class="lab">Villain stack</div><div class="v" id="d-vil">—<small>bb</small></div></div>
-        <div class="sk"><div class="lab">Pot</div><div class="v" id="d-pot">—<small>bb</small></div></div>
-      </div>
+  <div class="qcard">
+    <div class="qspot" id="d-spot">&mdash;</div>
+    <div class="sk">
+      <div><div class="k">Your stack</div><div class="v" id="d-me">&mdash;</div></div>
+      <div><div class="k">Villain stack</div><div class="v" id="d-vil">&mdash;</div></div>
+      <div><div class="k">Pot</div><div class="v" id="d-pot">&mdash;</div></div>
     </div>
+    <div class="qask" id="d-ask">&mdash;</div>
+    <div id="d-answer"></div>
+    <div class="verdict" id="d-verdict"></div>
+    <div class="truth" id="d-truth"></div>
+    <div id="d-nextwrap"></div>
+  </div>
 
-    <div class="qtext" id="d-q">—</div>
+  <div class="rowend">
+    <button class="ghost" id="d-reset">Clear progress</button>
+  </div>
+  <div class="keys"><kbd>1</kbd>&ndash;<kbd>5</kbd> answer &middot; <kbd>&crarr;</kbd> submit / next hand</div>
+</section>
 
-    <div id="d-numeric" hidden>
-      <div class="answer">
-        <input id="d-input" class="num" type="number" step="0.1" inputmode="decimal" placeholder="0.0">
-        <button class="btn" onclick="submitNum()">Check</button>
-      </div>
+<!-- REFERENCE -->
+<section id="ref">
+  <div class="refgrid">
+    <div class="card">
+      <h2>Stack-off thresholds</h2>
+      <table><thead><tr><th style="width:70px">SPR</th><th style="width:118px">Zone</th><th>Weakest hand you stack off</th></tr></thead>
+      <tbody id="r-zones"></tbody></table>
     </div>
-    <div class="opts" id="d-opts" hidden></div>
-
-    <div class="fb" id="d-fb" hidden>
-      <div class="verdict" id="d-verdict">—</div>
-      <div class="fbbody" id="d-explain"></div>
-      <div class="cbar" style="border-top:none;padding-top:12px;margin-top:12px">
-        <div class="track"><div class="marker" id="d-marker" style="left:0%"></div></div>
-        <div class="scale" id="d-scale"></div>
-      </div>
+    <div class="card">
+      <h2>Typical SPR by preflop line &middot; 100bb start</h2>
+      <table><thead><tr><th>Line</th><th style="width:54px">Pot</th><th style="width:60px">Stack</th><th style="width:50px">SPR</th></tr></thead>
+      <tbody id="r-lines"></tbody></table>
+      <div class="note">Halve the effective stack and you halve the SPR. A 50bb villain in a 3-bet pot puts you at SPR 2, not 4.4, and top pair becomes a stack-off.</div>
     </div>
-
-    <div class="row">
-      <button class="btn" id="d-next" onclick="nextQ()" hidden>Next hand</button>
-      <button class="btn ghost" onclick="resetStats()">Reset stats</button>
-      <span class="hint">Enter to submit and advance · 1–5 to pick</span>
+    <div class="card">
+      <h2>Flop size that gets stacks in by the river</h2>
+      <table><thead><tr><th>Flop size</th><th style="width:92px">Clears SPR</th><th>Over two streets</th></tr></thead>
+      <tbody id="r-sizes"></tbody></table>
+      <div class="note">Pick the size backward from the river. At SPR 6 with a set, start at 2/3 pot and the river shove arrives on its own. Start at 1/3 and you leave 40bb behind.</div>
+    </div>
+    <div class="card">
+      <h2>The routine at the table</h2>
+      <table><tbody>
+        <tr><td class="n" style="width:20px;color:var(--dim)">1</td><td>Read the effective stack in bb before you act preflop. Smaller of the two.</td></tr>
+        <tr><td class="n" style="color:var(--dim)">2</td><td>Count the pot when the flop comes.</td></tr>
+        <tr><td class="n" style="color:var(--dim)">3</td><td>Divide.</td></tr>
+        <tr><td class="n" style="color:var(--dim)">4</td><td>Pick the flop size that makes the river bet natural.</td></tr>
+      </tbody></table>
+      <div class="note">The spot that costs money on Ignition is the 40bb reg. In a 3-bet pot that is SPR 1.5, and AK on an ace-high flop is a stack-off rather than a two-street value hand. Check the stack before the hand starts.</div>
     </div>
   </div>
 </section>
-
-<!-- ============ REFERENCE ============ -->
-<section id="ref" hidden>
-  <div class="panel">
-    <h2>Stack-off thresholds</h2>
-    <table>
-      <thead><tr><th style="width:74px">SPR</th><th>Zone</th><th>Weakest hand you stack off</th></tr></thead>
-      <tbody id="r-zones"></tbody>
-    </table>
-  </div>
-
-  <div class="panel">
-    <h2>Typical SPR by preflop line (100bb start)</h2>
-    <table>
-      <thead><tr><th>Line</th><th style="width:66px">Pot</th><th style="width:66px">Stack</th><th style="width:56px">SPR</th></tr></thead>
-      <tbody id="r-lines"></tbody>
-    </table>
-    <p class="pnote">Halve the effective stack and you halve the SPR. A 50bb villain in a 3-bet pot puts you at
-      SPR 2, not 4.4, and top pair becomes a stack-off.</p>
-  </div>
-
-  <div class="panel">
-    <h2>Flop size that gets stacks in by the river</h2>
-    <table>
-      <thead><tr><th>Flop size</th><th style="width:80px">SPR it clears</th><th>Over</th></tr></thead>
-      <tbody id="r-sizes"></tbody>
-    </table>
-    <p class="pnote">Pick the size backward from the river. At SPR 6 with a set, start at 2/3 pot and the river
-      shove arrives on its own. Start at 1/3 and you leave 40bb behind.</p>
-  </div>
-
-  <div class="panel">
-    <h2>The routine at the table</h2>
-    <table>
-      <tbody>
-        <tr><td class="n" style="width:22px;color:var(--dimmer)">1</td><td>Read the effective stack in bb before you act preflop. Smaller of the two.</td></tr>
-        <tr><td class="n" style="color:var(--dimmer)">2</td><td>Count the pot when the flop comes.</td></tr>
-        <tr><td class="n" style="color:var(--dimmer)">3</td><td>Divide.</td></tr>
-        <tr><td class="n" style="color:var(--dimmer)">4</td><td>Pick the flop size that makes the river bet natural.</td></tr>
-      </tbody>
-    </table>
-    <p class="pnote">The spot that costs money on Ignition is the 40bb reg. In a 3-bet pot that is SPR 1.5,
-      and AK on an ace-high flop is a stack-off rather than a two-street value hand. Check the stack before
-      the hand starts.</p>
-  </div>
-</section>
-
-</div>
 
 <script>
+const $=id=>document.getElementById(id);
+const Store=(()=>{let ok=true,mem={};
+  try{localStorage.setItem('__t','1');localStorage.removeItem('__t');}catch(e){ok=false;}
+  return{ok,
+    get(k,d){try{const v=ok?localStorage.getItem(k):mem[k];return v?JSON.parse(v):d;}catch(e){return d;}},
+    set(k,v){try{const s=JSON.stringify(v);if(ok)localStorage.setItem(k,s);else mem[k]=s;}catch(e){}}};})();
+
 /* ---------- zones ---------- */
 const ZONES=[
- {min:0,   max:1.5,  name:"Commit",      color:"var(--z1)",
-  hand:"Any top pair, overpair, strong second pair",
-  full:"You are pot-committed. One bet gets it in. Do not fold top pair here."},
- {min:1.5, max:3,    name:"Near-commit", color:"var(--z2)",
-  hand:"Top pair good kicker and up",
-  full:"Two bets get it in. Top pair good kicker stacks off, weak top pair does not."},
- {min:3,   max:6,    name:"Standard",    color:"var(--z3)",
-  hand:"Two pair, sets, TPTK on dry boards, big combo draws",
-  full:"Three bets get it in. Top pair top kicker stacks off on dry boards only."},
- {min:6,   max:13,   name:"Deep",        color:"var(--z4)",
-  hand:"Sets, straights, flushes, nutted draws",
-  full:"One pair is a two-street hand. Stacking off with an overpair burns money."},
- {min:13,  max:1e9,  name:"Very deep",   color:"var(--z5)",
-  hand:"Near-nuts only",
-  full:"One pair is pot control, full stop. Getting 100bb in needs three large bets and one pair almost never wants that."}
-];
+ {min:0,max:1.5,name:'Commit',col:'var(--hot)',range:'\u003c 1.5',
+  hand:'Any top pair, overpair, strong second pair',
+  full:'You are pot-committed. One bet gets it in. Do not fold top pair here.'},
+ {min:1.5,max:3,name:'Near-commit',col:'var(--raise)',range:'1.5 \u2013 3',
+  hand:'Top pair good kicker and up',
+  full:'Two bets get it in. Top pair good kicker stacks off, weak top pair does not.'},
+ {min:3,max:6,name:'Standard',col:'var(--warn)',range:'3 \u2013 6',
+  hand:'Two pair, sets, TPTK on dry boards, big combo draws',
+  full:'Three bets get it in. Top pair top kicker stacks off on dry boards only.'},
+ {min:6,max:13,name:'Deep',col:'var(--call)',range:'6 \u2013 13',
+  hand:'Sets, straights, flushes, nutted draws',
+  full:'One pair is a two-street hand. Stacking off with an overpair burns money.'},
+ {min:13,max:1e9,name:'Very deep',col:'var(--fold)',range:'13+',
+  hand:'Near-nuts only',
+  full:'One pair is pot control, full stop. Getting 100bb in needs three large bets and one pair almost never wants that.'}];
 const zoneOf=s=>ZONES.find(z=>s>=z.min&&s<z.max)||ZONES[ZONES.length-1];
 
 /* ---------- geometric sizing ----------
-   3 streets: S = 4f^3 + 6f^2 + 3f      2 streets: S = 2f^2 + 2f   */
+   3 streets: S = 4f^3 + 6f^2 + 3f   |   2 streets: S = 2f^2 + 2f  */
 function f3(S){let lo=.01,hi=3;for(let i=0;i<60;i++){const m=(lo+hi)/2;
   (4*m**3+6*m**2+3*m<S)?lo=m:hi=m;}return (lo+hi)/2;}
 const f2=S=>(-1+Math.sqrt(1+2*S))/2;
+const SIZE_NAMES=[[1/3,'1/3 pot'],[1/2,'1/2 pot'],[2/3,'2/3 pot'],[3/4,'3/4 pot'],[1,'full pot']];
 function sizeName(f){
-  const opts=[[1/3,"1/3 pot"],[1/2,"1/2 pot"],[2/3,"2/3 pot"],[3/4,"3/4 pot"],[1,"full pot"]];
-  let best=opts[0];for(const o of opts) if(Math.abs(o[0]-f)<Math.abs(best[0]-f)) best=o;
-  return f>1.15?"an overbet":best[1];
-}
-/* MCQ bucket for the sizing question */
+  if(f>1.15)return'an overbet';
+  let b=SIZE_NAMES[0];for(const o of SIZE_NAMES)if(Math.abs(o[0]-f)<Math.abs(b[0]-f))b=o;return b[1];}
+const SIZE_OPTS=['Shove the flop','1/3 pot','1/2 pot','2/3 pot','Pot or bigger'];
+const SIZE_COL=['var(--hot)','var(--fold)','var(--call)','var(--warn)','var(--raise)'];
 function sizeBucket(S){
-  if(S<1.3) return "Just shove the flop";
-  if(S<2.6) return "1/3 pot";
-  if(S<4.6) return "1/2 pot";
-  if(S<9)   return "2/3 pot";
-  return "Pot or bigger";
-}
-const SIZE_OPTS=["Just shove the flop","1/3 pot","1/2 pot","2/3 pot","Pot or bigger"];
+  if(S<1.3)return SIZE_OPTS[0];
+  if(S<2.6)return SIZE_OPTS[1];
+  if(S<4.6)return SIZE_OPTS[2];
+  if(S<9)  return SIZE_OPTS[3];
+  return SIZE_OPTS[4];}
 
-/* ---------- commitment bar scale (compressed at the top) ---------- */
-const pos=s=>Math.max(0,Math.min(100, 100*Math.log(1+Math.min(s,30))/Math.log(31)));
-function drawScale(el){
-  el.innerHTML="";
+/* ---------- scale geometry ---------- */
+const pos=s=>Math.max(0,Math.min(100,100*Math.log(1+Math.min(s,30))/Math.log(31)));
+function drawTicks(ticksEl,trackEl){
+  ticksEl.innerHTML='';
   [0.5,1,2,3,6,13,30].forEach(v=>{
-    const t=document.createElement("span");
-    t.style.left=pos(v)+"%"; t.textContent=(v>=30?"30+":v);
-    el.appendChild(t);
-  });
-  const tr=el.previousElementSibling;
-  tr.querySelectorAll(".tick").forEach(n=>n.remove());
+    const t=document.createElement('span');
+    t.style.left=pos(v)+'%';t.textContent=v>=30?'30+':v;ticksEl.appendChild(t);});
+  trackEl.querySelectorAll('.tk').forEach(n=>n.remove());
   [1.5,3,6,13].forEach(v=>{
-    const d=document.createElement("div"); d.className="tick"; d.style.left=pos(v)+"%"; tr.appendChild(d);
-  });
-}
+    const d=document.createElement('div');d.className='tk';d.style.left=pos(v)+'%';trackEl.appendChild(d);});}
 
-/* ---------- tabs ---------- */
-function tab(id){
-  ["calc","drill","ref"].forEach(k=>{
-    document.getElementById(k).hidden = k!==id;
-    document.getElementById("t-"+k).setAttribute("aria-selected", k===id);
-  });
-  if(id==="drill" && !cur) nextQ();
-}
-
-/* ============ CALCULATOR ============ */
-const $=id=>document.getElementById(id);
-function preset(stack,pot){ $("i-me").value=stack; $("i-vil").value=stack; $("i-pot").value=pot; calc(); }
-
-function calc(){
-  const me=+$("i-me").value||0, vil=+$("i-vil").value||0, pot=+$("i-pot").value||0;
-  const eff=Math.min(me,vil);
-  if(pot<=0||eff<=0){ $("o-spr").textContent="—"; return; }
-  const S=eff/pot, z=zoneOf(S);
-
-  $("o-spr").textContent = S<10 ? S.toFixed(1) : Math.round(S);
-  $("o-spr").style.color = z.color;
-  $("o-zone").textContent = z.name;
-  $("o-zone").style.color = z.color;
-  $("o-hand").textContent = z.hand;
-  $("o-eff").textContent = eff.toFixed(1).replace(/\.0$/,"");
-  $("marker").style.left = pos(S)+"%";
-
-  /* sizing ladder */
-  const three=f3(S), two=f2(S);
-  let f,streets;
-  if(S<1.05){ f=null; streets=1; }
-  else if(three<=1.1){ f=three; streets=3; }
-  else { f=two; streets=2; }
-
-  const L=$("o-ladder"); L.innerHTML="";
-  if(streets===1){
-    $("o-plan").innerHTML = `<b>Shove the flop.</b> ${eff.toFixed(1).replace(/\.0$/,"")}bb into ${pot.toFixed(1).replace(/\.0$/,"")}bb is `+
-      (S<1?"under":"about")+` a pot-sized bet. There is nothing to plan.`;
-    $("o-alt").textContent="";
-  }else{
-    const names=["Flop","Turn","River"], bets=[]; let p=pot;
-    for(let i=0;i<streets;i++){ const b=f*p; bets.push(b); p=p+2*b; }
-    const max=Math.max(...bets);
-    names.slice(0,streets).forEach((n,i)=>{
-      const r=document.createElement("div"); r.className="rung";
-      r.innerHTML=`<div class="st">${n}</div>
-        <div class="barwrap"><div class="bar" style="width:${(bets[i]/max*100).toFixed(1)}%"></div></div>
-        <div class="amt">${bets[i].toFixed(1)} bb</div>`;
-      L.appendChild(r);
-    });
-    $("o-plan").innerHTML = `Bet <b>${sizeName(f)}</b> on each of ${streets} street${streets>1?"s":""} `+
-      `and the last bet is exactly your stack.`;
-    $("o-alt").innerHTML = streets===3
-      ? `Over two streets instead: <b>${sizeName(f2(S))}</b> twice. Over one: unrealistic at this depth.`
-      : `Three streets would need ${sizeName(three)}, which is bigger than a pot bet. Two streets is the clean line.`;
-  }
-}
-["i-me","i-vil","i-pot"].forEach(id=>$(id).addEventListener("input",calc));
-
-/* ============ DRILL ============ */
+/* ---------- preflop lines ---------- */
 const LINES=[
- {t:"You limp BTN, SB completes, BB checks",                       inv:1,    pot:3},
- {t:"You open 2.5 from CO, BB calls",                              inv:2.5,  pot:5.5},
- {t:"You open 2.5 from BTN, BB calls",                             inv:2.5,  pot:5.5},
- {t:"You open 3 from UTG, BTN calls",                              inv:3,    pot:7.5},
- {t:"You open 2.5 from HJ, BTN calls, BB calls",                   inv:2.5,  pot:8},
- {t:"SB limps, you raise to 4.5 from BB, SB calls",                inv:4.5,  pot:9},
- {t:"BTN opens 2.5, you 3-bet to 9 from BB, BTN calls",            inv:9,    pot:18.5},
- {t:"You open 2.5 from CO, BTN 3-bets to 8.5, you call",           inv:8.5,  pot:18},
- {t:"CO opens 2.5, you squeeze to 12 from BB, CO calls",           inv:12,   pot:26.5},
- {t:"You open 2.5, BB 3-bets to 10, you 4-bet to 23, BB calls",    inv:23,   pot:46.5}
-];
-const rnd=a=>a[Math.floor(Math.random()*a.length)];
-function stack(){
-  const r=Math.random();
-  if(r<.30) return 100;                                  // auto-topped reg
-  if(r<.60) return Math.round((30+Math.random()*45)*2)/2;// short
-  if(r<.90) return Math.round((80+Math.random()*40)*2)/2;// near full
-  return Math.round((125+Math.random()*90)*2)/2;         // deep
-}
-function scenario(){
-  for(let i=0;i<200;i++){
-    const L=rnd(LINES), a=stack(), b=stack();
-    if(a<L.inv+6||b<L.inv+6) continue;
-    const me=+(a-L.inv).toFixed(1), vil=+(b-L.inv).toFixed(1);
-    const eff=Math.min(me,vil), S=eff/L.pot;
-    if(S<0.4||S>40) continue;
-    return {t:L.t,pot:L.pot,me,vil,eff,S};
-  }
-  return {t:"You open 2.5 from CO, BB calls",pot:5.5,me:97.5,vil:97.5,eff:97.5,S:17.7};
-}
+ {t:'You limp BTN, SB completes, BB checks',                    inv:1,   pot:3},
+ {t:'You open 2.5 from CO, BB calls',                           inv:2.5, pot:5.5},
+ {t:'You open 2.5 from BTN, BB calls',                          inv:2.5, pot:5.5},
+ {t:'You open 3 from UTG, BTN calls',                           inv:3,   pot:7.5},
+ {t:'You open 2.5 from HJ, BTN calls, BB calls',                inv:2.5, pot:8},
+ {t:'SB limps, you raise to 4.5 from BB, SB calls',             inv:4.5, pot:9},
+ {t:'BTN opens 2.5, you 3-bet to 9 from BB, BTN calls',         inv:9,   pot:18.5},
+ {t:'You open 2.5 from CO, BTN 3-bets to 8.5, you call',        inv:8.5, pot:18},
+ {t:'CO opens 2.5, you squeeze to 12 from BB, CO calls',        inv:12,  pot:26.5},
+ {t:'You open 2.5, BB 3-bets to 10, you 4-bet to 23, BB calls', inv:23,  pot:46.5}];
+const PRESETS=[['Limped',99,3],['2.5x SRP',97.5,5.5],['3x SRP',97,7.5],['SRP 3-way',97.5,8],
+  ['3-bet pot',91,18.5],['Squeeze',88,26.5],['4-bet pot',77,46.5]];
 
-let cur=null,answered=false,st={n:0,c:0,streak:0,best:0};
+/* ---------- calculator ---------- */
+const fmt=v=>(Math.round(v*10)/10).toFixed(1).replace(/\.0$/,'');
+function preset(stack,pot){$('i-me').value=stack;$('i-vil').value=stack;$('i-pot').value=pot;calc();}
+function calc(){
+  const me=+$('i-me').value||0,vil=+$('i-vil').value||0,pot=+$('i-pot').value||0;
+  const eff=Math.min(me,vil);
+  if(pot<=0||eff<=0){$('o-spr').textContent='\u2014';$('o-zone').textContent='';$('o-hand').textContent='Enter a pot and a stack.';return;}
+  const S=eff/pot,z=zoneOf(S);
+  $('o-spr').textContent=S<100?S.toFixed(1):Math.round(S);
+  $('o-spr').style.color=z.col;
+  $('o-zone').textContent=z.name;$('o-zone').style.color=z.col;
+  $('o-hand').textContent=z.hand;
+  $('o-eff').textContent=fmt(eff);
+  $('mk').style.left=pos(S)+'%';
+
+  const three=f3(S),two=f2(S);
+  const L=$('o-ladder');L.innerHTML='';
+  const rung=(n,bet,w)=>{const r=document.createElement('div');r.className='m';
+    r.innerHTML='<span>'+n+'</span><span class="t"><i style="width:'+w.toFixed(1)+
+      '%"></i></span><span class="v">'+fmt(bet)+'</span>';L.appendChild(r);};
+
+  if(S<1.05){
+    $('o-plan').innerHTML='<b>Shove the flop.</b> '+fmt(eff)+'bb into '+fmt(pot)+'bb is '+
+      (S<1?'under':'about')+' a pot-sized bet.';
+    $('o-alt').textContent='Nothing to plan. Anything smaller leaves a stack you are committed to anyway.';
+  }else if(three<=1.02){
+    const bets=[];let p=pot;
+    for(let i=0;i<3;i++){const b=three*p;bets.push(b);p+=2*b;}
+    const max=Math.max(...bets);
+    ['Flop','Turn','River'].forEach((n,i)=>rung(n,bets[i],bets[i]/max*100));
+    $('o-plan').innerHTML='Bet <b>'+sizeName(three)+'</b> on all three streets and the river bet is exactly your stack.';
+    $('o-alt').innerHTML=two<=1.02
+      ? 'Over two streets instead: '+sizeName(two)+' twice.'
+      : 'Two streets would need an overbet. Three is the clean line.';
+  }else{
+    const bets=[pot,3*pot,9*pot],left=eff-13*pot,max=bets[2];
+    ['Flop','Turn','River'].forEach((n,i)=>rung(n,bets[i],bets[i]/max*100));
+    const r=document.createElement('div');r.className='m';
+    r.innerHTML='<span style="color:var(--fold)">Left</span><span class="t"></span>'+
+      '<span class="v" style="color:var(--fold)">'+fmt(left)+'</span>';L.appendChild(r);
+    $('o-plan').innerHTML='Three <b>pot-sized</b> bets is the largest normal line and it only clears SPR 13.';
+    $('o-alt').innerHTML='At SPR '+S.toFixed(1)+' that still leaves '+fmt(left)+
+      'bb behind on the river. You are not getting stacks in here without overbetting, which is the whole reason one pair is a pot-control hand at this depth.';
+  }
+}
+(function(){
+  $('presets').innerHTML='<span class="tag" style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;'+
+    'letter-spacing:.14em;text-transform:uppercase;color:var(--dim);align-self:center;margin-right:2px">From 100bb</span>'+
+    PRESETS.map((p,i)=>'<button class="pill" data-p="'+i+'">'+p[0]+'</button>').join('');
+  $('presets').querySelectorAll('[data-p]').forEach(b=>
+    b.onclick=()=>{const p=PRESETS[+b.dataset.p];preset(p[1],p[2]);});
+  $('o-zones').innerHTML=ZONES.map(z=>
+    '<div class="zl"><span class="sw" style="background:'+z.col+'"></span>'+
+    '<span style="color:'+z.col+'">'+z.range+'</span>'+
+    '<span>'+z.name+'</span></div>').join('');
+  ['i-me','i-vil','i-pot'].forEach(id=>$(id).addEventListener('input',calc));
+})();
+
+/* ---------- drill ---------- */
+function stackRoll(){
+  const r=Math.random();
+  if(r<.30)return 100;
+  if(r<.60)return Math.round((30+Math.random()*45)*2)/2;
+  if(r<.90)return Math.round((80+Math.random()*40)*2)/2;
+  return Math.round((125+Math.random()*90)*2)/2;}
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+function scenario(){
+  for(let i=0;i<300;i++){
+    const L=rnd(LINES),a=stackRoll(),b=stackRoll();
+    if(a<L.inv+6||b<L.inv+6)continue;
+    const me=+(a-L.inv).toFixed(1),vil=+(b-L.inv).toFixed(1);
+    const eff=Math.min(me,vil),S=eff/L.pot;
+    if(S<0.4||S>40)continue;
+    return{t:L.t,pot:L.pot,me,vil,eff,S};}
+  return{t:'You open 2.5 from CO, BB calls',pot:5.5,me:97.5,vil:97.5,eff:97.5,S:17.7};}
+
+let cur=null,answered=false,mode=Store.get('spr_mode','mix');
+let st=Store.get('spr_stats',{spr:{n:0,c:0},size:{n:0,c:0},zone:{n:0,c:0},streak:0,best:0});
+
+function setMode(m){
+  mode=m;Store.set('spr_mode',m);
+  document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('on',b.dataset.mode===m));
+  paintStats();nextQ();}
 
 function nextQ(){
   const sc=scenario();
-  const type=rnd(["spr","spr","zone","size"]);
-  cur={...sc,type};
+  cur={...sc,type:mode==='mix'?rnd(['spr','spr','zone','size']):mode};
   answered=false;
+  $('d-spot').innerHTML=sc.t+'.';
+  $('d-me').innerHTML=fmt(sc.me)+'<small>bb</small>';
+  $('d-vil').innerHTML=fmt(sc.vil)+'<small>bb</small>';
+  $('d-pot').innerHTML=fmt(sc.pot)+'<small>bb</small>';
+  $('d-verdict').textContent='';$('d-verdict').className='verdict';
+  $('d-truth').innerHTML='';$('d-nextwrap').innerHTML='';
 
-  $("d-action").textContent=sc.t;
-  $("d-me").innerHTML=fmt(sc.me)+'<small>bb</small>';
-  $("d-vil").innerHTML=fmt(sc.vil)+'<small>bb</small>';
-  $("d-pot").innerHTML=fmt(sc.pot)+'<small>bb</small>';
-  $("d-fb").hidden=true; $("d-next").hidden=true;
-  $("d-numeric").hidden=true; $("d-opts").hidden=true; $("d-opts").innerHTML="";
-
-  if(type==="spr"){
-    $("d-type").textContent="Compute the SPR";
-    $("d-q").textContent="Flop comes. What is your SPR?";
-    $("d-numeric").hidden=false;
-    $("d-input").value=""; $("d-input").focus();
-  }else if(type==="zone"){
-    $("d-type").textContent="Stack-off threshold";
-    $("d-q").textContent="Weakest hand you are happy to get all in with?";
-    buildOpts(ZONES.map(z=>z.hand), zoneOf(sc.S).hand);
+  if(cur.type==='spr'){
+    $('d-ask').textContent='Flop comes. What is your SPR?';
+    $('d-answer').innerHTML='<div class="numrow"><input id="d-in" type="number" step="0.1" '+
+      'inputmode="decimal" placeholder="0.0"><button class="next" style="margin-top:0" id="d-go">Check</button></div>';
+    $('d-go').onclick=submitNum;
+    $('d-in').focus();
+  }else if(cur.type==='zone'){
+    $('d-ask').textContent='Weakest hand you are happy to get all in with?';
+    buildOpts(ZONES.map(z=>z.hand),zoneOf(cur.S).hand,ZONES.map(z=>z.col),true);
   }else{
-    $("d-type").textContent="Sizing plan";
-    $("d-q").textContent="You flop a set and want stacks in by the river. Flop size?";
-    buildOpts(SIZE_OPTS, sizeBucket(sc.S));
+    $('d-ask').textContent='You flop a set and want stacks in by the river. Flop size?';
+    buildOpts(SIZE_OPTS,sizeBucket(cur.S),SIZE_COL,false);
   }
 }
-const fmt=v=>(+v).toFixed(1).replace(/\.0$/,"");
-
-function buildOpts(list,correct){
-  const box=$("d-opts"); box.hidden=false; box.innerHTML="";
-  cur.correct=correct; cur.list=list;
-  list.forEach((txt,i)=>{
-    const b=document.createElement("button");
-    b.className="opt"; b.type="button";
-    b.innerHTML=`<span class="k">${i+1}</span><span>${txt}</span>`;
-    b.onclick=()=>pick(i);
-    box.appendChild(b);
-  });
-}
+function buildOpts(list,correct,cols,column){
+  cur.list=list;cur.correct=correct;
+  $('d-answer').innerHTML='<div class="qopts'+(column?' col':'')+'" id="d-opts">'+
+    list.map((t,i)=>'<button class="qopt" data-i="'+i+'" style="--ac:'+cols[i]+'">'+
+      t+'<small>'+(i+1)+'</small></button>').join('')+'</div>';
+  $('d-opts').querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>pick(+b.dataset.i));}
 function pick(i){
-  if(answered) return;
+  if(answered)return;
   const ok=cur.list[i]===cur.correct;
-  const btns=[...$("d-opts").children];
-  btns.forEach((b,j)=>{ b.disabled=true;
-    if(cur.list[j]===cur.correct) b.classList.add("right");
-    else if(j===i) b.classList.add("wrong");
-  });
-  finish(ok);
-}
+  $('d-opts').querySelectorAll('.qopt').forEach((b,j)=>{
+    b.disabled=true;
+    if(cur.list[j]===cur.correct)b.classList.add('best');
+    if(j===i)b.classList.add('pick');});
+  finish(ok);}
 function submitNum(){
-  if(answered) return;
-  const v=parseFloat($("d-input").value);
-  if(isNaN(v)) return;
-  const tol=Math.max(0.4, cur.S*0.10);
-  finish(Math.abs(v-cur.S)<=tol);
-}
+  if(answered)return;
+  const v=parseFloat($('d-in').value);
+  if(isNaN(v))return;
+  $('d-in').disabled=true;$('d-go').disabled=true;
+  finish(Math.abs(v-cur.S)<=Math.max(0.4,cur.S*0.10));}
 
 function finish(ok){
   answered=true;
-  st.n++; if(ok){st.c++; st.streak++; st.best=Math.max(st.best,st.streak);} else st.streak=0;
-  paintStats();
-
-  const z=zoneOf(cur.S), three=f3(cur.S);
-  $("d-verdict").textContent = ok?"Correct":"Miss";
-  $("d-verdict").className = "verdict "+(ok?"ok":"no");
-
-  const shorter = cur.me<=cur.vil ? "yours" : "villain's";
-  let html = `<div class="fbmath">${fmt(cur.eff)} ÷ ${fmt(cur.pot)} = SPR <b>${cur.S.toFixed(1)}</b>
-      &nbsp;·&nbsp; <span style="color:${z.color}">${z.name}</span></div>`;
-  html += `<div>Effective stack is ${shorter} at ${fmt(cur.eff)}bb. ${z.full}</div>`;
-  if(cur.type==="size"||cur.type==="zone"){
-    html += `<div style="margin-top:7px">Three streets of <b>${sizeName(three)}</b> puts the last ${fmt(cur.eff)}bb in.</div>`;
+  st[cur.type].n++;
+  if(ok){st[cur.type].c++;st.streak++;st.best=Math.max(st.best,st.streak);}else st.streak=0;
+  Store.set('spr_stats',st);paintStats();
+  const z=zoneOf(cur.S),three=f3(cur.S);
+  $('d-verdict').textContent=ok?'Correct':'Miss';
+  $('d-verdict').className='verdict '+(ok?'ok':'no');
+  const shorter=cur.me<=cur.vil?'yours':"villain's";
+  let h=fmt(cur.eff)+' \u00f7 '+fmt(cur.pot)+' = SPR <b>'+cur.S.toFixed(1)+'</b> &middot; '+
+    '<span style="color:'+z.col+'">'+z.name+'</span><br>'+
+    'Effective stack is '+shorter+' at '+fmt(cur.eff)+'bb. '+z.full;
+  if(cur.type!=='spr'){
+    if(cur.S<1.05)h+='<br>One bet of '+fmt(cur.eff)+'bb is already about pot-sized. Shove.';
+    else if(three<=1.02)h+='<br>Three streets of <b>'+sizeName(three)+'</b> puts the last '+fmt(cur.eff)+'bb in.';
+    else h+='<br>Even three pot-sized bets only clear SPR 13, so stacks do not go in without overbetting.';
   }
-  $("d-explain").innerHTML=html;
-  $("d-marker").style.left=pos(cur.S)+"%";
-  drawScale($("d-scale"));
-  $("d-fb").hidden=false;
-  $("d-next").hidden=false;
-  $("d-next").focus();
-}
+  $('d-truth').innerHTML=h;
+  $('d-nextwrap').innerHTML='<button class="next" id="d-next">Next hand</button>';
+  $('d-next').onclick=nextQ;$('d-next').focus();}
+
 function paintStats(){
-  $("s-score").textContent=`${st.c} / ${st.n}`;
-  $("s-acc").textContent=st.n?Math.round(st.c/st.n*100)+"%":"—";
-  $("s-streak").textContent=st.streak;
-  $("s-best").textContent=st.best;
-}
-function resetStats(){ st={n:0,c:0,streak:0,best:0}; paintStats(); nextQ(); }
+  const keys=mode==='mix'?['spr','size','zone']:[mode];
+  const n=keys.reduce((a,k)=>a+st[k].n,0),c=keys.reduce((a,k)=>a+st[k].c,0);
+  $('s-score').textContent=c+' / '+n;
+  $('s-acc').textContent=n?Math.round(c/n*100)+'%':'\u2014';
+  $('s-streak').textContent=st.streak;
+  $('s-best').textContent=st.best;
+  $('s-label').innerHTML=mode==='mix'?'Correct &middot; all':'Correct &middot; this drill';}
+$('d-reset').onclick=()=>{
+  st={spr:{n:0,c:0},size:{n:0,c:0},zone:{n:0,c:0},streak:0,best:0};
+  Store.set('spr_stats',st);paintStats();nextQ();};
+document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
 
-document.addEventListener("keydown",e=>{
-  if(document.getElementById("drill").hidden) return;
-  if(e.key==="Enter"){
-    e.preventDefault();
-    if(answered) nextQ();
-    else if(cur&&cur.type==="spr") submitNum();
-  }
-  if(!answered && cur && cur.type!=="spr" && /^[1-5]$/.test(e.key)){
-    const i=+e.key-1; if(i<cur.list.length) pick(i);
-  }
-});
+/* ---------- tabs ---------- */
+document.querySelectorAll('#tabs button').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on');
+  ['calc','drill','ref'].forEach(k=>$(k).classList.toggle('on',k===t.dataset.tab));
+  if(t.dataset.tab==='drill'&&!cur)nextQ();});
 
-/* ============ REFERENCE TABLES ============ */
+document.addEventListener('keydown',e=>{
+  if(!$('drill').classList.contains('on'))return;
+  if(e.key==='Enter'){e.preventDefault();
+    if(answered)nextQ();else if(cur&&cur.type==='spr')submitNum();return;}
+  if(!answered&&cur&&cur.type!=='spr'&&/^[1-5]$/.test(e.key)){
+    const i=+e.key-1;if(i<cur.list.length)pick(i);}});
+
+/* ---------- reference ---------- */
 (function(){
-  const z=document.getElementById("r-zones");
-  const rng=["under 1.5","1.5 – 3","3 – 6","6 – 13","13+"];
-  ZONES.forEach((Z,i)=>{
-    z.insertAdjacentHTML("beforeend",
-      `<tr><td class="n">${rng[i]}</td>
-       <td><span class="swatch" style="background:${Z.color}"></span>${Z.name}</td>
-       <td style="color:var(--dim)">${Z.hand}</td></tr>`);
-  });
-
-  const l=document.getElementById("r-lines");
-  LINES.forEach(L=>{
-    const rem=100-L.inv, S=rem/L.pot, Z=zoneOf(S);
-    l.insertAdjacentHTML("beforeend",
-      `<tr><td>${L.t}</td><td class="n">${L.pot}</td><td class="n">${rem}</td>
-       <td class="n" style="color:${Z.color}">${S<10?S.toFixed(1):Math.round(S)}</td></tr>`);
-  });
-
-  const s=document.getElementById("r-sizes");
-  [[1/3,"1/3 pot"],[1/2,"1/2 pot"],[2/3,"2/3 pot"],[3/4,"3/4 pot"],[1,"Full pot"]].forEach(([f,n])=>{
-    const S3=4*f**3+6*f**2+3*f, S2=2*f**2+2*f;
-    s.insertAdjacentHTML("beforeend",
-      `<tr><td>${n}</td><td class="n">${S3.toFixed(1)}</td><td style="color:var(--dim)">3 streets`+
-      ` <span class="n" style="color:var(--dimmer)">· ${S2.toFixed(1)} over 2</span></td></tr>`);
-  });
+  $('r-zones').innerHTML=ZONES.map(z=>
+    '<tr><td class="n" style="color:'+z.col+'">'+z.range+'</td>'+
+    '<td><span class="sw" style="background:'+z.col+'"></span>'+z.name+'</td>'+
+    '<td class="mu">'+z.hand+'</td></tr>').join('');
+  $('r-lines').innerHTML=LINES.map(L=>{
+    const rem=100-L.inv,S=rem/L.pot,Z=zoneOf(S);
+    return '<tr><td>'+L.t+'</td><td class="n">'+L.pot+'</td><td class="n">'+rem+
+      '</td><td class="n" style="color:'+Z.col+'">'+S.toFixed(1)+'</td></tr>';}).join('');
+  $('r-sizes').innerHTML=SIZE_NAMES.map(([f,n])=>{
+    const S3=4*f**3+6*f**2+3*f,S2=2*f**2+2*f;
+    return '<tr><td>'+n.charAt(0).toUpperCase()+n.slice(1)+'</td><td class="n">'+S3.toFixed(1)+
+      '</td><td class="n mu">clears SPR '+S2.toFixed(1)+'</td></tr>';}).join('');
 })();
 
-drawScale(document.getElementById("scale"));
-calc();
-paintStats();
+drawTicks($('ticks'),$('track'));
+document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('on',b.dataset.mode===mode));
+calc();paintStats();
 </script>
 </body>
 </html>
