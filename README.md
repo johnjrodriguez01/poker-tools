@@ -48,6 +48,14 @@ Choosing a size, on a felt table with the spot dealt out — position, pot type,
 
 Grade against a **GTO baseline**, a **Reg**, or a **Station** — the same spot gets a different answer against each, and the feedback shows all three side by side so you can see which reads actually change the size. Accuracy is tracked per board texture and per turn card, so the weak textures surface on their own. Keyboard-driven: number keys answer, Enter deals the next hand, `M` cycles modes.
 
+The **SPR** tab (formerly the standalone SPR Trainer) covers stack-to-pot ratio for 6-max cash:
+
+- **Calculator** — enter stacks and flop pot, or load a preset (limped, 2.5x and 3x single-raised, SRP 3-way, 3-bet, squeeze, 4-bet). Returns SPR, the zone it falls in, effective stack, and where you sit on a commit / standard / pot-control scale.
+- **Drill** — timed spot quizzes, mixed or narrowed to SPR only, sizing only, or stack-off only, with accuracy, streak, and best-streak tracking.
+- **Reference** — stack-off thresholds by SPR zone, typical SPR by preflop line from 100bb, and the flop sizing that gets stacks in.
+
+The point it keeps hammering: halve the effective stack and you halve the SPR. A 50bb villain in a 3-bet pot puts you at SPR 2, not 4.4, and top pair becomes a stack-off.
+
 ### [Flop Texture Drill](flop-texture-drill.html)
 Continuation betting on a dealt flop, following Jonathan Little's framework: frequency comes from range advantage and position, size comes from nut advantage and how well the board hits the opponent's continuing range.
 
@@ -69,15 +77,6 @@ Pricing calls and reading draws, in five tabs: price to call, outs to equity, ca
 **Name the draw** (formerly the standalone Name the Draw tool) teaches you to identify draws on sight and count them correctly. Pick from gutshot, open-ended, double gutshot, flush draw, backdoor straight, backdoor flush, one or two overcards, or no draw — then enter your total outs. It scores the read and the count separately, so "right draw, wrong count" is its own result. Deal the turn to see whether you got there. Two modes: straights and flushes only, or any improvement. Keyboard-driven — number keys pick, Enter submits, Space deals the next hand.
 
 The reference table is the point of the tool: a table of required equity by bet size from a quarter pot up through overbets, and the argument for memorizing five numbers rather than doing arithmetic at the table — **quarter 17, third 20, half 25, three-quarters 30, pot 33**, interpolating for everything in between. Pot size itself never matters; a half-pot bet prices you at 25% whether the pot is 4bb or 40bb.
-
-### [SPR Trainer](spr-trainer.html)
-Stack-to-pot ratio for 6-max cash.
-
-- **Calculator** — enter stacks and flop pot, or load a preset (limped, 2.5x and 3x single-raised, SRP 3-way, 3-bet, squeeze, 4-bet). Returns SPR, the zone it falls in, effective stack, and where you sit on a commit / standard / pot-control scale.
-- **Drill** — timed spot quizzes with accuracy, streak, and best-streak tracking.
-- **Reference** — stack-off thresholds by SPR zone, typical SPR by preflop line from 100bb, and the flop sizing that gets stacks in.
-
-The point it keeps hammering: halve the effective stack and you halve the SPR. A 50bb villain in a 3-bet pot puts you at SPR 2, not 4.4, and top pair becomes a stack-off.
 
 ---
 
