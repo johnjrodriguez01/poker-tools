@@ -35,11 +35,6 @@ The **Analyzer** tab (formerly the standalone Range Analyzer) is a 169-hand grid
 ### [Board Callout](board-callout.html)
 Read board texture at a glance. Given a board, call out what's already possible — straight, flush, full house, straight flush — then deal the turn or river and say whether the nuts changed. Restrict to wet boards only if you want the harder set. Tracks streak and best streak.
 
-### [Name the Draw](name-the-draw.html)
-Identify draws on sight and count them correctly. Pick from gutshot, open-ended, double gutshot, flush draw, backdoor straight, backdoor flush, one or two overcards, or no draw — then enter your total outs. It scores the read and the count separately, so "right draw, wrong count" is its own result. Deal the turn to see whether you got there.
-
-Two modes: straights and flushes only, or any improvement. Keyboard-driven — number keys pick, Enter submits, Space deals the next hand.
-
 ### [Combo Trainer](combo-trainer.html)
 Counting hand combinations, in four question types: raw combo counts, how a board changes them, how many combos beat a given hand, and what's currently beating you. Includes a reference tab.
 
@@ -69,9 +64,11 @@ Filter to one pot type, and keep an even mix of textures so rainbow, two-tone, m
 ## Math
 
 ### [Pot Odds Trainer](pot-odds-trainer.html)
-Pricing calls, in four modes: price to call, outs to equity, counting outs, and a call-or-fold decision.
+Pricing calls and reading draws, in five tabs: price to call, outs to equity, call or fold, name the draw, and count outs.
 
-The reference tab is the point of the tool: a table of required equity by bet size from a quarter pot up through overbets, and the argument for memorizing five numbers rather than doing arithmetic at the table — **quarter 17, third 20, half 25, three-quarters 30, pot 33**, interpolating for everything in between. Pot size itself never matters; a half-pot bet prices you at 25% whether the pot is 4bb or 40bb.
+**Name the draw** (formerly the standalone Name the Draw tool) teaches you to identify draws on sight and count them correctly. Pick from gutshot, open-ended, double gutshot, flush draw, backdoor straight, backdoor flush, one or two overcards, or no draw — then enter your total outs. It scores the read and the count separately, so "right draw, wrong count" is its own result. Deal the turn to see whether you got there. Two modes: straights and flushes only, or any improvement. Keyboard-driven — number keys pick, Enter submits, Space deals the next hand.
+
+The reference table is the point of the tool: a table of required equity by bet size from a quarter pot up through overbets, and the argument for memorizing five numbers rather than doing arithmetic at the table — **quarter 17, third 20, half 25, three-quarters 30, pot 33**, interpolating for everything in between. Pot size itself never matters; a half-pot bet prices you at 25% whether the pot is 4bb or 40bb.
 
 ### [SPR Trainer](spr-trainer.html)
 Stack-to-pot ratio for 6-max cash.
