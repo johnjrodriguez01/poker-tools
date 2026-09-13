@@ -26,8 +26,7 @@ Filter by street, number of players, and bucket focus. Two stages: name the buck
 
 The stats tab shows which buckets you confuse with which — the useful part, since thin-vs-thick errors cost you on rivers and SDV-vs-draw errors turn made hands into bluffs. A reference tab holds the bucket definitions and the full decision grid.
 
-### [Range Analyzer](range-analyzer.html)
-A 169-hand grid for building and inspecting ranges. Select by hand or pull a top-% slider (5% through 100%), and it reports combo count, hand count, and percentage of all 1,326 combos. Breaks the selection into pairs, suited, and offsuit, marks boundary hands that are only partly in, and exports the range as copyable text.
+The **Analyzer** tab (formerly the standalone Range Analyzer) is a 169-hand grid for building and inspecting ranges. Drag the top-% slider and the grid fills in preflop equity order, or click hands to build a custom range. It reports combo count, hand count, percentage of all 1,326 combos, and the last hand in; breaks the selection into pairs, suited, and offsuit; marks boundary hands that are only partly in; and exports the range as copyable text.
 
 ---
 
