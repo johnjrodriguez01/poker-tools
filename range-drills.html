@@ -183,6 +183,47 @@ h2:first-child{margin-top:0}
 .note{font-size:12.5px;color:var(--dim);margin-bottom:14px;line-height:1.55}
 .bar{height:5px;background:#1e2226;border-radius:3px;overflow:hidden;margin-top:4px;min-width:80px}
 .bar i{display:block;height:100%;background:var(--gold)}
+/* ---------- range analyzer ---------- */
+.az-readout{display:flex;align-items:flex-end;gap:18px;background:var(--panel);border:1px solid var(--line);
+  border-radius:8px;padding:12px 14px;margin-bottom:14px;flex-wrap:wrap}
+.az-big{font-size:40px;line-height:1;font-weight:700;color:var(--gold-hi);font-family:ui-monospace,Menlo,monospace}
+.az-big span{font-size:18px;color:var(--dim);margin-left:2px}
+.az-read{font-size:11.5px;color:var(--dim);line-height:1.7;font-family:ui-monospace,Menlo,monospace}
+.az-read b{color:var(--txt);font-weight:600}
+.az-mode{margin-left:auto;font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;border:1px solid var(--line);
+  border-radius:9px;padding:3px 9px;color:var(--dim)}
+.az-mode.custom{color:var(--gold-hi);border-color:var(--gold)}
+
+.az-sliderrow{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.az-sliderrow input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:26px;background:transparent;cursor:pointer}
+.az-sliderrow input[type=range]::-webkit-slider-runnable-track{height:3px;border-radius:2px;background:var(--line)}
+.az-sliderrow input[type=range]::-moz-range-track{height:3px;border-radius:2px;background:var(--line)}
+.az-sliderrow input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+  background:var(--gold);margin-top:-6px;border:none}
+.az-sliderrow input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--gold);border:none}
+.az-sliderrow input[type=range]:focus-visible{outline:2px solid var(--gold-hi);outline-offset:4px}
+.az-nudge{width:30px;text-align:center;padding:4px 0}
+
+.az-grid{display:grid;grid-template-columns:repeat(13,1fr);gap:2px;margin-bottom:14px;max-width:660px}
+.az-cell{position:relative;aspect-ratio:1;border:1px solid var(--line);border-radius:3px;padding:0;cursor:pointer;
+  background:var(--panel2);color:#5d6774;font-family:ui-monospace,Menlo,monospace;font-weight:500;
+  font-size:clamp(8px,1.5vw,12px);display:flex;align-items:center;justify-content:center;
+  transition:background .1s,color .1s;overflow:hidden}
+.az-cell span{position:relative;z-index:1}
+.az-cell:hover{border-color:var(--gold);z-index:2}
+.az-cell:focus-visible{outline:2px solid var(--gold-hi);outline-offset:-2px;z-index:2}
+.az-cell.on{color:#0a0a0a;font-weight:700;border-color:transparent}
+.az-cell.part{color:var(--txt)}
+.az-cell.edge:after{content:"";position:absolute;inset:0;border-radius:2px;
+  box-shadow:inset 0 0 0 2px var(--bad);z-index:2}
+
+.az-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:10.5px;letter-spacing:.08em;color:var(--dim);margin-bottom:16px}
+.az-legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.az-out{border-top:1px solid var(--line);padding-top:12px}
+.az-notation{font-size:12px;line-height:1.8;color:var(--txt);word-break:break-word;
+  font-family:ui-monospace,Menlo,monospace}
+.az-notation.empty{color:#4d5560}
+@media(max-width:520px){.az-big{font-size:32px}}
 .hide{display:none}
 kbd{background:#1d2126;border:1px solid var(--line);border-radius:3px;padding:1px 5px;font-size:11px;
   font-family:ui-monospace,monospace;color:var(--dim)}
@@ -200,6 +241,7 @@ kbd{background:#1d2126;border:1px solid var(--line);border-radius:3px;padding:1p
     <button class="tab on" data-tab="drill">Drill</button>
     <button class="tab" data-tab="range">Ranging</button>
     <button class="tab" data-tab="stats">Stats</button>
+    <button class="tab" data-tab="analyzer">Analyzer</button>
     <button class="tab" data-tab="ref">Reference</button>
   </div>
 </header>
@@ -315,6 +357,59 @@ kbd{background:#1d2126;border:1px solid var(--line);border-radius:3px;padding:1p
   <table><thead><tr><th>Villain action</th><th>Seen</th><th>Correct</th><th style="width:38%">Rate</th></tr></thead>
   <tbody id="ltable"></tbody></table>
   <button class="tab" id="reset" style="margin-top:6px">Reset session</button>
+</section>
+
+<!-- ============ ANALYZER ============ -->
+<section id="tab-analyzer" class="hide">
+  <div class="scen">Drag the slider and the grid fills in preflop equity order, strongest hand first. Click any hand to build a custom range by hand. <b>169 hands / 1,326 combos.</b></div>
+
+  <div class="az-readout">
+    <div class="az-big" id="azPct">0<span>%</span></div>
+    <div class="az-read">
+      <b id="azCombos">0</b> combos<br>
+      <b id="azHands">0</b> hands<br>
+      last in: <b id="azLast">&ndash;</b>
+    </div>
+    <div class="az-mode" id="azMode">Top %</div>
+  </div>
+
+  <div class="az-sliderrow">
+    <button class="chip az-nudge" id="azDown" aria-label="Decrease 1%">&minus;</button>
+    <input type="range" id="azSlider" min="0" max="100" step="1" value="20" aria-label="Range percentage">
+    <button class="chip az-nudge" id="azUp" aria-label="Increase 1%">+</button>
+  </div>
+
+  <div class="controls" id="azPresets">
+    <div class="cgroup"><span class="clabel">Top</span>
+      <button class="chip" data-azp="5">5%</button>
+      <button class="chip" data-azp="10">10%</button>
+      <button class="chip" data-azp="15">15%</button>
+      <button class="chip" data-azp="20">20%</button>
+      <button class="chip" data-azp="25">25%</button>
+      <button class="chip" data-azp="30">30%</button>
+      <button class="chip" data-azp="40">40%</button>
+      <button class="chip" data-azp="50">50%</button>
+      <button class="chip" data-azp="60">60%</button>
+      <button class="chip" data-azp="100">100%</button>
+    </div>
+    <div class="cgroup" style="margin-left:auto"><button class="chip" id="azClear">Clear</button></div>
+  </div>
+
+  <div class="az-grid" id="azGrid"></div>
+
+  <div class="az-legend">
+    <span><i style="background:var(--gold)"></i>Pairs</span>
+    <span><i style="background:var(--good)"></i>Suited</span>
+    <span><i style="background:var(--d)"></i>Offsuit</span>
+    <span><i style="box-shadow:inset 0 0 0 2px var(--bad)"></i>Boundary hand (partly in)</span>
+  </div>
+
+  <div class="az-out">
+    <div class="rlabel" style="display:flex;align-items:center;gap:10px">Range
+      <button class="chip" id="azCopy" style="margin-left:auto">Copy</button>
+    </div>
+    <div class="az-notation empty" id="azNotation">Nothing selected</div>
+  </div>
 </section>
 
 <!-- ============ REFERENCE ============ -->
@@ -1434,7 +1529,7 @@ $("rules").innerHTML=[
 /* ---------- wiring ---------- */
 document.querySelectorAll(".tab[data-tab]").forEach(t=>t.onclick=()=>{
   document.querySelectorAll(".tab[data-tab]").forEach(x=>x.classList.toggle("on",x===t));
-  ["drill","range","stats","ref"].forEach(k=>$("tab-"+k).classList.toggle("hide",k!==t.dataset.tab));
+  ["drill","range","analyzer","stats","ref"].forEach(k=>$("tab-"+k).classList.toggle("hide",k!==t.dataset.tab));
   if(t.dataset.tab==="range"){ if(!rcur){rcur=rDeal();} rRender(); rUpd(); }
 });
 function chipGroup(attr,fn){
@@ -1474,6 +1569,7 @@ $("reset").onclick=()=>{
 };
 document.addEventListener("keydown",e=>{
   const onRange=!$("tab-range").classList.contains("hide");
+  if(!$("tab-analyzer").classList.contains("hide")) return;
   if(onRange){
     if(e.key==="Enter"||e.key===" "){ if(rans||rcfg.mode==="explore"){e.preventDefault();rNext();} return; }
     const k=parseInt(e.key,10);
@@ -1489,6 +1585,198 @@ document.addEventListener("keydown",e=>{
   if(phase===1&&n>=1&&n<=6) answerBucket(BORDER[n-1]);
   else if(phase===2&&n>=1&&n<=cur.villain.opts.length) answerAction(cur.villain.opts[n-1]);
 });
+
+/* ---------- range analyzer ---------- */
+(function(){
+const RANKS=['A','K','Q','J','T','9','8','7','6','5','4','3','2'];
+
+// Hands ordered strongest to weakest (standard preflop equity ranking)
+const ORDER=[
+"AA","KK","QQ","JJ","AKs","AKo","TT","AQs","AQo","99",
+"AJs","KQs","88","AJo","ATs","KJs","77","KQo","ATo","A9s",
+"KTs","QJs","66","A8s","KJo","QTs","A9o","JTs","55","A7s",
+"QJo","KTo","A5s","K9s","A6s","A8o","Q9s","JTo","A4s","44",
+"T9s","A3s","K8s","J9s","A7o","Q8s","A2s","K9o","QTo","33",
+"K7s","Q9o","T8s","J8s","A6o","98s","K6s","22","A5o","Q7s",
+"T9o","87s","K5s","J9o","Q6s","K8o","A4o","97s","J7s","Q5s",
+"T7s","76s","K4s","A3o","98o","Q8o","86s","J8o","K7o","65s",
+"K3s","Q4s","96s","T8o","A2o","J6s","54s","75s","K2s","Q3s",
+"J5s","T6s","87o","Q7o","64s","85s","J4s","Q2s","K6o","97o",
+"J3s","T5s","53s","76o","J7o","K5o","T7o","95s","J2s","43s",
+"T4s","Q6o","65o","74s","K4o","86o","T3s","84s","96o","52s",
+"62s","Q5o","T2s","63s","42s","32s","K3o","54o","75o","93s",
+"J6o","73s","Q4o","94s","K2o","85o","T6o","64o","J5o","92s",
+"83s","82s","72s","Q3o","95o","53o","T5o","J4o","74o","Q2o",
+"43o","63o","J3o","T4o","84o","52o","62o","J2o","94o","T3o",
+"42o","93o","73o","32o","83o","T2o","92o","82o","72o"
+];
+if(ORDER.length!==169) console.error('Ranking list length',ORDER.length);
+
+const TOTAL=1326;
+const weight=h=>h.length===2?6:(h.endsWith('s')?4:12);
+const kind=h=>h.length===2?'pair':(h.endsWith('s')?'suited':'offsuit');
+const COLOR={pair:'#c9a227',suited:'#4caf7d',offsuit:'#5b9bd5'};
+const RANK_OF={}; ORDER.forEach((h,i)=>RANK_OF[h]=i+1);
+
+// hand -> fraction of its combos that are in the range (0 to 1)
+let sel=new Map();
+let custom=false;
+
+const grid=$("azGrid");
+const cells={};
+for(let r=0;r<13;r++){
+  for(let c=0;c<13;c++){
+    const hand = r===c ? RANKS[r]+RANKS[c]
+               : r<c   ? RANKS[r]+RANKS[c]+'s'
+                       : RANKS[c]+RANKS[r]+'o';
+    const b=document.createElement('button');
+    b.className='az-cell';
+    b.innerHTML='<span>'+hand+'</span>';
+    b.title=hand+' \u00b7 #'+RANK_OF[hand]+' \u00b7 '+weight(hand)+' combos';
+    b.onclick=()=>toggle(hand);
+    grid.appendChild(b);
+    cells[hand]=b;
+  }
+}
+
+// exact top-% fill: whole hands, then a partial slice of the boundary hand
+function setFromPct(pct){
+  custom=false;
+  const target=pct/100*TOTAL;
+  const m=new Map();
+  let sum=0;
+  for(const h of ORDER){
+    const w=weight(h);
+    if(sum+w<=target+1e-9){ m.set(h,1); sum+=w; }
+    else{
+      const frac=(target-sum)/w;
+      if(frac>1e-9) m.set(h,frac);
+      break;
+    }
+  }
+  sel=m;
+  render();
+}
+
+function toggle(hand){
+  custom=true;
+  sel.has(hand)?sel.delete(hand):sel.set(hand,1);
+  render();
+}
+
+function currentPct(){
+  let c=0; sel.forEach((f,h)=>c+=f*weight(h));
+  return c/TOTAL*100;
+}
+
+function nudge(dir){
+  const next=Math.max(0,Math.min(100,Math.round(currentPct())+dir));
+  setFromPct(next);
+}
+
+function notation(map){
+  const idx={}; RANKS.forEach((r,i)=>idx[r]=i);
+  const full=new Set(); const partial=[];
+  map.forEach((f,h)=>f>=0.999?full.add(h):partial.push(h));
+  const parts=[];
+
+  const pairs=RANKS.filter(r=>full.has(r+r)).map(r=>idx[r]).sort((a,b)=>a-b);
+  runs(pairs).forEach(([a,b])=>{
+    if(a===0) parts.push(RANKS[b]+RANKS[b]+'+');
+    else if(a===b) parts.push(RANKS[a]+RANKS[a]);
+    else parts.push(RANKS[a]+RANKS[a]+'-'+RANKS[b]+RANKS[b]);
+  });
+
+  ['s','o'].forEach(sfx=>{
+    RANKS.forEach((hi,i)=>{
+      const ks=[];
+      for(let j=i+1;j<13;j++) if(full.has(hi+RANKS[j]+sfx)) ks.push(j);
+      runs(ks).forEach(([a,b])=>{
+        if(a===i+1&&b>a) parts.push(hi+RANKS[b]+sfx+'+');
+        else if(a===b) parts.push(hi+RANKS[a]+sfx);
+        else parts.push(hi+RANKS[a]+sfx+'-'+hi+RANKS[b]+sfx);
+      });
+    });
+  });
+
+  partial.forEach(h=>parts.push(h+':'+map.get(h).toFixed(2)));
+  return parts;
+}
+
+function runs(arr){
+  const out=[];
+  for(let i=0;i<arr.length;i++){
+    let j=i;
+    while(j+1<arr.length&&arr[j+1]===arr[j]+1) j++;
+    out.push([arr[i],arr[j]]); i=j;
+  }
+  return out;
+}
+
+function render(){
+  let combos=0;
+  for(const h in cells){
+    const f=sel.get(h)||0;
+    const el=cells[h];
+    combos+=f*weight(h);
+    el.classList.toggle('on',f>=0.999);
+    el.classList.toggle('part',f>0&&f<0.999);
+    el.classList.remove('edge');
+    if(f<=0) el.style.background='';
+    else if(f>=0.999) el.style.background=COLOR[kind(h)];
+    else{
+      const p=(f*100).toFixed(1)+'%';
+      el.style.background='linear-gradient(to top, '+COLOR[kind(h)]+' '+p+', var(--panel2) '+p+')';
+      el.classList.add('edge');
+    }
+  }
+
+  const inOrder=ORDER.filter(h=>sel.has(h));
+  const last=inOrder[inOrder.length-1];
+
+  const pct=combos/TOTAL*100;
+  $("azPct").innerHTML=trim(pct)+'<span>%</span>';
+  $("azCombos").textContent=trim(combos);
+  $("azHands").textContent=inOrder.length;
+  $("azLast").textContent=last?last+' (#'+RANK_OF[last]+')':'\u2013';
+
+  const m=$("azMode");
+  m.textContent=custom?'Custom':'Top %';
+  m.classList.toggle('custom',custom);
+
+  const n=$("azNotation");
+  const parts=notation(sel);
+  n.textContent=parts.length?parts.join(', '):'Nothing selected';
+  n.classList.toggle('empty',!parts.length);
+
+  $("azSlider").value=Math.round(pct);
+  document.querySelectorAll("#azPresets button[data-azp]").forEach(b=>{
+    b.classList.toggle('on',!custom&&Math.abs(+b.dataset.azp-pct)<0.01);
+  });
+}
+
+function trim(x){
+  const s=x.toFixed(1);
+  return s.endsWith('.0')?s.slice(0,-2):s;
+}
+
+$("azSlider").oninput=e=>setFromPct(+e.target.value);
+$("azUp").onclick=()=>nudge(1);
+$("azDown").onclick=()=>nudge(-1);
+$("azClear").onclick=()=>{ custom=false; sel=new Map(); render(); };
+document.querySelectorAll("#azPresets button[data-azp]").forEach(b=>{
+  b.onclick=()=>setFromPct(+b.dataset.azp);
+});
+$("azCopy").onclick=async e=>{
+  const txt=notation(sel).join(', ');
+  if(!txt) return;
+  try{ await navigator.clipboard.writeText(txt); e.target.textContent='Copied'; }
+  catch{ e.target.textContent='Copy failed'; }
+  setTimeout(()=>e.target.textContent='Copy',1200);
+};
+
+setFromPct(20);
+})();
 
 next(); updStats();
 </script>
